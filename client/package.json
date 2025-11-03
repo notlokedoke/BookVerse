@@ -1,0 +1,27 @@
+{
+  "name": "bookverse-client",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "BookVerse frontend React application",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.22",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.4",
+    "vite": "^4.4.9",
+    "vitest": "^0.34.5",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.1.3"
+  }
+}
