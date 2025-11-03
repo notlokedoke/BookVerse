@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.test
 
 # Logs
 logs
@@ -29,3 +31,13 @@ coverage/
 # Build
 dist/
 build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads & temporary files
+uploads/
+temp/
+tmp/
