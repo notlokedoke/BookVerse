@@ -29,7 +29,7 @@ MONGODB_URI=mongodb://localhost:27017/bookverse
 For production, use MongoDB Atlas or another hosted solution:
 
 ```
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/bookverse
+MONGODB_URI=mongodb+srv://<YOUR_USERNAME>:<YOUR_PASSWORD>@<YOUR_CLUSTER>.mongodb.net/bookverse
 ```
 
 ## Testing the Connection
