@@ -1,4 +1,8 @@
-require('dotenv').config();
+// Only load dotenv in non-test environments
+if (process.env.NODE_ENV !== 'test') {
+  require('dotenv').config();
+}
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -13,6 +17,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Import routes
+const authRoutes = require('./routes/auth');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -32,6 +39,9 @@ app.get('/', (req, res) => {
   });
 });
 
+// API Routes
+app.use('/api/auth', authRoutes);
+
 const PORT = process.env.PORT || 5000;
 
 // Connect to database and start server
@@ -50,6 +60,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Only start server if this file is run directly (not imported for testing)
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
