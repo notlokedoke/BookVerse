@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
+const { generateToken } = require('../utils/jwt');
 
 /**
  * @route   POST /api/auth/register
@@ -117,6 +118,109 @@ router.post('/register', [
       success: false,
       error: {
         message: 'An error occurred during registration',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/login
+ * @desc    Authenticate user and return JWT token
+ * @access  Public
+ */
+router.post('/login', [
+  // Validation middleware
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail(),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+], async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Please provide both email and password',
+          code: 'MISSING_FIELDS'
+        }
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Invalid credentials',
+          code: 'INVALID_CREDENTIALS'
+        }
+      });
+    }
+
+    // Compare password hash
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Invalid credentials',
+          code: 'INVALID_CREDENTIALS'
+        }
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    // Return token and user data (excluding password)
+    const userResponse = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      city: user.city,
+      privacySettings: user.privacySettings,
+      averageRating: user.averageRating,
+      ratingCount: user.ratingCount,
+      createdAt: user.createdAt
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        token,
+        user: userResponse
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred during login',
         code: 'INTERNAL_ERROR'
       }
     });
