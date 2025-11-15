@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 
 /**
@@ -7,9 +8,29 @@ const User = require('../models/User');
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', async (req, res) => {
+router.post('/register', [
+  // Validation middleware
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail()
+], async (req, res) => {
   try {
     const { name, email, password, city } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
 
     // Validate required fields
     if (!name || !email || !password || !city) {
