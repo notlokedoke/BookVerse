@@ -15,8 +15,9 @@ server/dist/
 .kiro/output/
 .kiro/build/
 
+
 # Keep specs
-!.kiro/specs/
+.kiro/specs/
 
 # --- Logs ---
 logs/
