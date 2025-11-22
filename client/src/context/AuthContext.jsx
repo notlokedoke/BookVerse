@@ -63,9 +63,18 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true }
     } catch (error) {
+      // Handle network errors
+      if (!error.response) {
+        return {
+          success: false,
+          error: 'Network error. Please check your connection and try again.'
+        }
+      }
+      
+      // Handle server errors
       return {
         success: false,
-        error: error.response?.data?.error?.message || 'Login failed'
+        error: error.response?.data?.error?.message || 'Login failed. Please try again.'
       }
     }
   }
