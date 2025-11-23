@@ -1,11 +1,11 @@
 import React from 'react'
+import RegisterForm from './components/RegisterForm'
 import './App.css'
 
 function App() {
   return (
     <div className="App">
-      <h1>BookVerse</h1>
-      <p>Book Trading Platform</p>
+      <RegisterForm />
     </div>
   )
 }
