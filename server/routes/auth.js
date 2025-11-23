@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
+const { authenticateToken } = require('../middleware/auth');
 
 /**
  * @route   POST /api/auth/register
@@ -221,6 +222,42 @@ router.post('/login', [
       success: false,
       error: {
         message: 'An error occurred during login',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get current user profile
+ * @access  Private (requires JWT token)
+ */
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    // User is already attached to req by authenticateToken middleware
+    const userResponse = {
+      _id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      city: req.user.city,
+      privacySettings: req.user.privacySettings,
+      averageRating: req.user.averageRating,
+      ratingCount: req.user.ratingCount,
+      createdAt: req.user.createdAt
+    };
+
+    res.status(200).json({
+      success: true,
+      data: userResponse
+    });
+
+  } catch (error) {
+    console.error('Get current user error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching user profile',
         code: 'INTERNAL_ERROR'
       }
     });
