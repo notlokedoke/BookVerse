@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -12,6 +13,7 @@ function App() {
     <Router>
       <AuthProvider>
         <div className="App">
+          <Navbar />
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
