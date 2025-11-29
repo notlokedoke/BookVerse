@@ -264,4 +264,124 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/auth/profile
+ * @desc    Update user profile (name and city)
+ * @access  Private (requires JWT token)
+ */
+router.put('/profile', [
+  authenticateToken,
+  // Validation middleware
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Name cannot be empty'),
+  body('city')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('City cannot be empty')
+], async (req, res) => {
+  try {
+    const { name, city } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
+    // Check if at least one field is provided for update
+    if (!name && !city) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Please provide at least one field to update (name or city)',
+          code: 'NO_UPDATE_FIELDS'
+        }
+      });
+    }
+
+    // Build update object with only provided fields
+    const updateFields = {};
+    if (name !== undefined) {
+      updateFields.name = name;
+    }
+    if (city !== undefined) {
+      updateFields.city = city;
+    }
+
+    // Update user document in database
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      updateFields,
+      { 
+        new: true, // Return updated document
+        runValidators: true // Run schema validators
+      }
+    ).select('-password'); // Exclude password from response
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND'
+        }
+      });
+    }
+
+    // Return updated user data
+    const userResponse = {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      city: updatedUser.city,
+      privacySettings: updatedUser.privacySettings,
+      averageRating: updatedUser.averageRating,
+      ratingCount: updatedUser.ratingCount,
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: userResponse
+    });
+
+  } catch (error) {
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: messages.join(', '),
+          code: 'VALIDATION_ERROR',
+          details: error.errors
+        }
+      });
+    }
+
+    // Handle other errors
+    console.error('Profile update error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while updating profile',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

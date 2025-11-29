@@ -400,4 +400,192 @@ describe('Auth Routes', () => {
       expect(response.body.error.message).toBe('Invalid token. User not found.');
     });
   });
+
+  describe('PUT /api/auth/profile', () => {
+    const validUserData = {
+      name: 'Bob Wilson',
+      email: 'bob@example.com',
+      password: 'password123',
+      city: 'Seattle'
+    };
+
+    let authToken;
+    let userId;
+
+    beforeEach(async () => {
+      // Create a user and get auth token
+      const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send(validUserData);
+      
+      userId = registerResponse.body.data._id;
+
+      const loginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        });
+      
+      authToken = loginResponse.body.data.token;
+    });
+
+    test('should update user name with valid token', async () => {
+      const updateData = { name: 'Robert Wilson' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Profile updated successfully');
+      expect(response.body.data.name).toBe(updateData.name);
+      expect(response.body.data.city).toBe(validUserData.city); // Should remain unchanged
+      expect(response.body.data.email).toBe(validUserData.email); // Should remain unchanged
+      expect(response.body.data).not.toHaveProperty('password');
+    });
+
+    test('should update user city with valid token', async () => {
+      const updateData = { city: 'Portland' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Profile updated successfully');
+      expect(response.body.data.city).toBe(updateData.city);
+      expect(response.body.data.name).toBe(validUserData.name); // Should remain unchanged
+      expect(response.body.data.email).toBe(validUserData.email); // Should remain unchanged
+    });
+
+    test('should update both name and city with valid token', async () => {
+      const updateData = { 
+        name: 'Robert Wilson',
+        city: 'Portland'
+      };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Profile updated successfully');
+      expect(response.body.data.name).toBe(updateData.name);
+      expect(response.body.data.city).toBe(updateData.city);
+      expect(response.body.data.email).toBe(validUserData.email); // Should remain unchanged
+    });
+
+    test('should reject update with empty name', async () => {
+      const updateData = { name: '' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toContain('Name cannot be empty');
+    });
+
+    test('should reject update with empty city', async () => {
+      const updateData = { city: '' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toContain('City cannot be empty');
+    });
+
+    test('should reject update with no fields provided', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({})
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_UPDATE_FIELDS');
+      expect(response.body.error.message).toBe('Please provide at least one field to update (name or city)');
+    });
+
+    test('should reject update without Authorization header', async () => {
+      const updateData = { name: 'Robert Wilson' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .send(updateData)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should reject update with invalid token', async () => {
+      const updateData = { name: 'Robert Wilson' };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', 'Bearer invalid.token.here')
+        .send(updateData)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should trim whitespace from name and city', async () => {
+      const updateData = { 
+        name: '  Robert Wilson  ',
+        city: '  Portland  '
+      };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.name).toBe('Robert Wilson');
+      expect(response.body.data.city).toBe('Portland');
+    });
+
+    test('should persist changes in database', async () => {
+      const updateData = { 
+        name: 'Robert Wilson',
+        city: 'Portland'
+      };
+
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      // Verify changes persisted by fetching user profile
+      const profileResponse = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(profileResponse.body.data.name).toBe(updateData.name);
+      expect(profileResponse.body.data.city).toBe(updateData.city);
+    });
+  });
 });
