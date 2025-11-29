@@ -6,6 +6,7 @@ import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import UserProfilePage from './pages/UserProfilePage'
 import './App.css'
 
 function App() {
@@ -25,6 +26,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <HomePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <UserProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile/:userId" 
+              element={
+                <ProtectedRoute>
+                  <UserProfilePage />
                 </ProtectedRoute>
               } 
             />
