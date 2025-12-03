@@ -266,7 +266,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 /**
  * @route   PUT /api/auth/profile
- * @desc    Update user profile (name and city)
+ * @desc    Update user profile (name, city, and privacy settings)
  * @access  Private (requires JWT token)
  */
 router.put('/profile', [
@@ -281,10 +281,14 @@ router.put('/profile', [
     .optional()
     .trim()
     .isLength({ min: 1 })
-    .withMessage('City cannot be empty')
+    .withMessage('City cannot be empty'),
+  body('privacySettings.showCity')
+    .optional()
+    .isBoolean()
+    .withMessage('Privacy setting showCity must be a boolean value')
 ], async (req, res) => {
   try {
-    const { name, city } = req.body;
+    const { name, city, privacySettings } = req.body;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -300,11 +304,11 @@ router.put('/profile', [
     }
 
     // Check if at least one field is provided for update
-    if (!name && !city) {
+    if (!name && !city && !privacySettings) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Please provide at least one field to update (name or city)',
+          message: 'Please provide at least one field to update (name, city, or privacySettings)',
           code: 'NO_UPDATE_FIELDS'
         }
       });
@@ -317,6 +321,12 @@ router.put('/profile', [
     }
     if (city !== undefined) {
       updateFields.city = city;
+    }
+    if (privacySettings !== undefined) {
+      // Handle nested privacy settings update
+      if (privacySettings.showCity !== undefined) {
+        updateFields['privacySettings.showCity'] = privacySettings.showCity;
+      }
     }
 
     // Update user document in database

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
+import PrivacyToggle from '../components/PrivacyToggle'
 import './ProfileSettingsPage.css'
 
 const ProfileSettingsPage = () => {
@@ -10,7 +11,8 @@ const ProfileSettingsPage = () => {
   
   const [formData, setFormData] = useState({
     name: '',
-    city: ''
+    city: '',
+    showCity: true
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -21,7 +23,8 @@ const ProfileSettingsPage = () => {
     if (user) {
       setFormData({
         name: user.name || '',
-        city: user.city || ''
+        city: user.city || '',
+        showCity: user.privacySettings?.showCity ?? true
       })
     }
   }, [user])
@@ -40,6 +43,18 @@ const ProfileSettingsPage = () => {
         [name]: ''
       }))
     }
+    
+    // Clear success message when user starts editing
+    if (successMessage) {
+      setSuccessMessage('')
+    }
+  }
+
+  const handlePrivacyToggle = (showCity) => {
+    setFormData(prev => ({
+      ...prev,
+      showCity
+    }))
     
     // Clear success message when user starts editing
     if (successMessage) {
@@ -76,7 +91,10 @@ const ProfileSettingsPage = () => {
     }
     
     // Check if anything actually changed
-    if (formData.name === user.name && formData.city === user.city) {
+    const currentShowCity = user.privacySettings?.showCity ?? true
+    if (formData.name === user.name && 
+        formData.city === user.city && 
+        formData.showCity === currentShowCity) {
       setSuccessMessage('No changes to save')
       return
     }
@@ -88,7 +106,10 @@ const ProfileSettingsPage = () => {
         `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`,
         {
           name: formData.name.trim(),
-          city: formData.city.trim()
+          city: formData.city.trim(),
+          privacySettings: {
+            showCity: formData.showCity
+          }
         }
       )
       
@@ -213,6 +234,16 @@ const ProfileSettingsPage = () => {
                 {errors.city}
               </div>
             )}
+          </div>
+
+          <div className="form-group">
+            <PrivacyToggle
+              showCity={formData.showCity}
+              onChange={handlePrivacyToggle}
+              disabled={loading}
+              label="Show city on profile"
+              description="When enabled, other users can see your city information on your profile and in book listings"
+            />
           </div>
 
           <div className="form-actions">
