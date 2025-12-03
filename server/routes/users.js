@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { applyUserPrivacySettings } = require('../utils/privacy');
 
 /**
  * @route   GET /api/users/:userId
@@ -35,20 +36,8 @@ router.get('/:userId', async (req, res) => {
       });
     }
 
-    // Apply privacy settings - hide city if showCity is false
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      averageRating: user.averageRating,
-      ratingCount: user.ratingCount,
-      createdAt: user.createdAt,
-      privacySettings: user.privacySettings
-    };
-
-    // Only include city if privacy settings allow it
-    if (user.privacySettings?.showCity !== false) {
-      userResponse.city = user.city;
-    }
+    // Apply privacy settings using utility function
+    const userResponse = applyUserPrivacySettings(user);
 
     res.status(200).json({
       success: true,

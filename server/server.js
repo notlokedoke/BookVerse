@@ -21,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // Import routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const bookRoutes = require('./routes/books');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -43,6 +44,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/books', bookRoutes);
 
 const PORT = process.env.PORT || 5000;
 
