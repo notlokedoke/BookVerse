@@ -4,7 +4,7 @@ const app = require('../server');
 const User = require('../models/User');
 const connectDB = require('../config/database');
 
-describe('Auth Routes - Registration', () => {
+describe('Auth Routes', () => {
   beforeAll(async () => {
     // Connect to test database
     await connectDB();
@@ -162,6 +162,120 @@ describe('Auth Routes - Registration', () => {
         .expect(201);
 
       expect(response.body.data.email).toBe('john@example.com');
+    });
+  });
+
+  describe('POST /api/auth/login', () => {
+    const validUserData = {
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      password: 'password123',
+      city: 'Boston'
+    };
+
+    beforeEach(async () => {
+      // Create a user for login tests
+      await request(app)
+        .post('/api/auth/register')
+        .send(validUserData);
+    });
+
+    test('should login with valid credentials', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Login successful');
+      expect(response.body.data).toHaveProperty('token');
+      expect(response.body.data).toHaveProperty('user');
+      expect(response.body.data.user.email).toBe(validUserData.email);
+      expect(response.body.data.user.name).toBe(validUserData.name);
+      expect(response.body.data.user.city).toBe(validUserData.city);
+      expect(response.body.data.user).not.toHaveProperty('password');
+      expect(typeof response.body.data.token).toBe('string');
+    });
+
+    test('should reject login with invalid email', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'nonexistent@example.com',
+          password: validUserData.password
+        })
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
+      expect(response.body.error.message).toBe('Invalid credentials');
+    });
+
+    test('should reject login with invalid password', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: 'wrongpassword'
+        })
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_CREDENTIALS');
+      expect(response.body.error.message).toBe('Invalid credentials');
+    });
+
+    test('should reject login with missing email', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          password: validUserData.password
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('should reject login with missing password', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('should reject login with invalid email format', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'invalid-email',
+          password: validUserData.password
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    test('should handle case-insensitive email login', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'JANE@EXAMPLE.COM',
+          password: validUserData.password
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.email).toBe(validUserData.email);
     });
   });
 });
