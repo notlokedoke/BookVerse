@@ -209,4 +209,47 @@ describe('LoginForm', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
     });
   });
+
+  it('displays error message for network errors', async () => {
+    mockLogin.mockResolvedValueOnce({ 
+      success: false, 
+      error: 'Network error. Please check your connection and try again.' 
+    });
+
+    render(
+      <BrowserRouter>
+        <LoginForm />
+      </BrowserRouter>
+    );
+    
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    
+    const submitButton = screen.getByRole('button', { name: /log in/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/network error/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles unexpected errors gracefully', async () => {
+    mockLogin.mockRejectedValueOnce(new Error('Unexpected error'));
+
+    render(
+      <BrowserRouter>
+        <LoginForm />
+      </BrowserRouter>
+    );
+    
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    
+    const submitButton = screen.getByRole('button', { name: /log in/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/an unexpected error occurred/i)).toBeInTheDocument();
+    });
+  });
 });
