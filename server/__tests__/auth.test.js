@@ -99,7 +99,7 @@ describe('Auth Routes', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject registration with missing password', async () => {
@@ -112,7 +112,7 @@ describe('Auth Routes', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject registration with missing city', async () => {
@@ -276,6 +276,128 @@ describe('Auth Routes', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe(validUserData.email);
+    });
+  });
+
+  describe('GET /api/auth/me', () => {
+    const validUserData = {
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      password: 'password123',
+      city: 'Chicago'
+    };
+
+    let authToken;
+    let userId;
+
+    beforeEach(async () => {
+      // Create a user and get auth token
+      const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send(validUserData);
+      
+      userId = registerResponse.body.data._id;
+
+      const loginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        });
+      
+      authToken = loginResponse.body.data.token;
+    });
+
+    test('should get current user profile with valid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('_id');
+      expect(response.body.data._id).toBe(userId);
+      expect(response.body.data.name).toBe(validUserData.name);
+      expect(response.body.data.email).toBe(validUserData.email);
+      expect(response.body.data.city).toBe(validUserData.city);
+      expect(response.body.data).not.toHaveProperty('password');
+      expect(response.body.data.privacySettings.showCity).toBe(true);
+      expect(response.body.data.averageRating).toBe(0);
+      expect(response.body.data.ratingCount).toBe(0);
+    });
+
+    test('should reject request without Authorization header', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should reject request with malformed Authorization header', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'InvalidFormat')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should reject request with invalid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer invalid.token.here')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should reject request with expired token', async () => {
+      // Create a token with very short expiration for testing
+      const jwt = require('jsonwebtoken');
+      const expiredToken = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET,
+        { expiresIn: '1ms' } // Expires immediately
+      );
+
+      // Wait a moment to ensure token is expired
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should reject request with token for non-existent user', async () => {
+      // Create a token with a non-existent user ID
+      const jwt = require('jsonwebtoken');
+      const fakeUserId = new mongoose.Types.ObjectId();
+      const fakeToken = jwt.sign(
+        { id: fakeUserId },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${fakeToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('USER_NOT_FOUND');
+      expect(response.body.error.message).toBe('Invalid token. User not found.');
     });
   });
 });
