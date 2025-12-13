@@ -482,6 +482,40 @@ describe('Auth Routes', () => {
       expect(response.body.data.email).toBe(validUserData.email); // Should remain unchanged
     });
 
+    test('should update privacy settings with valid token', async () => {
+      const updateData = { privacySettings: { showCity: false } };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Profile updated successfully');
+      expect(response.body.data.privacySettings.showCity).toBe(false);
+      expect(response.body.data.email).toBe(validUserData.email);
+    });
+
+    test('should update name and privacy settings together', async () => {
+      const updateData = { 
+        name: 'Privacy User',
+        privacySettings: { showCity: false }
+      };
+
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Profile updated successfully');
+      expect(response.body.data.name).toBe('Privacy User');
+      expect(response.body.data.privacySettings.showCity).toBe(false);
+      expect(response.body.data.email).toBe(validUserData.email);
+    });
+
     test('should reject update with empty name', async () => {
       const updateData = { name: '' };
 
@@ -519,7 +553,7 @@ describe('Auth Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('NO_UPDATE_FIELDS');
-      expect(response.body.error.message).toBe('Please provide at least one field to update (name or city)');
+      expect(response.body.error.message).toBe('Please provide at least one field to update (name, city, or privacySettings)');
     });
 
     test('should reject update without Authorization header', async () => {

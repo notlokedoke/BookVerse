@@ -152,7 +152,10 @@ describe('ProfileSettingsPage', () => {
       'http://localhost:5000/api/auth/profile',
       {
         name: 'Jane Doe',
-        city: 'Los Angeles'
+        city: 'Los Angeles',
+        privacySettings: {
+          showCity: true
+        }
       }
     )
 
@@ -274,5 +277,53 @@ describe('ProfileSettingsPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Saving...')).not.toBeInTheDocument()
     })
+  })
+
+  it('renders privacy toggle and handles changes', async () => {
+    const mockUpdateUser = vi.fn()
+
+    mockedAxios.put.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          ...mockUser,
+          privacySettings: { showCity: false }
+        }
+      }
+    })
+
+    renderWithAuth(mockUser, mockUpdateUser)
+
+    // Check that privacy toggle is rendered
+    expect(screen.getByText('Show city on profile')).toBeInTheDocument()
+    expect(screen.getByText('When enabled, other users can see your city information on your profile and in book listings')).toBeInTheDocument()
+    
+    // Check initial state
+    const toggle = screen.getByRole('switch')
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByText('Visible')).toBeInTheDocument()
+
+    // Click the toggle
+    fireEvent.click(toggle)
+
+    // Submit form
+    const submitButton = screen.getByRole('button', { name: /save changes/i })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(screen.getByText('Profile updated successfully!')).toBeInTheDocument()
+    })
+
+    // Check that API was called with privacy settings
+    expect(mockedAxios.put).toHaveBeenCalledWith(
+      'http://localhost:5000/api/auth/profile',
+      {
+        name: 'John Doe',
+        city: 'New York',
+        privacySettings: {
+          showCity: false
+        }
+      }
+    )
   })
 })
