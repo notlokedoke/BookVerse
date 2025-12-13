@@ -8,6 +8,16 @@ import axios from 'axios';
 // Mock axios
 vi.mock('axios');
 
+// Mock useNavigate
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate
+  };
+});
+
 // Mock the AuthContext
 const mockAuthContext = {
   user: { id: '1', name: 'Test User' },
@@ -25,6 +35,11 @@ const renderWithProviders = (component) => {
 };
 
 describe('BookListingForm', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+    axios.post.mockClear();
+  });
+
   test('renders form with all required fields', () => {
     renderWithProviders(<BookListingForm />);
     
@@ -254,5 +269,62 @@ describe('BookListingForm', () => {
     fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
 
     expect(lookupButton).not.toBeDisabled();
+  });
+
+  test('shows success message and redirects after successful book creation', async () => {
+    const mockSuccessResponse = {
+      data: {
+        success: true,
+        data: {
+          _id: '507f1f77bcf86cd799439011',
+          title: 'Test Book',
+          author: 'Test Author',
+          condition: 'Good',
+          genre: 'Fiction'
+        }
+      }
+    };
+
+    axios.post.mockResolvedValueOnce(mockSuccessResponse);
+
+    renderWithProviders(<BookListingForm />);
+    
+    // Fill out the form with valid data
+    const titleInput = screen.getByLabelText(/book title/i);
+    const authorInput = screen.getByLabelText(/author/i);
+    const conditionSelect = screen.getByLabelText(/condition/i);
+    const genreSelect = screen.getByLabelText(/genre/i);
+    const fileInput = screen.getByLabelText(/book photo/i);
+    
+    fireEvent.change(titleInput, { target: { value: 'Test Book' } });
+    fireEvent.change(authorInput, { target: { value: 'Test Author' } });
+    fireEvent.change(conditionSelect, { target: { value: 'Good' } });
+    fireEvent.change(genreSelect, { target: { value: 'Fiction' } });
+    
+    // Create a valid image file
+    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    // Submit the form
+    const submitButton = screen.getByRole('button', { name: /create listing/i });
+    fireEvent.click(submitButton);
+
+    // Wait for success message to appear
+    await waitFor(() => {
+      expect(screen.getByText(/book listing created successfully! redirecting to your profile/i)).toBeInTheDocument();
+    });
+
+    // Verify form is cleared
+    await waitFor(() => {
+      expect(titleInput.value).toBe('');
+      expect(authorInput.value).toBe('');
+      expect(conditionSelect.value).toBe('');
+      expect(genreSelect.value).toBe('');
+    });
+
+    // Wait for redirect (after 2 seconds)
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/profile');
+    }, { timeout: 3000 });
   });
 });
