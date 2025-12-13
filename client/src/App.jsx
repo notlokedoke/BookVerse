@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UserProfilePage from './pages/UserProfilePage'
+import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import './App.css'
 
 function App() {
@@ -42,6 +43,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile/settings" 
+              element={
+                <ProtectedRoute>
+                  <ProfileSettingsPage />
                 </ProtectedRoute>
               } 
             />

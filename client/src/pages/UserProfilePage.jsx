@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../context/AuthContext'
 import './UserProfilePage.css'
@@ -120,7 +120,9 @@ const UserProfilePage = () => {
         </div>
         {isOwnProfile && (
           <div className="profile-actions">
-            <button className="edit-profile-btn">Edit Profile</button>
+            <Link to="/profile/settings" className="edit-profile-btn">
+              Edit Profile
+            </Link>
           </div>
         )}
       </div>
