@@ -22,6 +22,7 @@ const BookListingForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLookingUpISBN, setIsLookingUpISBN] = useState(false);
 
   const { title, author, condition, genre, isbn, description, publicationYear, publisher } = formData;
 
@@ -107,6 +108,71 @@ const BookListingForm = () => {
           image: ''
         });
       }
+    }
+  };
+
+  // Handle ISBN lookup
+  const handleISBNLookup = async () => {
+    if (!isbn || isbn.trim().length === 0) {
+      setErrors({
+        ...errors,
+        isbn: 'Please enter an ISBN to lookup'
+      });
+      return;
+    }
+
+    setIsLookingUpISBN(true);
+    setErrors({
+      ...errors,
+      isbn: ''
+    });
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await axios.post(`${apiUrl}/api/books/isbn/${isbn.trim()}`);
+
+      if (response.data.success) {
+        const bookData = response.data.data;
+        
+        // Autofill form fields with the retrieved data
+        setFormData({
+          ...formData,
+          title: bookData.title || formData.title,
+          author: bookData.author || formData.author,
+          publisher: bookData.publisher || formData.publisher,
+          publicationYear: bookData.publicationYear ? bookData.publicationYear.toString() : formData.publicationYear,
+          description: bookData.description || formData.description
+        });
+
+        setSuccessMessage('Book information retrieved successfully!');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 3000);
+      }
+    } catch (error) {
+      if (error.response) {
+        const errorData = error.response.data;
+        if (errorData.error) {
+          setErrors({
+            ...errors,
+            isbn: errorData.error.message
+          });
+        } else {
+          setErrors({
+            ...errors,
+            isbn: 'Failed to lookup book information'
+          });
+        }
+      } else {
+        setErrors({
+          ...errors,
+          isbn: 'Unable to connect to book lookup service'
+        });
+      }
+    } finally {
+      setIsLookingUpISBN(false);
     }
   };
 
@@ -395,17 +461,27 @@ const BookListingForm = () => {
                 
                 <div className="form-group">
                   <label htmlFor="isbn">ISBN</label>
-                  <input
-                    type="text"
-                    id="isbn"
-                    name="isbn"
-                    placeholder="Enter ISBN (10 or 13 digits)"
-                    value={isbn}
-                    onChange={handleChange}
-                    className={errors.isbn ? 'error' : ''}
-                    disabled={isSubmitting}
-                  />
-                  <small>ISBN helps other readers identify the exact edition</small>
+                  <div className="isbn-input-group">
+                    <input
+                      type="text"
+                      id="isbn"
+                      name="isbn"
+                      placeholder="Enter ISBN (10 or 13 digits)"
+                      value={isbn}
+                      onChange={handleChange}
+                      className={errors.isbn ? 'error' : ''}
+                      disabled={isSubmitting || isLookingUpISBN}
+                    />
+                    <button
+                      type="button"
+                      className="isbn-lookup-btn"
+                      onClick={handleISBNLookup}
+                      disabled={isSubmitting || isLookingUpISBN || !isbn.trim()}
+                    >
+                      {isLookingUpISBN ? 'Looking up...' : 'Lookup'}
+                    </button>
+                  </div>
+                  <small>ISBN helps other readers identify the exact edition. Click "Lookup" to autofill book details.</small>
                   {errors.isbn && <span className="field-error">{errors.isbn}</span>}
                 </div>
 

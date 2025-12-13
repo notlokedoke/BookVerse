@@ -94,4 +94,80 @@ describe('BookListingForm', () => {
       expect(screen.getByText(/publication year must be between/i)).toBeInTheDocument();
     });
   });
+
+  test('validates image file type', async () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const fileInput = screen.getByLabelText(/book photo/i);
+    const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+    
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/please select a valid image file/i)).toBeInTheDocument();
+    });
+  });
+
+  test('validates image file size', async () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const fileInput = screen.getByLabelText(/book photo/i);
+    // Create a file larger than 5MB
+    const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+    
+    fireEvent.change(fileInput, { target: { files: [largeFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/image file must be less than 5mb/i)).toBeInTheDocument();
+    });
+  });
+
+  test('shows image preview when valid image is selected', async () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const fileInput = screen.getByLabelText(/book photo/i);
+    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    
+    // Mock FileReader
+    const mockFileReader = {
+      readAsDataURL: vi.fn(),
+      result: 'data:image/jpeg;base64,test',
+      onload: null
+    };
+    
+    global.FileReader = vi.fn(() => mockFileReader);
+    
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+    
+    // Simulate FileReader onload
+    mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+
+    await waitFor(() => {
+      const previewImage = screen.getByAltText(/book preview/i);
+      expect(previewImage).toBeInTheDocument();
+      expect(previewImage).toHaveAttribute('src', 'data:image/jpeg;base64,test');
+    });
+  });
+
+  test('clears image error when valid image is selected', async () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const fileInput = screen.getByLabelText(/book photo/i);
+    
+    // First, trigger an error with invalid file
+    const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/please select a valid image file/i)).toBeInTheDocument();
+    });
+
+    // Then, select a valid file
+    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/please select a valid image file/i)).not.toBeInTheDocument();
+    });
+  });
 });
