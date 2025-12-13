@@ -3,6 +3,139 @@ const router = express.Router();
 const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
+const { upload } = require('../config/cloudinary');
+
+/**
+ * @route   POST /api/books
+ * @desc    Create new book listing with image upload
+ * @access  Private (requires authentication)
+ */
+router.post('/', authenticateToken, (req, res, next) => {
+  // Handle multer upload with custom error handling
+  upload.single('coverImage')(req, res, (err) => {
+    if (err) {
+      // Handle multer errors
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'File too large. Maximum size is 5MB.',
+            code: 'FILE_TOO_LARGE'
+          }
+        });
+      }
+
+      if (err.message && err.message.includes('Invalid file type')) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: err.message,
+            code: 'INVALID_FILE_TYPE'
+          }
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: err.message || 'File upload error',
+          code: 'UPLOAD_ERROR'
+        }
+      });
+    }
+    
+    // Continue to the main handler
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
+
+    // Validate required fields
+    if (!title || !author || !condition || !genre) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Missing required fields: title, author, condition, and genre are required',
+          code: 'MISSING_REQUIRED_FIELDS'
+        }
+      });
+    }
+
+    // Validate that an image was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Cover image is required for book listing',
+          code: 'IMAGE_REQUIRED'
+        }
+      });
+    }
+
+    // Get image info from Cloudinary upload
+    const imageUrl = req.file.path; // Cloudinary URL
+    const imagePublicId = req.file.filename; // For deletion later
+
+    // Create new book listing
+    const bookData = {
+      owner: req.user.userId,
+      title: title.trim(),
+      author: author.trim(),
+      condition,
+      genre: genre.trim(),
+      imageUrl: imageUrl,
+      isAvailable: true
+    };
+
+    // Add optional fields if provided
+    if (isbn) bookData.isbn = isbn.trim();
+    if (description) bookData.description = description.trim();
+    if (publicationYear) bookData.publicationYear = parseInt(publicationYear);
+    if (publisher) bookData.publisher = publisher.trim();
+
+    const book = new Book(bookData);
+    await book.save();
+
+    // Populate owner information for response
+    await book.populate('owner', '-password');
+
+    // Apply privacy settings to owner information
+    const bookWithPrivacy = applyBookOwnerPrivacy(book);
+
+    res.status(201).json({
+      success: true,
+      data: bookWithPrivacy,
+      message: 'Book listing created successfully',
+      imageUrl: imageUrl,
+      imagePublicId: imagePublicId
+    });
+
+  } catch (error) {
+    console.error('Create book error:', error);
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: validationErrors
+        }
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while creating book listing',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
 
 /**
  * @route   GET /api/books/:id

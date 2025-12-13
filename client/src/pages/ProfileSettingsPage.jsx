@@ -1,30 +1,29 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import PrivacyToggle from '../components/PrivacyToggle'
 import './ProfileSettingsPage.css'
 
 const ProfileSettingsPage = () => {
   const { user, updateUser } = useAuth()
-  const navigate = useNavigate()
-  
   const [formData, setFormData] = useState({
     name: '',
     city: '',
-    showCity: true
+    privacySettings: {
+      showCity: true
+    }
   })
   const [loading, setLoading] = useState(false)
-  const [errors, setErrors] = useState({})
-  const [successMessage, setSuccessMessage] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
 
-  // Initialize form with current user data
   useEffect(() => {
     if (user) {
       setFormData({
         name: user.name || '',
         city: user.city || '',
-        showCity: user.privacySettings?.showCity ?? true
+        privacySettings: {
+          showCity: user.privacySettings?.showCity !== false
+        }
       })
     }
   }, [user])
@@ -35,242 +34,136 @@ const ProfileSettingsPage = () => {
       ...prev,
       [name]: value
     }))
-    
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
-    }
-    
-    // Clear success message when user starts editing
-    if (successMessage) {
-      setSuccessMessage('')
-    }
   }
 
-  const handlePrivacyToggle = (showCity) => {
+  const handlePrivacyChange = (showCity) => {
     setFormData(prev => ({
       ...prev,
-      showCity
+      privacySettings: {
+        showCity
+      }
     }))
-    
-    // Clear success message when user starts editing
-    if (successMessage) {
-      setSuccessMessage('')
-    }
-  }
-
-  const validateForm = () => {
-    const newErrors = {}
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-    
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required'
-    }
-    
-    return newErrors
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    // Clear previous messages
-    setErrors({})
-    setSuccessMessage('')
-    
-    // Validate form
-    const validationErrors = validateForm()
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      return
-    }
-    
-    // Check if anything actually changed
-    const currentShowCity = user.privacySettings?.showCity ?? true
-    if (formData.name === user.name && 
-        formData.city === user.city && 
-        formData.showCity === currentShowCity) {
-      setSuccessMessage('No changes to save')
-      return
-    }
-    
     setLoading(true)
-    
+    setMessage('')
+    setError('')
+
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`,
-        {
-          name: formData.name.trim(),
-          city: formData.city.trim(),
-          privacySettings: {
-            showCity: formData.showCity
-          }
-        }
-      )
-      
-      if (response.data.success) {
-        setSuccessMessage('Profile updated successfully!')
-        
-        // Update the user context with new data
-        updateUser(response.data.data)
-        
-        // Optionally redirect back to profile after a delay
-        setTimeout(() => {
-          navigate('/profile')
-        }, 2000)
-      }
-    } catch (error) {
-      console.error('Profile update error:', error)
-      
-      if (error.response?.data?.error) {
-        const serverError = error.response.data.error
-        
-        // Handle validation errors from server
-        if (serverError.code === 'VALIDATION_ERROR' && serverError.details) {
-          const fieldErrors = {}
-          if (Array.isArray(serverError.details)) {
-            serverError.details.forEach(detail => {
-              if (detail.path) {
-                fieldErrors[detail.path] = detail.msg || detail.message
-              }
-            })
-          }
-          setErrors(fieldErrors)
-        } else {
-          // Handle other server errors
-          setErrors({ 
-            general: serverError.message || 'Failed to update profile' 
-          })
-        }
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setMessage('Profile updated successfully!')
+        updateUser(data.data)
       } else {
-        // Handle network errors
-        setErrors({ 
-          general: 'Network error. Please check your connection and try again.' 
-        })
+        setError(data.error?.message || 'Failed to update profile')
       }
+    } catch (err) {
+      setError('An error occurred while updating your profile')
+      console.error('Profile update error:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCancel = () => {
-    navigate('/profile')
-  }
-
-  if (!user) {
-    return (
-      <div className="settings-container">
-        <div className="settings-error">
-          <h2>Access Denied</h2>
-          <p>You must be logged in to access profile settings.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="settings-container">
-      <div className="settings-header">
-        <h1>Profile Settings</h1>
-        <p>Update your profile information</p>
-      </div>
-
-      <div className="settings-content">
-        <form onSubmit={handleSubmit} className="settings-form">
-          {errors.general && (
-            <div className="error-message general-error">
-              {errors.general}
-            </div>
-          )}
+    <div className="profile-settings-page">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-center mb-8">Profile Settings</h1>
           
-          {successMessage && (
-            <div className="success-message">
-              {successMessage}
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="name" className="form-label">
-              Name *
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`form-input ${errors.name ? 'error' : ''}`}
-              placeholder="Enter your full name"
-              disabled={loading}
-            />
-            {errors.name && (
-              <div className="error-message field-error">
-                {errors.name}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your name"
+                />
               </div>
-            )}
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="city" className="form-label">
-              City *
-            </label>
-            <input
-              type="text"
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleInputChange}
-              className={`form-input ${errors.city ? 'error' : ''}`}
-              placeholder="Enter your city"
-              disabled={loading}
-            />
-            {errors.city && (
-              <div className="error-message field-error">
-                {errors.city}
+              {/* City Field */}
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                  City
+                </label>
+                <input
+                  type="text"
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter your city"
+                />
               </div>
-            )}
-          </div>
 
-          <div className="form-group">
-            <PrivacyToggle
-              showCity={formData.showCity}
-              onChange={handlePrivacyToggle}
-              disabled={loading}
-              label="Show city on profile"
-              description="When enabled, other users can see your city information on your profile and in book listings"
-            />
-          </div>
+              {/* Privacy Settings */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Privacy Settings
+                </label>
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <PrivacyToggle
+                    showCity={formData.privacySettings.showCity}
+                    onChange={handlePrivacyChange}
+                  />
+                </div>
+              </div>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="cancel-button"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="save-button"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="button-spinner"></span>
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
+              {/* Messages */}
+              {message && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
+                  {message}
+                </div>
               )}
-            </button>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <div className="flex justify-end space-x-4">
+                <a
+                  href="/profile"
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </a>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? 'Updating...' : 'Update Profile'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

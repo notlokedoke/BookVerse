@@ -6,6 +6,7 @@ if (process.env.NODE_ENV !== 'test') {
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const multer = require('multer');
 const connectDB = require('./config/database');
 
 const app = express();
@@ -45,6 +46,34 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes);
+
+// Multer error handling middleware (after routes)
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        success: false,
+        error: {
+          message: 'File too large. Maximum size is 5MB.',
+          code: 'FILE_TOO_LARGE'
+        }
+      });
+    }
+  }
+
+  if (error.message === 'Invalid file type. Only JPEG, PNG and WebP are allowed.') {
+    return res.status(400).json({ 
+      success: false,
+      error: {
+        message: error.message,
+        code: 'INVALID_FILE_TYPE'
+      }
+    });
+  }
+
+  // Pass other errors to the default error handler
+  next(error);
+});
 
 const PORT = process.env.PORT || 5000;
 
