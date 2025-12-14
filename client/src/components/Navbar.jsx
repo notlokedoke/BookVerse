@@ -25,6 +25,7 @@ const Navbar = () => {
             <div className="navbar-auth">
               <span className="navbar-user">Hello, {user?.name}!</span>
               <Link to="/" className="navbar-link">Home</Link>
+              <Link to="/my-books" className="navbar-link">My Books</Link>
               <Link to="/profile" className="navbar-link">Profile</Link>
               <button 
                 onClick={handleLogout}

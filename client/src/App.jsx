@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage'
 import UserProfilePage from './pages/UserProfilePage'
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import CreateBookPage from './pages/CreateBookPage'
+import MyBooksPage from './pages/MyBooksPage'
 import './App.css'
 
 // Component to conditionally render navbar
@@ -63,6 +64,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <CreateBookPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/my-books" 
+              element={
+                <ProtectedRoute>
+                  <MyBooksPage />
                 </ProtectedRoute>
               } 
             />
