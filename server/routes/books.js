@@ -472,4 +472,176 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/books/:id
+ * @desc    Update book listing (owner only)
+ * @access  Private (requires authentication and ownership)
+ */
+router.put('/:id', authenticateToken, uploadSingleImage('coverImage'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
+
+    // Validate book ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid book ID format',
+          code: 'INVALID_BOOK_ID'
+        }
+      });
+    }
+
+    // Find the book first
+    const book = await Book.findById(id);
+    
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Book not found',
+          code: 'BOOK_NOT_FOUND'
+        }
+      });
+    }
+
+    // Verify that the authenticated user is the book owner
+    if (book.owner.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'You can only update your own book listings',
+          code: 'UNAUTHORIZED_UPDATE'
+        }
+      });
+    }
+
+    // Validate required fields if provided
+    if (title !== undefined && (!title || title.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Title cannot be empty',
+          code: 'INVALID_TITLE'
+        }
+      });
+    }
+
+    if (author !== undefined && (!author || author.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Author cannot be empty',
+          code: 'INVALID_AUTHOR'
+        }
+      });
+    }
+
+    if (genre !== undefined && (!genre || genre.trim().length === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Genre cannot be empty',
+          code: 'INVALID_GENRE'
+        }
+      });
+    }
+
+    // Validate condition if provided
+    if (condition !== undefined) {
+      const validConditions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
+      if (!validConditions.includes(condition)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Condition must be one of: New, Like New, Good, Fair, Poor',
+            code: 'INVALID_CONDITION'
+          }
+        });
+      }
+    }
+
+    // Build update object with only provided fields
+    const updateData = {};
+    
+    if (title !== undefined) updateData.title = title.trim();
+    if (author !== undefined) updateData.author = author.trim();
+    if (condition !== undefined) updateData.condition = condition;
+    if (genre !== undefined) updateData.genre = genre.trim();
+    if (isbn !== undefined) {
+      const trimmedIsbn = isbn.trim();
+      updateData.isbn = trimmedIsbn === '' ? null : trimmedIsbn;
+    }
+    if (description !== undefined) {
+      const trimmedDescription = description.trim();
+      updateData.description = trimmedDescription === '' ? null : trimmedDescription;
+    }
+    if (publicationYear !== undefined) updateData.publicationYear = publicationYear ? parseInt(publicationYear) : null;
+    if (publisher !== undefined) {
+      const trimmedPublisher = publisher.trim();
+      updateData.publisher = trimmedPublisher === '' ? null : trimmedPublisher;
+    }
+
+    // Update image URL if new image was uploaded
+    if (req.imageUrl) {
+      updateData.imageUrl = req.imageUrl;
+    }
+
+    // Update the book
+    const updatedBook = await Book.findByIdAndUpdate(
+      id,
+      updateData,
+      { 
+        new: true, // Return updated document
+        runValidators: true // Run schema validation
+      }
+    ).populate('owner', '-password');
+
+    // Apply privacy settings to owner information
+    const bookWithPrivacy = applyBookOwnerPrivacy(updatedBook);
+
+    res.status(200).json({
+      success: true,
+      data: bookWithPrivacy,
+      message: 'Book listing updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Update book error:', error);
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: validationErrors
+        }
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId, invalid number, etc.)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid data format',
+          code: 'INVALID_DATA_FORMAT'
+        }
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while updating book listing',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

@@ -460,4 +460,181 @@ describe('Books API - Privacy Settings', () => {
       expect(response.body.error.code).toBe('API_CONNECTION_ERROR');
     });
   });
+
+  describe('PUT /api/books/:id', () => {
+    test('should update book listing when user is owner', async () => {
+      const updateData = {
+        title: 'Updated Book Title',
+        author: 'Updated Author',
+        condition: 'Like New',
+        genre: 'Updated Genre',
+        description: 'Updated description'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.title).toBe('Updated Book Title');
+      expect(response.body.data.author).toBe('Updated Author');
+      expect(response.body.data.condition).toBe('Like New');
+      expect(response.body.data.genre).toBe('Updated Genre');
+      expect(response.body.data.description).toBe('Updated description');
+      expect(response.body.message).toBe('Book listing updated successfully');
+    });
+
+    test('should return 403 when user tries to update book they do not own', async () => {
+      const updateData = {
+        title: 'Unauthorized Update'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${privateUserToken}`)
+        .send(updateData)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('UNAUTHORIZED_UPDATE');
+      expect(response.body.error.message).toBe('You can only update your own book listings');
+    });
+
+    test('should return 401 when no authentication token provided', async () => {
+      const updateData = {
+        title: 'Unauthorized Update'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .send(updateData)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should return 404 when book does not exist', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const updateData = {
+        title: 'Non-existent Book'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${fakeId}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('BOOK_NOT_FOUND');
+    });
+
+    test('should return 400 for invalid book ID format', async () => {
+      const updateData = {
+        title: 'Invalid ID Test'
+      };
+
+      const response = await request(app)
+        .put('/api/books/invalid-id')
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_BOOK_ID');
+    });
+
+    test('should validate required fields when provided', async () => {
+      const updateData = {
+        title: '', // Empty title should fail
+        author: 'Valid Author'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TITLE');
+    });
+
+    test('should validate condition field when provided', async () => {
+      const updateData = {
+        condition: 'Invalid Condition'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_CONDITION');
+    });
+
+    test('should allow partial updates', async () => {
+      const updateData = {
+        title: 'Only Title Updated'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.title).toBe('Only Title Updated');
+      expect(response.body.data.author).toBe('Test Author'); // Should remain unchanged
+      expect(response.body.data.genre).toBe('Fiction'); // Should remain unchanged
+    });
+
+    test('should allow clearing optional fields', async () => {
+      // First add some optional data
+      await Book.findByIdAndUpdate(publicUserBook._id, {
+        isbn: '1234567890',
+        description: 'Original description',
+        publisher: 'Original publisher'
+      });
+
+      const updateData = {
+        isbn: '',
+        description: '',
+        publisher: ''
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.isbn).toBeNull();
+      expect(response.body.data.description).toBeNull();
+      expect(response.body.data.publisher).toBeNull();
+    });
+
+    test('should apply privacy settings to updated book response', async () => {
+      const updateData = {
+        title: 'Privacy Test Update'
+      };
+
+      const response = await request(app)
+        .put(`/api/books/${privateUserBook._id}`)
+        .set('Authorization', `Bearer ${privateUserToken}`)
+        .send(updateData)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.title).toBe('Privacy Test Update');
+      expect(response.body.data.owner.name).toBe('Private User');
+      expect(response.body.data.owner.city).toBeUndefined(); // Should be hidden due to privacy settings
+    });
+  });
 });
