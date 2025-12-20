@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import BookGrid from '../components/BookGrid';
+import SearchFilters from '../components/SearchFilters';
 import './BrowsePage.css';
 
 const BrowsePage = () => {
@@ -122,77 +123,14 @@ const BrowsePage = () => {
         </div>
 
         {/* Search Filters */}
-        <div className="search-filters">
-          <div className="filters-row">
-            <div className="filter-group">
-              <label htmlFor="city-filter" className="filter-label">
-                City
-              </label>
-              <input
-                id="city-filter"
-                type="text"
-                placeholder="Filter by city..."
-                value={filters.city}
-                onChange={(e) => handleFilterChange('city', e.target.value)}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="genre-filter" className="filter-label">
-                Genre
-              </label>
-              <input
-                id="genre-filter"
-                type="text"
-                placeholder="Filter by genre..."
-                value={filters.genre}
-                onChange={(e) => handleFilterChange('genre', e.target.value)}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="author-filter" className="filter-label">
-                Author
-              </label>
-              <input
-                id="author-filter"
-                type="text"
-                placeholder="Filter by author..."
-                value={filters.author}
-                onChange={(e) => handleFilterChange('author', e.target.value)}
-                className="filter-input"
-              />
-            </div>
-
-            {hasActiveFilters && (
-              <div className="filter-group">
-                <button
-                  onClick={clearFilters}
-                  className="clear-filters-btn"
-                  title="Clear all filters"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Results Summary */}
-          {!loading && (
-            <div className="results-summary">
-              {pagination.totalBooks > 0 ? (
-                <span>
-                  Showing {((pagination.currentPage - 1) * 20) + 1}-{Math.min(pagination.currentPage * 20, pagination.totalBooks)} of {pagination.totalBooks} books
-                  {hasActiveFilters && ' (filtered)'}
-                </span>
-              ) : (
-                <span>No books found</span>
-              )}
-            </div>
-          )}
-        </div>
+        <SearchFilters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+          resultsCount={pagination.totalBooks}
+          loading={loading}
+        />
 
         {/* Book Grid */}
         <BookGrid 

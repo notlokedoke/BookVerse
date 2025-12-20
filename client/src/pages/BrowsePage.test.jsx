@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import BrowsePage from './BrowsePage';
@@ -131,5 +131,143 @@ describe('BrowsePage', () => {
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
     });
+  });
+
+  test('applies city filter when city input changes', async () => {
+    // Mock initial API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    // Mock filtered API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    renderWithProviders(<BrowsePage />);
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+    });
+
+    // Change city filter
+    const cityInput = screen.getByLabelText('City');
+    fireEvent.change(cityInput, { target: { value: 'New York' } });
+
+    // Wait for filtered API call
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=New+York');
+    });
+  });
+
+  test('clears filters when clear button is clicked', async () => {
+    // Mock initial API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    // Mock filtered API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    // Mock cleared API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    renderWithProviders(<BrowsePage />);
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+    });
+
+    // Add a filter
+    const cityInput = screen.getByLabelText('City');
+    fireEvent.change(cityInput, { target: { value: 'Boston' } });
+
+    // Wait for filtered API call
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Boston');
+    });
+
+    // Clear filters
+    const clearButton = screen.getByText('Clear Filters');
+    fireEvent.click(clearButton);
+
+    // Wait for cleared API call
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+    });
+
+    // Check that input is cleared
+    expect(cityInput.value).toBe('');
   });
 });
