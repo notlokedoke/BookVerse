@@ -172,6 +172,69 @@ describe('Books API - Privacy Settings', () => {
       expect(response.body.data.books).toHaveLength(2);
     });
 
+    test('should filter by genre with exact match only', async () => {
+      // Create additional books with different genres to test exact matching
+      await Book.create({
+        owner: publicUser._id,
+        title: 'Science Fiction Book',
+        author: 'Sci-Fi Author',
+        genre: 'Science Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/scifi.jpg'
+      });
+
+      await Book.create({
+        owner: publicUser._id,
+        title: 'Non-Fiction Book',
+        author: 'Non-Fiction Author',
+        genre: 'Non-Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/nonfiction.jpg'
+      });
+
+      // Test exact match for "Fiction" - should only return books with genre exactly "Fiction"
+      const fictionResponse = await request(app)
+        .get('/api/books?genre=Fiction')
+        .expect(200);
+
+      expect(fictionResponse.body.success).toBe(true);
+      expect(fictionResponse.body.data.books).toHaveLength(2); // Only the original 2 Fiction books
+      fictionResponse.body.data.books.forEach(book => {
+        expect(book.genre).toBe('Fiction');
+      });
+
+      // Test exact match for "Science Fiction" - should only return the Science Fiction book
+      const sciFiResponse = await request(app)
+        .get('/api/books?genre=Science Fiction')
+        .expect(200);
+
+      expect(sciFiResponse.body.success).toBe(true);
+      expect(sciFiResponse.body.data.books).toHaveLength(1);
+      expect(sciFiResponse.body.data.books[0].genre).toBe('Science Fiction');
+      expect(sciFiResponse.body.data.books[0].title).toBe('Science Fiction Book');
+
+      // Test exact match for "Non-Fiction" - should only return the Non-Fiction book
+      const nonFictionResponse = await request(app)
+        .get('/api/books?genre=Non-Fiction')
+        .expect(200);
+
+      expect(nonFictionResponse.body.success).toBe(true);
+      expect(nonFictionResponse.body.data.books).toHaveLength(1);
+      expect(nonFictionResponse.body.data.books[0].genre).toBe('Non-Fiction');
+      expect(nonFictionResponse.body.data.books[0].title).toBe('Non-Fiction Book');
+
+      // Test partial match should not work - searching for "Fiction" should not return "Science Fiction" or "Non-Fiction"
+      const partialResponse = await request(app)
+        .get('/api/books?genre=Fiction')
+        .expect(200);
+
+      expect(partialResponse.body.success).toBe(true);
+      expect(partialResponse.body.data.books).toHaveLength(2); // Only exact "Fiction" matches
+      partialResponse.body.data.books.forEach(book => {
+        expect(book.genre).toBe('Fiction'); // Should not include "Science Fiction" or "Non-Fiction"
+      });
+    });
+
     test('should filter by author regardless of privacy settings', async () => {
       const response = await request(app)
         .get('/api/books?author=Test Author')
