@@ -2,9 +2,11 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 const Book = require('../models/Book');
+const Trade = require('../models/Trade');
 const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
 const { uploadSingleImage } = require('../middleware/upload');
+const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
 
 /**
  * @route   POST /api/books/isbn/:isbn
@@ -155,7 +157,7 @@ router.post('/isbn/:isbn', async (req, res) => {
  * @desc    Create new book listing with image upload
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, uploadSingleImage('coverImage'), (req, res, next) => {
+router.post('/', authenticateToken, sanitizeInput, uploadSingleImage('coverImage'), (req, res, next) => {
   // Validate required fields after upload middleware
   const { title, author, condition, genre } = req.body;
   
@@ -185,22 +187,22 @@ router.post('/', authenticateToken, uploadSingleImage('coverImage'), (req, res, 
       });
     }
 
-    // Create new book listing
+    // Create new book listing with sanitized data
     const bookData = {
       owner: req.userId,
-      title: title.trim(),
-      author: author.trim(),
+      title: sanitizeString(title.trim()),
+      author: sanitizeString(author.trim()),
       condition,
-      genre: genre.trim(),
+      genre: sanitizeString(genre.trim()),
       imageUrl: req.imageUrl,
       isAvailable: true
     };
 
-    // Add optional fields if provided
-    if (isbn && isbn.trim()) bookData.isbn = isbn.trim();
-    if (description && description.trim()) bookData.description = description.trim();
+    // Add optional fields if provided (with sanitization)
+    if (isbn && isbn.trim()) bookData.isbn = sanitizeString(isbn.trim());
+    if (description && description.trim()) bookData.description = sanitizeString(description.trim());
     if (publicationYear) bookData.publicationYear = parseInt(publicationYear);
-    if (publisher && publisher.trim()) bookData.publisher = publisher.trim();
+    if (publisher && publisher.trim()) bookData.publisher = sanitizeString(publisher.trim());
 
     const book = new Book(bookData);
     await book.save();
@@ -477,7 +479,7 @@ router.get('/user/:userId', async (req, res) => {
  * @desc    Update book listing (owner only)
  * @access  Private (requires authentication and ownership)
  */
-router.put('/:id', authenticateToken, uploadSingleImage('coverImage'), async (req, res) => {
+router.put('/:id', authenticateToken, sanitizeInput, uploadSingleImage('coverImage'), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
@@ -562,25 +564,25 @@ router.put('/:id', authenticateToken, uploadSingleImage('coverImage'), async (re
       }
     }
 
-    // Build update object with only provided fields
+    // Build update object with only provided fields (with sanitization)
     const updateData = {};
     
-    if (title !== undefined) updateData.title = title.trim();
-    if (author !== undefined) updateData.author = author.trim();
+    if (title !== undefined) updateData.title = sanitizeString(title.trim());
+    if (author !== undefined) updateData.author = sanitizeString(author.trim());
     if (condition !== undefined) updateData.condition = condition;
-    if (genre !== undefined) updateData.genre = genre.trim();
+    if (genre !== undefined) updateData.genre = sanitizeString(genre.trim());
     if (isbn !== undefined) {
       const trimmedIsbn = isbn.trim();
-      updateData.isbn = trimmedIsbn === '' ? null : trimmedIsbn;
+      updateData.isbn = trimmedIsbn === '' ? null : sanitizeString(trimmedIsbn);
     }
     if (description !== undefined) {
       const trimmedDescription = description.trim();
-      updateData.description = trimmedDescription === '' ? null : trimmedDescription;
+      updateData.description = trimmedDescription === '' ? null : sanitizeString(trimmedDescription);
     }
     if (publicationYear !== undefined) updateData.publicationYear = publicationYear ? parseInt(publicationYear) : null;
     if (publisher !== undefined) {
       const trimmedPublisher = publisher.trim();
-      updateData.publisher = trimmedPublisher === '' ? null : trimmedPublisher;
+      updateData.publisher = trimmedPublisher === '' ? null : sanitizeString(trimmedPublisher);
     }
 
     // Update image URL if new image was uploaded
@@ -638,6 +640,101 @@ router.put('/:id', authenticateToken, uploadSingleImage('coverImage'), async (re
       success: false,
       error: {
         message: 'An error occurred while updating book listing',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   DELETE /api/books/:id
+ * @desc    Delete book listing (owner only)
+ * @access  Private (requires authentication and ownership)
+ */
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate book ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid book ID format',
+          code: 'INVALID_BOOK_ID'
+        }
+      });
+    }
+
+    // Find the book first
+    const book = await Book.findById(id);
+    
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Book not found',
+          code: 'BOOK_NOT_FOUND'
+        }
+      });
+    }
+
+    // Verify that the authenticated user is the book owner
+    if (book.owner.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'You can only delete your own book listings',
+          code: 'UNAUTHORIZED_DELETE'
+        }
+      });
+    }
+
+    // Check for active trades involving this book (Requirement 5.5)
+    const activeTrades = await Trade.find({
+      $and: [
+        {
+          $or: [
+            { requestedBook: id },
+            { offeredBook: id }
+          ]
+        },
+        {
+          status: { $in: ['proposed', 'accepted'] }
+        }
+      ]
+    });
+
+    // If there are active trades, prevent deletion and inform the user
+    if (activeTrades.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: {
+          message: 'Cannot delete book listing because it is involved in active trades. Please complete or cancel the trades first.',
+          code: 'BOOK_HAS_ACTIVE_TRADES',
+          details: {
+            activeTradeCount: activeTrades.length,
+            tradeIds: activeTrades.map(trade => trade._id)
+          }
+        }
+      });
+    }
+
+    // Delete the book document from database
+    await Book.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Book listing deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete book error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while deleting book listing',
         code: 'INTERNAL_ERROR'
       }
     });

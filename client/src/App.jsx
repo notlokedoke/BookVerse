@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import BookDetailView from './components/BookDetailView'
 import HomePage from './pages/HomePage'
+import BrowsePage from './pages/BrowsePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -32,6 +33,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <HomePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/browse" 
+              element={
+                <ProtectedRoute>
+                  <BrowsePage />
                 </ProtectedRoute>
               } 
             />

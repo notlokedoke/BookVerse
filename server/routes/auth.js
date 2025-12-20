@@ -4,6 +4,8 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, sanitizeEmail, sanitizeString } = require('../utils/sanitize');
+const { blacklistToken } = require('../utils/tokenBlacklist');
 
 /**
  * @route   POST /api/auth/register
@@ -11,13 +13,34 @@ const { authenticateToken } = require('../middleware/auth');
  * @access  Public
  */
 router.post('/register', [
+  // Input sanitization middleware
+  sanitizeInput,
   // Validation middleware
   body('email')
     .trim()
+    .notEmpty()
+    .withMessage('Email is required')
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .normalizeEmail()
+    .customSanitizer(sanitizeEmail),
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Name is required')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name is required and must be between 1 and 100 characters')
+    .customSanitizer(sanitizeString),
+  body('city')
+    .trim()
+    .notEmpty()
+    .withMessage('City is required')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('City is required and must be between 1 and 100 characters')
+    .customSanitizer(sanitizeString),
   body('password')
+    .notEmpty()
+    .withMessage('Password is required')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters long')
 ], async (req, res) => {
@@ -27,23 +50,26 @@ router.post('/register', [
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      const firstError = errors.array()[0];
+      
+      // Check if it's a missing field error
+      if (firstError.msg.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Please provide all required fields: name, email, password, and city',
+            code: 'MISSING_FIELDS',
+            details: errors.array()
+          }
+        });
+      }
+      
       return res.status(400).json({
         success: false,
         error: {
-          message: errors.array()[0].msg,
+          message: firstError.msg,
           code: 'VALIDATION_ERROR',
           details: errors.array()
-        }
-      });
-    }
-
-    // Validate required fields
-    if (!name || !email || !password || !city) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide all required fields: name, email, password, and city',
-          code: 'MISSING_FIELDS'
         }
       });
     }
@@ -131,12 +157,15 @@ router.post('/register', [
  * @access  Public
  */
 router.post('/login', [
+  // Input sanitization middleware
+  sanitizeInput,
   // Validation middleware
   body('email')
     .trim()
     .isEmail()
     .withMessage('Please provide a valid email address')
-    .normalizeEmail(),
+    .normalizeEmail()
+    .customSanitizer(sanitizeEmail),
   body('password')
     .notEmpty()
     .withMessage('Password is required')
@@ -265,23 +294,54 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 /**
+ * @route   POST /api/auth/logout
+ * @desc    Logout user and invalidate JWT token
+ * @access  Private (requires JWT token)
+ */
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    // Add the current token to the blacklist
+    blacklistToken(req.token);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Logout successful. Token has been invalidated.'
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred during logout',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   PUT /api/auth/profile
  * @desc    Update user profile (name, city, and privacy settings)
  * @access  Private (requires JWT token)
  */
 router.put('/profile', [
   authenticateToken,
+  // Input sanitization middleware
+  sanitizeInput,
   // Validation middleware
   body('name')
     .optional()
     .trim()
-    .isLength({ min: 1 })
-    .withMessage('Name cannot be empty'),
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name cannot be empty')
+    .customSanitizer(sanitizeString),
   body('city')
     .optional()
     .trim()
-    .isLength({ min: 1 })
-    .withMessage('City cannot be empty'),
+    .isLength({ min: 1, max: 100 })
+    .withMessage('City cannot be empty')
+    .customSanitizer(sanitizeString),
   body('privacySettings.showCity')
     .optional()
     .isBoolean()
