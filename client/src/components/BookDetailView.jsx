@@ -5,7 +5,7 @@ import './BookDetailView.css';
 
 const BookDetailView = () => {
   const { bookId } = useParams();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -218,32 +218,69 @@ const BookDetailView = () => {
             <div className="owner-section">
               <h3>Book Owner</h3>
               <div className="owner-card">
-                <Link to={`/profile/${book.owner._id}`} className="owner-link">
-                  <div className="owner-info">
-                    <h4 className="owner-name">{book.owner.name}</h4>
-                    {book.owner.city && book.owner.privacySettings?.showCity !== false && (
-                      <p className="owner-location">📍 {book.owner.city}</p>
-                    )}
-                    {book.owner.averageRating > 0 && (
-                      <div className="owner-rating">
-                        <span className="rating-stars">⭐</span>
-                        <span className="rating-value">
-                          {book.owner.averageRating.toFixed(1)} ({book.owner.ratingCount} reviews)
-                        </span>
-                      </div>
-                    )}
+                {isAuthenticated ? (
+                  <Link to={`/profile/${book.owner._id}`} className="owner-link">
+                    <div className="owner-info">
+                      <h4 className="owner-name">{book.owner.name}</h4>
+                      {book.owner.city && book.owner.privacySettings?.showCity !== false && (
+                        <p className="owner-location">📍 {book.owner.city}</p>
+                      )}
+                      {book.owner.averageRating > 0 && (
+                        <div className="owner-rating">
+                          <span className="rating-stars">⭐</span>
+                          <span className="rating-value">
+                            {book.owner.averageRating.toFixed(1)} ({book.owner.ratingCount} reviews)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="view-profile-btn">
+                      View Profile →
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="owner-info-guest">
+                    <div className="owner-info">
+                      <h4 className="owner-name">{book.owner.name}</h4>
+                      {book.owner.city && book.owner.privacySettings?.showCity !== false && (
+                        <p className="owner-location">📍 {book.owner.city}</p>
+                      )}
+                      {book.owner.averageRating > 0 && (
+                        <div className="owner-rating">
+                          <span className="rating-stars">⭐</span>
+                          <span className="rating-value">
+                            {book.owner.averageRating.toFixed(1)} ({book.owner.ratingCount} reviews)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="login-to-view">
+                      <Link to="/login">Log in to view profile</Link>
+                    </div>
                   </div>
-                  <div className="view-profile-btn">
-                    View Profile →
-                  </div>
-                </Link>
+                )}
               </div>
             </div>
           )}
 
           {/* Action Buttons */}
           <div className="action-buttons">
-            {isOwner ? (
+            {!isAuthenticated ? (
+              <div className="guest-actions">
+                <div className="auth-prompt">
+                  <h4>Want to trade this book?</h4>
+                  <p>Sign up or log in to propose trades and connect with book owners.</p>
+                  <div className="auth-buttons">
+                    <Link to="/register" className="signup-button">
+                      Sign Up to Trade
+                    </Link>
+                    <Link to="/login" className="login-button">
+                      Log In
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : isOwner ? (
               <div className="owner-actions">
                 <button className="edit-button">
                   Edit Listing

@@ -67,13 +67,13 @@ describe('Navbar', () => {
     renderNavbar({ isAuthenticated: true, user: mockUser })
     
     expect(screen.getByText('Hello, John Doe!')).toBeInTheDocument()
-    expect(screen.getByText('Home')).toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Logout')).toBeInTheDocument()
     expect(screen.queryByText('Login')).not.toBeInTheDocument()
     expect(screen.queryByText('Register')).not.toBeInTheDocument()
   })
 
-  it('calls logout and navigates to login when logout button is clicked', () => {
+  it('calls logout and navigates to homepage when logout button is clicked', () => {
     const mockUser = { name: 'John Doe', email: 'john@example.com' }
     renderNavbar({ isAuthenticated: true, user: mockUser })
     
@@ -81,24 +81,26 @@ describe('Navbar', () => {
     fireEvent.click(logoutButton)
     
     expect(mockLogout).toHaveBeenCalledTimes(1)
-    expect(mockNavigate).toHaveBeenCalledWith('/login')
+    expect(mockNavigate).toHaveBeenCalledWith('/')
   })
 
   it('has correct navigation links', () => {
     renderNavbar({ isAuthenticated: false })
     
+    const browseLink = screen.getByText('Browse').closest('a')
     const loginLink = screen.getByText('Login').closest('a')
     const registerLink = screen.getByText('Register').closest('a')
     
+    expect(browseLink).toHaveAttribute('href', '/browse')
     expect(loginLink).toHaveAttribute('href', '/login')
     expect(registerLink).toHaveAttribute('href', '/register')
   })
 
-  it('shows home link when authenticated', () => {
+  it('shows dashboard link when authenticated', () => {
     const mockUser = { name: 'John Doe', email: 'john@example.com' }
     renderNavbar({ isAuthenticated: true, user: mockUser })
     
-    const homeLink = screen.getByText('Home').closest('a')
-    expect(homeLink).toHaveAttribute('href', '/')
+    const dashboardLink = screen.getByText('Dashboard').closest('a')
+    expect(dashboardLink).toHaveAttribute('href', '/dashboard')
   })
 })

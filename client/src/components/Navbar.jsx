@@ -9,7 +9,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/')
   }
 
   return (
@@ -24,7 +24,7 @@ const Navbar = () => {
             // Authenticated user menu
             <div className="navbar-auth">
               <span className="navbar-user">Hello, {user?.name}!</span>
-              <Link to="/" className="navbar-link">Home</Link>
+              <Link to="/dashboard" className="navbar-link">Dashboard</Link>
               <Link to="/browse" className="navbar-link">Browse</Link>
               <Link to="/my-books" className="navbar-link">My Books</Link>
               <Link to="/profile" className="navbar-link">Profile</Link>
@@ -38,6 +38,7 @@ const Navbar = () => {
           ) : (
             // Non-authenticated user menu
             <div className="navbar-guest">
+              <Link to="/browse" className="navbar-link">Browse</Link>
               <Link to="/login" className="navbar-link">Login</Link>
               <Link to="/register" className="navbar-link">Register</Link>
             </div>
