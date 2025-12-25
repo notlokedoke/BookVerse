@@ -1,0 +1,91 @@
+.wishlist-section {
+  /* Container styles handled by parent component */
+}
+
+.wishlist-loading,
+.wishlist-error {
+  padding: 1rem;
+  text-align: center;
+}
+
+.wishlist-empty {
+  padding: 2rem;
+  text-align: center;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 2px dashed #d1d5db;
+}
+
+.wishlist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wishlist-item {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.wishlist-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.wishlist-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.wishlist-item-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.wishlist-item-author {
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+}
+
+.wishlist-item-isbn {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.wishlist-item-notes {
+  color: #374151;
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem;
+  background-color: #ffffff;
+  border-radius: 0.25rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.wishlist-item-date {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin: 0.5rem 0 0 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .wishlist-empty {
+    padding: 1.5rem;
+  }
+  
+  .wishlist-item {
+    padding: 0.75rem;
+  }
+  
+  .wishlist-item-title {
+    font-size: 1rem;
+  }
+}
