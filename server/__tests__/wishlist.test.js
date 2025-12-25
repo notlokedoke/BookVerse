@@ -255,4 +255,146 @@ describe('Wishlist API', () => {
       expect(response.body.data.notes).not.toContain('<em>');
     });
   });
+
+  describe('GET /api/wishlist/user/:userId', () => {
+    let otherUser;
+
+    beforeEach(async () => {
+      // Create another test user
+      otherUser = new User({
+        name: 'Other User',
+        email: 'other@example.com',
+        password: 'password123',
+        city: 'Other City'
+      });
+      await otherUser.save();
+    });
+
+    test('should get user wishlist items sorted by creation date descending', async () => {
+      // Create multiple wishlist items for testUser
+      const wishlistItem1 = new Wishlist({
+        user: testUser._id,
+        title: 'First Book',
+        author: 'Author One',
+        isbn: '1111111111111'
+      });
+      await wishlistItem1.save();
+
+      // Wait a bit to ensure different timestamps
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const wishlistItem2 = new Wishlist({
+        user: testUser._id,
+        title: 'Second Book',
+        author: 'Author Two',
+        isbn: '2222222222222'
+      });
+      await wishlistItem2.save();
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const wishlistItem3 = new Wishlist({
+        user: testUser._id,
+        title: 'Third Book',
+        author: 'Author Three'
+      });
+      await wishlistItem3.save();
+
+      const response = await request(app)
+        .get(`/api/wishlist/user/${testUser._id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.count).toBe(3);
+
+      // Check that items are sorted by creation date descending (newest first)
+      expect(response.body.data[0].title).toBe('Third Book');
+      expect(response.body.data[1].title).toBe('Second Book');
+      expect(response.body.data[2].title).toBe('First Book');
+
+      // Check that user information is populated
+      expect(response.body.data[0].user.name).toBe(testUser.name);
+      expect(response.body.data[0].user.city).toBe(testUser.city);
+      expect(response.body.data[0].user.password).toBeUndefined(); // Password should not be included
+    });
+
+    test('should return empty array for user with no wishlist items', async () => {
+      const response = await request(app)
+        .get(`/api/wishlist/user/${otherUser._id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(0);
+      expect(response.body.count).toBe(0);
+    });
+
+    test('should only return wishlist items for specified user', async () => {
+      // Create wishlist items for both users
+      const testUserItem = new Wishlist({
+        user: testUser._id,
+        title: 'Test User Book',
+        author: 'Test Author'
+      });
+      await testUserItem.save();
+
+      const otherUserItem = new Wishlist({
+        user: otherUser._id,
+        title: 'Other User Book',
+        author: 'Other Author'
+      });
+      await otherUserItem.save();
+
+      // Get testUser's wishlist
+      const response = await request(app)
+        .get(`/api/wishlist/user/${testUser._id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].title).toBe('Test User Book');
+      expect(response.body.data[0].user._id).toBe(testUser._id.toString());
+    });
+
+    test('should reject invalid user ID format', async () => {
+      const response = await request(app)
+        .get('/api/wishlist/user/invalid-id')
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_USER_ID');
+      expect(response.body.error.message).toBe('Invalid user ID format');
+    });
+
+    test('should handle non-existent user ID gracefully', async () => {
+      const nonExistentId = new mongoose.Types.ObjectId();
+      
+      const response = await request(app)
+        .get(`/api/wishlist/user/${nonExistentId}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(0);
+      expect(response.body.count).toBe(0);
+    });
+
+    test('should be accessible without authentication (public route)', async () => {
+      // Create a wishlist item
+      const wishlistItem = new Wishlist({
+        user: testUser._id,
+        title: 'Public Book',
+        author: 'Public Author'
+      });
+      await wishlistItem.save();
+
+      // Access without authentication token
+      const response = await request(app)
+        .get(`/api/wishlist/user/${testUser._id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].title).toBe('Public Book');
+    });
+  });
 });

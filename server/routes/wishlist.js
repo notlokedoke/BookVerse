@@ -140,4 +140,49 @@ router.post('/', [
   }
 });
 
+/**
+ * @route   GET /api/wishlist/user/:userId
+ * @desc    Get all wishlist items for specified user
+ * @access  Public
+ */
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId format
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid user ID format',
+          code: 'INVALID_USER_ID'
+        }
+      });
+    }
+
+    // Fetch all wishlist items for specified user
+    // Sort by creation date descending (newest first)
+    const wishlistItems = await Wishlist.find({ user: userId })
+      .populate('user', 'name city averageRating ratingCount privacySettings')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: wishlistItems,
+      count: wishlistItems.length
+    });
+
+  } catch (error) {
+    console.error('Get user wishlist error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching wishlist',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;
