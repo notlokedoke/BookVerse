@@ -185,4 +185,69 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+/**
+ * @route   DELETE /api/wishlist/:id
+ * @desc    Remove book from user's wishlist
+ * @access  Private (requires authentication)
+ */
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate wishlist item ID format
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid wishlist item ID format',
+          code: 'INVALID_WISHLIST_ID'
+        }
+      });
+    }
+
+    // Find the wishlist item
+    const wishlistItem = await Wishlist.findById(id);
+
+    if (!wishlistItem) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Wishlist item not found',
+          code: 'WISHLIST_ITEM_NOT_FOUND'
+        }
+      });
+    }
+
+    // Verify that authenticated user owns the wishlist item
+    if (wishlistItem.user.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'You can only remove your own wishlist items',
+          code: 'UNAUTHORIZED_WISHLIST_ACCESS'
+        }
+      });
+    }
+
+    // Delete wishlist document from database
+    await Wishlist.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: 'Book removed from wishlist successfully'
+    });
+
+  } catch (error) {
+    console.error('Remove from wishlist error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while removing book from wishlist',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;
