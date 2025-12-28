@@ -3,96 +3,59 @@ const router = express.Router();
 const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
-const { upload } = require('../config/cloudinary');
+const { uploadSingleImage } = require('../middleware/upload');
 
 /**
  * @route   POST /api/books
  * @desc    Create new book listing with image upload
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, (req, res, next) => {
-  // Handle multer upload with custom error handling
-  upload.single('coverImage')(req, res, (err) => {
-    if (err) {
-      // Handle multer errors
-      if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'File too large. Maximum size is 5MB.',
-            code: 'FILE_TOO_LARGE'
-          }
-        });
+router.post('/', authenticateToken, uploadSingleImage('coverImage'), (req, res, next) => {
+  // Validate required fields after upload middleware
+  const { title, author, condition, genre } = req.body;
+  
+  if (!title || !author || !condition || !genre) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: 'Missing required fields: title, author, condition, and genre are required',
+        code: 'MISSING_REQUIRED_FIELDS'
       }
-
-      if (err.message && err.message.includes('Invalid file type')) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: err.message,
-            code: 'INVALID_FILE_TYPE'
-          }
-        });
-      }
-
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: err.message || 'File upload error',
-          code: 'UPLOAD_ERROR'
-        }
-      });
-    }
-    
-    // Continue to the main handler
-    next();
-  });
+    });
+  }
+  
+  next();
 }, async (req, res) => {
   try {
     const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
 
-    // Validate required fields
-    if (!title || !author || !condition || !genre) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Missing required fields: title, author, condition, and genre are required',
-          code: 'MISSING_REQUIRED_FIELDS'
-        }
-      });
-    }
-
     // Validate that an image was uploaded
-    if (!req.file) {
+    if (!req.imageUrl) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Cover image is required for book listing',
+          message: 'Image is required for book listing',
           code: 'IMAGE_REQUIRED'
         }
       });
     }
 
-    // Get image info from Cloudinary upload
-    const imageUrl = req.file.path; // Cloudinary URL
-    const imagePublicId = req.file.filename; // For deletion later
-
     // Create new book listing
     const bookData = {
-      owner: req.user.userId,
+      owner: req.userId,
       title: title.trim(),
       author: author.trim(),
       condition,
       genre: genre.trim(),
-      imageUrl: imageUrl,
+      imageUrl: req.imageUrl,
       isAvailable: true
     };
 
     // Add optional fields if provided
-    if (isbn) bookData.isbn = isbn.trim();
-    if (description) bookData.description = description.trim();
+    if (isbn && isbn.trim()) bookData.isbn = isbn.trim();
+    if (description && description.trim()) bookData.description = description.trim();
     if (publicationYear) bookData.publicationYear = parseInt(publicationYear);
-    if (publisher) bookData.publisher = publisher.trim();
+    if (publisher && publisher.trim()) bookData.publisher = publisher.trim();
 
     const book = new Book(bookData);
     await book.save();
@@ -106,9 +69,7 @@ router.post('/', authenticateToken, (req, res, next) => {
     res.status(201).json({
       success: true,
       data: bookWithPrivacy,
-      message: 'Book listing created successfully',
-      imageUrl: imageUrl,
-      imagePublicId: imagePublicId
+      message: 'Book listing created successfully'
     });
 
   } catch (error) {
