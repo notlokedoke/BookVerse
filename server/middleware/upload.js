@@ -1,0 +1,136 @@
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
+const crypto = require('crypto');
+
+// Configure multer for memory storage (we'll upload directly to Cloudinary)
+const storage = multer.memoryStorage();
+
+// File filter to validate image types
+const fileFilter = (req, file, cb) => {
+  // Check if file is an image
+  if (file.mimetype.startsWith('image/')) {
+    // Accept common image formats
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'), false);
+    }
+  } else {
+    cb(new Error('Only image files are allowed.'), false);
+  }
+};
+
+// Configure multer with file size limit and filter
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1 // Only allow single file upload
+  },
+  fileFilter: fileFilter
+});
+
+// Middleware to upload single image to Cloudinary
+const uploadSingleImage = (fieldName = 'image') => {
+  return async (req, res, next) => {
+    // First apply multer middleware
+    upload.single(fieldName)(req, res, async (err) => {
+      if (err) {
+        // Handle multer errors
+        if (err instanceof multer.MulterError) {
+          if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+              success: false,
+              error: {
+                message: 'File too large. Maximum size is 5MB.',
+                code: 'FILE_TOO_LARGE'
+              }
+            });
+          }
+          if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({
+              success: false,
+              error: {
+                message: 'Too many files. Only one file is allowed.',
+                code: 'TOO_MANY_FILES'
+              }
+            });
+          }
+        }
+        
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: err.message || 'File upload error',
+            code: 'UPLOAD_ERROR'
+          }
+        });
+      }
+
+      // If no file was uploaded, continue to next middleware
+      if (!req.file) {
+        return next();
+      }
+
+      try {
+        // Generate unique filename
+        const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}`;
+        
+        // Upload to Cloudinary
+        const result = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            {
+              resource_type: 'image',
+              public_id: `bookverse/books/${uniqueFilename}`,
+              folder: 'bookverse/books',
+              transformation: [
+                { width: 800, height: 600, crop: 'limit' }, // Limit max dimensions
+                { quality: 'auto' }, // Auto optimize quality
+                { fetch_format: 'auto' } // Auto select best format
+              ]
+            },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result);
+              }
+            }
+          ).end(req.file.buffer);
+        });
+
+        // Add the Cloudinary URL to the request object
+        req.imageUrl = result.secure_url;
+        req.cloudinaryPublicId = result.public_id;
+
+        next();
+      } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({
+          success: false,
+          error: {
+            message: 'Failed to upload image to cloud storage',
+            code: 'CLOUDINARY_ERROR'
+          }
+        });
+      }
+    });
+  };
+};
+
+// Utility function to delete image from Cloudinary
+const deleteImage = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    return result;
+  } catch (error) {
+    console.error('Error deleting image from Cloudinary:', error);
+    throw error;
+  }
+};
+
+module.exports = {
+  uploadSingleImage,
+  deleteImage
+};

@@ -1,73 +1,66 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import axios from 'axios'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './UserProfilePage.css'
 
 const UserProfilePage = () => {
   const { userId } = useParams()
-  const { user: currentUser } = useAuth()
+  const { user } = useAuth()
   const [profileUser, setProfileUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
 
-  // If no userId in params, show current user's profile
-  const targetUserId = userId || currentUser?._id
+  const isOwnProfile = !userId || userId === user?._id
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true)
-        setError(null)
-
-        let response
-        if (!userId && currentUser) {
-          // Fetch current user's own profile
-          response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me`)
-        } else if (targetUserId) {
-          // Fetch specific user's profile (this endpoint doesn't exist yet, but we'll prepare for it)
-          response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/${targetUserId}`)
-        } else {
-          throw new Error('No user ID available')
+        const targetUserId = userId || user?._id
+        
+        if (!targetUserId) {
+          setError('User not found')
+          return
         }
 
-        setProfileUser(response.data.data)
+        const response = await fetch(`/api/users/${targetUserId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setProfileUser(data.data)
+        } else {
+          setError('Failed to load user profile')
+        }
       } catch (err) {
-        console.error('Failed to fetch user profile:', err)
-        setError(err.response?.data?.error?.message || 'Failed to load user profile')
+        setError('An error occurred while loading the profile')
+        console.error('Profile fetch error:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    if (targetUserId) {
+    if (user) {
       fetchUserProfile()
     }
-  }, [targetUserId, userId, currentUser])
+  }, [userId, user])
 
   if (loading) {
     return (
-      <div className="profile-container">
-        <div className="profile-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading profile...</p>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-lg">Loading profile...</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="profile-container">
-        <div className="profile-error">
-          <h2>Error Loading Profile</h2>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-600">
           <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="retry-button"
-          >
-            Try Again
-          </button>
         </div>
       </div>
     )
@@ -75,101 +68,80 @@ const UserProfilePage = () => {
 
   if (!profileUser) {
     return (
-      <div className="profile-container">
-        <div className="profile-error">
-          <h2>User Not Found</h2>
-          <p>The requested user profile could not be found.</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <p>User not found</p>
         </div>
       </div>
     )
   }
 
-  const isOwnProfile = currentUser && profileUser._id === currentUser._id
-
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <div className="profile-info">
-          <div className="profile-avatar">
-            {profileUser.name.charAt(0).toUpperCase()}
-          </div>
-          <div className="profile-details">
-            <h1 className="profile-name">{profileUser.name}</h1>
-            <div className="profile-meta">
-              {profileUser.privacySettings?.showCity !== false && profileUser.city && (
-                <span className="profile-city">📍 {profileUser.city}</span>
-              )}
-              <div className="profile-rating">
-                <span className="rating-stars">
-                  {Array.from({ length: 5 }, (_, i) => (
-                    <span 
-                      key={i} 
-                      className={`star ${i < Math.round(profileUser.averageRating || 0) ? 'filled' : ''}`}
-                    >
-                      ★
+    <div className="user-profile-page">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Profile Header */}
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{profileUser.name}</h1>
+                {profileUser.city && (
+                  <p className="text-gray-600 mt-1">📍 {profileUser.city}</p>
+                )}
+                <div className="flex items-center mt-2">
+                  <div className="flex items-center">
+                    <span className="text-yellow-400">⭐</span>
+                    <span className="ml-1 text-gray-700">
+                      {profileUser.averageRating > 0 
+                        ? `${profileUser.averageRating.toFixed(1)} (${profileUser.ratingCount} reviews)`
+                        : 'No reviews yet'
+                      }
                     </span>
-                  ))}
-                </span>
-                <span className="rating-text">
-                  {profileUser.averageRating ? profileUser.averageRating.toFixed(1) : '0.0'} 
-                  ({profileUser.ratingCount || 0} {profileUser.ratingCount === 1 ? 'rating' : 'ratings'})
-                </span>
+                  </div>
+                </div>
+              </div>
+              {isOwnProfile && (
+                <div>
+                  <a
+                    href="/profile/settings"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Edit Profile
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Profile Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Book Listings */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">
+                {isOwnProfile ? 'My Books' : `${profileUser.name}'s Books`}
+              </h2>
+              <div className="text-gray-600">
+                <p>Book listings will be displayed here once the book management system is implemented.</p>
+              </div>
+            </div>
+
+            {/* Wishlist */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">
+                {isOwnProfile ? 'My Wishlist' : 'Wishlist'}
+              </h2>
+              <div className="text-gray-600">
+                <p>Wishlist items will be displayed here once the wishlist system is implemented.</p>
               </div>
             </div>
           </div>
-        </div>
-        {isOwnProfile && (
-          <div className="profile-actions">
-            <Link to="/profile/settings" className="edit-profile-btn">
-              Edit Profile
-            </Link>
-          </div>
-        )}
-      </div>
 
-      <div className="profile-content">
-        <div className="profile-section">
-          <h2 className="section-title">Book Listings</h2>
-          <div className="section-placeholder">
-            <div className="placeholder-icon">📚</div>
-            <p className="placeholder-text">
-              {isOwnProfile 
-                ? "Your book listings will appear here once you start adding books to trade."
-                : `${profileUser.name}'s book listings will appear here.`
-              }
-            </p>
-            {isOwnProfile && (
-              <button className="placeholder-action-btn">Add Your First Book</button>
-            )}
-          </div>
-        </div>
-
-        <div className="profile-section">
-          <h2 className="section-title">Wishlist</h2>
-          <div className="section-placeholder">
-            <div className="placeholder-icon">💭</div>
-            <p className="placeholder-text">
-              {isOwnProfile 
-                ? "Books you're looking for will appear here when you add them to your wishlist."
-                : `${profileUser.name}'s wishlist will appear here.`
-              }
-            </p>
-            {isOwnProfile && (
-              <button className="placeholder-action-btn">Add to Wishlist</button>
-            )}
-          </div>
-        </div>
-
-        <div className="profile-section">
-          <h2 className="section-title">Ratings & Reviews</h2>
-          <div className="section-placeholder">
-            <div className="placeholder-icon">⭐</div>
-            <p className="placeholder-text">
-              {isOwnProfile 
-                ? "Ratings and reviews from your completed trades will appear here."
-                : `Ratings and reviews for ${profileUser.name} will appear here.`
-              }
-            </p>
+          {/* Ratings Section */}
+          <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+            <h2 className="text-xl font-semibold mb-4">Reviews</h2>
+            <div className="text-gray-600">
+              <p>User reviews will be displayed here once the rating system is implemented.</p>
+            </div>
           </div>
         </div>
       </div>

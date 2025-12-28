@@ -14,6 +14,7 @@ server/dist/
 .kiro/cache/
 .kiro/output/
 .kiro/build/
+.kiro/
 
 
 # Keep specs
@@ -41,3 +42,4 @@ pids
 
 # --- Uploads (if any) ---
 server/uploads/
+.kiro/

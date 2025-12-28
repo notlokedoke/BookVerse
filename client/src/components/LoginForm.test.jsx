@@ -44,7 +44,7 @@ describe('LoginForm', () => {
     
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('displays validation errors for empty fields', async () => {
@@ -54,7 +54,7 @@ describe('LoginForm', () => {
       </BrowserRouter>
     );
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -73,7 +73,7 @@ describe('LoginForm', () => {
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -93,7 +93,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -113,7 +113,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'validpassword' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -136,7 +136,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'wrong@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpassword' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -151,7 +151,7 @@ describe('LoginForm', () => {
       </BrowserRouter>
     );
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -178,7 +178,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     // Button should be disabled and show loading text
@@ -200,7 +200,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -225,11 +225,11 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/network error/i)).toBeInTheDocument();
+      expect(screen.getByText(/unable to connect to server/i)).toBeInTheDocument();
     });
   });
 
@@ -245,11 +245,11 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     
-    const submitButton = screen.getByRole('button', { name: /log in/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/an unexpected error occurred/i)).toBeInTheDocument();
+      expect(screen.getByText(/unable to connect to server/i)).toBeInTheDocument();
     });
   });
 });

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
@@ -10,13 +10,15 @@ import UserProfilePage from './pages/UserProfilePage'
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import './App.css'
 
-function App() {
+// Component to conditionally render navbar
+const AppContent = () => {
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
+
   return (
-    <Router>
-      <AuthProvider>
-        <div className="App">
-          <Navbar />
-          <Routes>
+    <div className="App">
+      {!isAuthPage && <Navbar />}
+      <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -58,7 +60,15 @@ function App() {
             {/* Redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </div>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
     </Router>
   )

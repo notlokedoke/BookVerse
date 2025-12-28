@@ -1,0 +1,384 @@
+/* Import a clean, modern font */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+.signup-container {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1a1a1a;
+}
+
+/* Brand Section */
+.brand-section {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.brand-section h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.brand-section p {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Form Section */
+.form-section {
+  padding: 3rem 2rem;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+
+.form-intro {
+  padding-top: 1rem;
+}
+
+.form-intro h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem 0;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.form-intro p {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Form Groups */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-group input.error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.form-group input:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.375rem;
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+.field-error {
+  display: block;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin-top: 0.375rem;
+  font-weight: 500;
+}
+
+/* Messages */
+.success-message {
+  background-color: #ecfdf5;
+  color: #065f46;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #a7f3d0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  color: #991b1b;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #fecaca;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+/* Terms Button */
+.terms-btn {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.terms-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.terms-btn.agreed {
+  border-color: #1a1a1a;
+  background: #f9fafb;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.terms-btn.error {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.terms-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.terms-error {
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Create Button */
+.create-btn {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.create-btn:hover:not(:disabled) {
+  background: #374151;
+}
+
+.create-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.create-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Social Section */
+.social-section {
+  padding: 3rem 2rem;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.social-section-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.social-intro h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
+}
+
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.social-btn:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.social-icon {
+  width: 48px;
+  height: 48px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.social-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Footer */
+.signup-footer {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  background: white;
+}
+
+.signup-footer a {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.signup-footer a:hover {
+  color: #6b7280;
+}
+
+.signin-link {
+  color: #1a1a1a !important;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .form-section-inner,
+  .social-section-inner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .form-intro,
+  .social-intro {
+    text-align: center;
+  }
+
+  .form-container {
+    margin: 0 auto;
+  }
+
+  .terms-btn {
+    text-align: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .brand-section {
+    padding: 2rem 1rem;
+  }
+
+  .brand-section h1 {
+    font-size: 1.75rem;
+  }
+
+  .form-section,
+  .social-section {
+    padding: 2rem 1rem;
+  }
+
+  .form-intro h2,
+  .social-intro h2 {
+    font-size: 1.5rem;
+  }
+
+  .signup-footer {
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+
+  .signup-footer a {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .signup-footer {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
