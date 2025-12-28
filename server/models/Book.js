@@ -4,16 +4,29 @@ const bookSchema = new mongoose.Schema({
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Book owner is required']
+    required: [true, 'Owner is required']
   },
   title: {
     type: String,
-    required: [true, 'Book title is required'],
+    required: [true, 'Title is required'],
     trim: true
   },
   author: {
     type: String,
-    required: [true, 'Book author is required'],
+    required: [true, 'Author is required'],
+    trim: true
+  },
+  condition: {
+    type: String,
+    required: [true, 'Condition is required'],
+    enum: {
+      values: ['New', 'Like New', 'Good', 'Fair', 'Poor'],
+      message: 'Condition must be one of: New, Like New, Good, Fair, Poor'
+    }
+  },
+  genre: {
+    type: String,
+    required: [true, 'Genre is required'],
     trim: true
   },
   isbn: {
@@ -21,36 +34,22 @@ const bookSchema = new mongoose.Schema({
     trim: true,
     sparse: true // Allow multiple null values but unique non-null values
   },
-  genre: {
-    type: String,
-    required: [true, 'Book genre is required'],
-    trim: true
-  },
-  condition: {
-    type: String,
-    required: [true, 'Book condition is required'],
-    enum: {
-      values: ['New', 'Like New', 'Good', 'Fair', 'Poor'],
-      message: 'Condition must be one of: New, Like New, Good, Fair, Poor'
-    }
-  },
   description: {
     type: String,
-    trim: true,
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
-  },
-  imageUrl: {
-    type: String,
-    required: [true, 'Book image is required']
+    trim: true
   },
   publicationYear: {
     type: Number,
-    min: [1000, 'Publication year must be valid'],
-    max: [new Date().getFullYear(), 'Publication year cannot be in the future']
+    min: [1000, 'Publication year must be a valid year'],
+    max: [new Date().getFullYear() + 1, 'Publication year cannot be in the future']
   },
   publisher: {
     type: String,
     trim: true
+  },
+  imageUrl: {
+    type: String,
+    required: [true, 'Image URL is required']
   },
   isAvailable: {
     type: Boolean,
@@ -60,19 +59,31 @@ const bookSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create indexes for efficient queries
+// Create indexes as specified in the requirements
+// Index on owner field for efficient queries of user's books
 bookSchema.index({ owner: 1 });
-bookSchema.index({ genre: 1 });
-bookSchema.index({ author: 1 });
-bookSchema.index({ title: 1 });
-bookSchema.index({ isAvailable: 1 });
-bookSchema.index({ owner: 1, isAvailable: 1 }); // Compound index for user's available books
 
-// Text index for search functionality
+// Index on genre field for filtering
+bookSchema.index({ genre: 1 });
+
+// Index on author field for filtering and search
+bookSchema.index({ author: 1 });
+
+// Index on title field for search
+bookSchema.index({ title: 1 });
+
+// Compound index for owner and availability for efficient queries
+bookSchema.index({ owner: 1, isAvailable: 1 });
+
+// Text index for search functionality on title and author
 bookSchema.index({ 
   title: 'text', 
-  author: 'text', 
-  description: 'text' 
+  author: 'text' 
+}, {
+  weights: {
+    title: 10,
+    author: 5
+  }
 });
 
 const Book = mongoose.model('Book', bookSchema);
