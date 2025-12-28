@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
-          const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/me`)
+          const response = await axios.get(`${import.meta.env.VITE_API_URL || ''}/api/auth/me`)
           setUser(response.data.data)
           setToken(storedToken)
         } catch (error) {
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`,
+        `${import.meta.env.VITE_API_URL || ''}/api/auth/login`,
         { email, password }
       )
       

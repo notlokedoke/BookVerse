@@ -1,9 +1,154 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
 const { uploadSingleImage } = require('../middleware/upload');
+
+/**
+ * @route   POST /api/books/isbn/:isbn
+ * @desc    Lookup book data from Google Books API by ISBN
+ * @access  Public
+ */
+router.post('/isbn/:isbn', async (req, res) => {
+  try {
+    const { isbn } = req.params;
+
+    // Validate ISBN format (basic validation)
+    if (!isbn || isbn.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'ISBN is required',
+          code: 'ISBN_REQUIRED'
+        }
+      });
+    }
+
+    // Clean ISBN (remove spaces, hyphens)
+    const cleanIsbn = isbn.replace(/[-\s]/g, '');
+
+    // Validate ISBN length (10 or 13 digits)
+    if (!/^\d{10}(\d{3})?$/.test(cleanIsbn)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid ISBN format. ISBN must be 10 or 13 digits.',
+          code: 'INVALID_ISBN_FORMAT'
+        }
+      });
+    }
+
+    // Check if Google Books API key is configured
+    if (!process.env.GOOGLE_BOOKS_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          message: 'Google Books API is not configured',
+          code: 'API_NOT_CONFIGURED'
+        }
+      });
+    }
+
+    // Query Google Books API
+    const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}&key=${process.env.GOOGLE_BOOKS_API_KEY}`;
+    
+    const response = await axios.get(googleBooksUrl, {
+      timeout: 10000 // 10 second timeout
+    });
+
+    // Check if any books were found
+    if (!response.data.items || response.data.items.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'No book found with this ISBN',
+          code: 'BOOK_NOT_FOUND'
+        }
+      });
+    }
+
+    // Extract book information from the first result
+    const bookInfo = response.data.items[0].volumeInfo;
+    
+    // Format the response data
+    const formattedBookData = {
+      title: bookInfo.title || '',
+      author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
+      publisher: bookInfo.publisher || '',
+      publicationYear: bookInfo.publishedDate ? 
+        parseInt(bookInfo.publishedDate.split('-')[0]) : null,
+      isbn: cleanIsbn,
+      description: bookInfo.description || '',
+      pageCount: bookInfo.pageCount || null,
+      categories: bookInfo.categories || [],
+      thumbnail: bookInfo.imageLinks?.thumbnail || null
+    };
+
+    res.status(200).json({
+      success: true,
+      data: formattedBookData,
+      message: 'Book data retrieved successfully'
+    });
+
+  } catch (error) {
+    console.error('ISBN lookup error:', error);
+
+    // Handle specific axios errors
+    if (error.code === 'ECONNABORTED') {
+      return res.status(408).json({
+        success: false,
+        error: {
+          message: 'Request timeout. Please try again.',
+          code: 'REQUEST_TIMEOUT'
+        }
+      });
+    }
+
+    if (error.response) {
+      // Google Books API returned an error
+      if (error.response.status === 403) {
+        return res.status(503).json({
+          success: false,
+          error: {
+            message: 'Google Books API quota exceeded or invalid API key',
+            code: 'API_QUOTA_EXCEEDED'
+          }
+        });
+      }
+      
+      if (error.response.status === 400) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Invalid request to Google Books API',
+            code: 'INVALID_API_REQUEST'
+          }
+        });
+      }
+    }
+
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: 'Unable to connect to Google Books API. Please try again later.',
+          code: 'API_CONNECTION_ERROR'
+        }
+      });
+    }
+
+    // Generic error
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while looking up book data',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
 
 /**
  * @route   POST /api/books

@@ -84,7 +84,7 @@ const SignUp = () => {
     setIsSubmitting(true);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const apiUrl = import.meta.env.VITE_API_URL || '';
       console.log('API URL:', apiUrl); // Debug log
       console.log('Environment:', import.meta.env.VITE_API_URL); // Debug log
       
