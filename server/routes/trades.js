@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Trade = require('../models/Trade');
 const Book = require('../models/Book');
+const Notification = require('../models/Notification');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
@@ -222,6 +223,21 @@ router.post('/', authenticateToken, async (req, res) => {
         path: 'offeredBook'
       }
     ]);
+
+    // Create notification for the receiver (Req 8.3)
+    try {
+      const notification = new Notification({
+        recipient: requestedBookDoc.owner._id,
+        type: 'trade_request',
+        relatedTrade: trade._id,
+        relatedUser: req.userId,
+        message: `${trade.proposer.name} proposed a trade for your book "${requestedBookDoc.title}"`
+      });
+      await notification.save();
+    } catch (notificationError) {
+      // Log notification error but don't fail the trade creation
+      console.error('Failed to create notification:', notificationError);
+    }
 
     res.status(201).json({
       success: true,
