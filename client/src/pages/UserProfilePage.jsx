@@ -101,7 +101,13 @@ const UserProfilePage = () => {
                 </div>
               </div>
               {isOwnProfile && (
-                <div>
+                <div className="flex gap-3">
+                  <a
+                    href="/books/create"
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                  >
+                    Create Book Listing
+                  </a>
                   <a
                     href="/profile/settings"
                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -117,9 +123,19 @@ const UserProfilePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Book Listings */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                {isOwnProfile ? 'My Books' : `${profileUser.name}'s Books`}
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">
+                  {isOwnProfile ? 'My Books' : `${profileUser.name}'s Books`}
+                </h2>
+                {isOwnProfile && (
+                  <a
+                    href="/books/create"
+                    className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
+                  >
+                    + Add Book
+                  </a>
+                )}
+              </div>
               <div className="text-gray-600">
                 <p>Book listings will be displayed here once the book management system is implemented.</p>
               </div>

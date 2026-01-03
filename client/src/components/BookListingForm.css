@@ -193,6 +193,39 @@
   color: #374151;
 }
 
+/* ISBN Input Group */
+.isbn-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.isbn-input-group input {
+  flex: 1;
+}
+
+.isbn-lookup-btn {
+  padding: 0.75rem 1rem;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.isbn-lookup-btn:hover:not(:disabled) {
+  background: #374151;
+}
+
+.isbn-lookup-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 /* Form Row for side-by-side fields */
 .form-row {
   display: grid;
