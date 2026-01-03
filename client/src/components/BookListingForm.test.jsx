@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import BookListingForm from './BookListingForm';
 import { vi } from 'vitest';
+import axios from 'axios';
 
 // Mock axios
 vi.mock('axios');
@@ -169,5 +170,89 @@ describe('BookListingForm', () => {
     await waitFor(() => {
       expect(screen.queryByText(/please select a valid image file/i)).not.toBeInTheDocument();
     });
+  });
+
+  test('performs ISBN lookup and autofills form fields', async () => {
+    const mockBookData = {
+      success: true,
+      data: {
+        title: 'The Great Gatsby',
+        author: 'F. Scott Fitzgerald',
+        publisher: 'Scribner',
+        publicationYear: 1925,
+        description: 'A classic American novel'
+      }
+    };
+
+    axios.post.mockResolvedValueOnce({ data: mockBookData });
+
+    renderWithProviders(<BookListingForm />);
+    
+    const isbnInput = screen.getByLabelText(/isbn/i);
+    const lookupButton = screen.getByRole('button', { name: /lookup/i });
+
+    // Enter ISBN and click lookup
+    fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+    fireEvent.click(lookupButton);
+
+    // Wait for the API call and form update
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('The Great Gatsby')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('F. Scott Fitzgerald')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Scribner')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('1925')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('A classic American novel')).toBeInTheDocument();
+    });
+
+    expect(axios.post).toHaveBeenCalledWith('/api/books/isbn/9780743273565');
+  });
+
+  test('shows error when ISBN lookup fails', async () => {
+    const mockError = {
+      response: {
+        data: {
+          error: {
+            message: 'No book found with this ISBN'
+          }
+        }
+      }
+    };
+
+    axios.post.mockRejectedValueOnce(mockError);
+
+    renderWithProviders(<BookListingForm />);
+    
+    const isbnInput = screen.getByLabelText(/isbn/i);
+    const lookupButton = screen.getByRole('button', { name: /lookup/i });
+
+    // Enter ISBN and click lookup
+    fireEvent.change(isbnInput, { target: { value: '9999999999999' } });
+    fireEvent.click(lookupButton);
+
+    // Wait for the error message
+    await waitFor(() => {
+      expect(screen.getByText('No book found with this ISBN')).toBeInTheDocument();
+    });
+
+    expect(axios.post).toHaveBeenCalledWith('/api/books/isbn/9999999999999');
+  });
+
+  test('disables lookup button when ISBN is empty', () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const lookupButton = screen.getByRole('button', { name: /lookup/i });
+    
+    expect(lookupButton).toBeDisabled();
+  });
+
+  test('enables lookup button when ISBN is entered', () => {
+    renderWithProviders(<BookListingForm />);
+    
+    const isbnInput = screen.getByLabelText(/isbn/i);
+    const lookupButton = screen.getByRole('button', { name: /lookup/i });
+
+    fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+
+    expect(lookupButton).not.toBeDisabled();
   });
 });
