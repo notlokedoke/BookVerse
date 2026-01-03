@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
+import BookDetailView from './components/BookDetailView'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -62,6 +63,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <CreateBookPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/books/:bookId" 
+              element={
+                <ProtectedRoute>
+                  <BookDetailView />
                 </ProtectedRoute>
               } 
             />
