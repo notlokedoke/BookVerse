@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import axios from 'axios';
@@ -16,11 +16,37 @@ vi.mock('axios');
 
 // Mock BookCard component
 vi.mock('../components/BookCard', () => ({
-  default: ({ book }) => (
+  default: ({ book, showEditButton, onEdit }) => (
     <div data-testid="book-card">
       <h3>{book.title}</h3>
       <p>{book.author}</p>
+      {showEditButton && (
+        <button onClick={() => onEdit(book)} data-testid="edit-button">
+          Edit
+        </button>
+      )}
     </div>
+  )
+}));
+
+// Mock EditBookModal component
+vi.mock('../components/EditBookModal', () => ({
+  default: ({ isOpen, book, onClose, onBookUpdated }) => (
+    isOpen ? (
+      <div data-testid="edit-modal">
+        <h2>Edit Book: {book?.title}</h2>
+        <button onClick={onClose} data-testid="close-modal">Close</button>
+        <button 
+          onClick={() => {
+            onBookUpdated({ ...book, title: 'Updated Title' });
+            onClose();
+          }} 
+          data-testid="update-book"
+        >
+          Update
+        </button>
+      </div>
+    ) : null
   )
 }));
 
@@ -154,5 +180,75 @@ describe('MyBooksPage', () => {
 
     const createButton = screen.getByText('Create New Listing').closest('a');
     expect(createButton).toHaveAttribute('href', '/books/create');
+  });
+
+  test('shows edit buttons for user books and opens edit modal', async () => {
+    const mockBooks = [
+      {
+        _id: '1',
+        title: 'Test Book 1',
+        author: 'Author 1',
+        condition: 'Good',
+        genre: 'Fiction'
+      }
+    ];
+
+    useAuth.mockReturnValue({ user: mockUser });
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { books: mockBooks }
+      }
+    });
+
+    renderWithRouter(<MyBooksPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('edit-button')).toBeInTheDocument();
+    });
+
+    // Click edit button
+    fireEvent.click(screen.getByTestId('edit-button'));
+
+    // Check that modal opens
+    expect(screen.getByTestId('edit-modal')).toBeInTheDocument();
+    expect(screen.getByText('Edit Book: Test Book 1')).toBeInTheDocument();
+  });
+
+  test('updates book in list when edit modal saves changes', async () => {
+    const mockBooks = [
+      {
+        _id: '1',
+        title: 'Test Book 1',
+        author: 'Author 1',
+        condition: 'Good',
+        genre: 'Fiction'
+      }
+    ];
+
+    useAuth.mockReturnValue({ user: mockUser });
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { books: mockBooks }
+      }
+    });
+
+    renderWithRouter(<MyBooksPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Book 1')).toBeInTheDocument();
+    });
+
+    // Click edit button
+    fireEvent.click(screen.getByTestId('edit-button'));
+
+    // Click update button in modal
+    fireEvent.click(screen.getByTestId('update-book'));
+
+    // Check that the book title was updated in the list
+    await waitFor(() => {
+      expect(screen.getByText('Updated Title')).toBeInTheDocument();
+    });
   });
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
+import EditBookModal from '../components/EditBookModal';
 import axios from 'axios';
 import './MyBooksPage.css';
 
@@ -10,6 +11,8 @@ const MyBooksPage = () => {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingBook, setEditingBook] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserBooks = async () => {
@@ -41,6 +44,27 @@ const MyBooksPage = () => {
 
     fetchUserBooks();
   }, [user]);
+
+  // Handle edit book
+  const handleEditBook = (book) => {
+    setEditingBook(book);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle book updated
+  const handleBookUpdated = (updatedBook) => {
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book._id === updatedBook._id ? updatedBook : book
+      )
+    );
+  };
+
+  // Handle close edit modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingBook(null);
+  };
 
   if (loading) {
     return (
@@ -109,6 +133,8 @@ const MyBooksPage = () => {
                 key={book._id} 
                 book={book} 
                 showOwner={false} // Don't show owner info since these are user's own books
+                showEditButton={true} // Show edit button for user's own books
+                onEdit={handleEditBook} // Pass edit handler
               />
             ))}
           </div>
@@ -125,6 +151,14 @@ const MyBooksPage = () => {
             </Link>
           </div>
         )}
+
+        {/* Edit Book Modal */}
+        <EditBookModal
+          book={editingBook}
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          onBookUpdated={handleBookUpdated}
+        />
       </div>
     </div>
   );
