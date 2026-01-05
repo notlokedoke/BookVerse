@@ -23,18 +23,19 @@ const BrowsePage = () => {
   const [filters, setFilters] = useState({
     city: searchParams.get('city') || '',
     genre: searchParams.get('genre') || '',
-    author: searchParams.get('author') || ''
+    author: searchParams.get('author') || '',
+    title: searchParams.get('title') || ''
   });
 
   // Update URL parameters when filters change
   const updateURLParams = (newFilters, page = 1) => {
     const params = new URLSearchParams();
-    
+
     // Add page parameter
     if (page > 1) {
       params.set('page', page.toString());
     }
-    
+
     // Add filter parameters if they have values
     if (newFilters.city.trim()) {
       params.set('city', newFilters.city.trim());
@@ -45,7 +46,10 @@ const BrowsePage = () => {
     if (newFilters.author.trim()) {
       params.set('author', newFilters.author.trim());
     }
-    
+    if (newFilters.title.trim()) {
+      params.set('title', newFilters.title.trim());
+    }
+
     // Update URL without causing a page reload
     setSearchParams(params);
   };
@@ -72,15 +76,18 @@ const BrowsePage = () => {
       if (currentFilters.author.trim()) {
         params.append('author', currentFilters.author.trim());
       }
+      if (currentFilters.title.trim()) {
+        params.append('title', currentFilters.title.trim());
+      }
 
       const response = await fetch(`/api/books?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch books: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setBooks(data.data.books);
         setPagination(data.data.pagination);
@@ -114,15 +121,17 @@ const BrowsePage = () => {
     const urlFilters = {
       city: searchParams.get('city') || '',
       genre: searchParams.get('genre') || '',
-      author: searchParams.get('author') || ''
+      author: searchParams.get('author') || '',
+      title: searchParams.get('title') || ''
     };
-    
+
     // Only update if filters actually changed
-    const filtersChanged = 
+    const filtersChanged =
       urlFilters.city !== filters.city ||
       urlFilters.genre !== filters.genre ||
-      urlFilters.author !== filters.author;
-    
+      urlFilters.author !== filters.author ||
+      urlFilters.title !== filters.title;
+
     if (filtersChanged) {
       setFilters(urlFilters);
       const page = parseInt(searchParams.get('page')) || 1;
@@ -137,7 +146,7 @@ const BrowsePage = () => {
       [filterName]: value
     };
     setFilters(newFilters);
-    
+
     // Update URL parameters and reset to page 1 when filters change
     updateURLParams(newFilters, 1);
     fetchBooks(1, newFilters);
@@ -157,17 +166,18 @@ const BrowsePage = () => {
     const clearedFilters = {
       city: '',
       genre: '',
-      author: ''
+      author: '',
+      title: ''
     };
     setFilters(clearedFilters);
-    
+
     // Update URL parameters and reset to page 1
     updateURLParams(clearedFilters, 1);
     fetchBooks(1, clearedFilters);
   };
 
   // Check if any filters are active
-  const hasActiveFilters = filters.city || filters.genre || filters.author;
+  const hasActiveFilters = filters.city || filters.genre || filters.author || filters.title;
 
   return (
     <div className="browse-page">
@@ -209,7 +219,7 @@ const BrowsePage = () => {
         />
 
         {/* Book Grid */}
-        <BookGrid 
+        <BookGrid
           books={books}
           loading={loading}
           error={error}

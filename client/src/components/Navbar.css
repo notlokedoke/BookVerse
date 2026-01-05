@@ -1,88 +1,201 @@
-.navbar {
-  background-color: #2c3e50;
-  color: white;
-  padding: 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+/* Navbar Additional Styles */
 
-.navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-}
-
-.navbar-brand {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-.navbar-brand:hover {
-  color: #3498db;
-}
-
-.navbar-menu {
-  display: flex;
-  align-items: center;
-}
-
-.navbar-auth,
-.navbar-guest {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.navbar-user {
-  color: #ecf0f1;
-  margin-right: 0.5rem;
-}
-
+/* Smooth transitions for all interactive elements */
 .navbar-link {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+  transition: all 0.2s ease-in-out;
 }
 
-.navbar-link:hover {
-  background-color: #34495e;
-  color: white;
+/* Profile dropdown animation */
+.profile-dropdown-menu {
+  animation: slideDown 0.2s ease-out;
+  transform-origin: top right;
 }
 
-.navbar-logout-btn {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
+/* Mobile menu animation */
+.mobile-menu {
+  animation: slideDown 0.3s ease-out;
 }
 
-.navbar-logout-btn:hover {
-  background-color: #c0392b;
+/* Hover effects for navigation links */
+.nav-link-hover:hover {
+  transform: translateY(-1px);
 }
 
-/* Responsive design */
+/* Active link indicator animation */
+.active-indicator {
+  animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Notification badge pulse animation */
+.notification-badge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Search input focus effect */
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+}
+
+/* Backdrop blur for mobile menu */
+.mobile-menu-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Avatar gradient animation */
+.avatar-gradient {
+  background: linear-gradient(135deg, #2ECC71 0%, #1ABC9C 100%);
+  transition: transform 0.2s ease-in-out;
+}
+
+.avatar-gradient:hover {
+  transform: scale(1.05);
+}
+
+/* Button hover effects */
+.btn-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+}
+
+/* Dropdown menu item hover */
+.dropdown-item {
+  transition: all 0.15s ease-in-out;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(46, 204, 113, 0.05);
+  padding-left: 1.25rem;
+}
+
+/* Mobile menu item active state */
+.mobile-menu-item-active {
+  background: linear-gradient(90deg, rgba(46, 204, 113, 0.1) 0%, transparent 100%);
+  border-left: 3px solid #2ECC71;
+}
+
+/* Navbar shadow transition */
+.navbar-shadow {
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Badge animation */
+.badge-enter {
+  animation: badgeEnter 0.3s ease-out;
+}
+
+@keyframes badgeEnter {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Logo hover effect */
+.logo-hover:hover {
+  opacity: 0.8;
+  transform: scale(1.02);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Responsive utilities */
 @media (max-width: 768px) {
-  .navbar-container {
+  /* Ensure mobile menu is full width */
+  .mobile-menu {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+  
+  /* Adjust padding for mobile */
+  .mobile-menu-content {
     padding: 1rem;
   }
-  
-  .navbar-auth,
-  .navbar-guest {
-    gap: 0.5rem;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid #2ECC71;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus outline */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Smooth color transitions */
+.color-transition {
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+}
+
+/* Icon rotation animation */
+.icon-rotate {
+  transition: transform 0.3s ease-in-out;
+}
+
+.icon-rotate.rotated {
+  transform: rotate(180deg);
+}
+
+/* Glassmorphism effect for dropdowns */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Subtle shadow for elevated elements */
+.elevated {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.elevated-hover:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
   }
-  
-  .navbar-user {
-    display: none;
+  100% {
+    background-position: 1000px 0;
   }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f0f0f0 4%, #e0e0e0 25%, #f0f0f0 36%);
+  background-size: 1000px 100%;
 }

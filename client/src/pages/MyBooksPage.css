@@ -1,39 +1,38 @@
-/* Import the same font as other pages for consistency */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+/* MyBooksPage - Uses global theme */
 
 .my-books-page {
-  min-height: 100vh;
-  background: #ffffff;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1a1a1a;
-  padding: 2rem 0;
+  min-height: calc(100vh - 64px);
+  background: var(--bg-page);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  padding: var(--spacing-xl) 0;
 }
 
-.container {
-  max-width: 1200px;
+.my-books-page .container {
+  max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 var(--container-padding);
 }
 
 /* Page Header */
-.page-header {
+.my-books-page .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.header-content h1 {
+.my-books-page .header-content h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
-.header-subtitle {
-  color: #6b7280;
+.my-books-page .header-subtitle {
+  color: var(--color-text-muted);
   font-size: 1rem;
   margin: 0;
 }
@@ -41,21 +40,21 @@
 .create-listing-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   padding: 0.75rem 1.5rem;
-  background: #1a1a1a;
+  background: var(--color-text);
   color: white;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all var(--transition-normal);
   border: none;
   cursor: pointer;
 }
 
 .create-listing-btn:hover {
-  background: #374151;
+  background: var(--color-text-secondary);
   transform: translateY(-1px);
 }
 
@@ -116,8 +115,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {
@@ -394,7 +398,7 @@
   .modal-actions {
     flex-direction: column;
   }
-  
+
   .cancel-btn,
   .confirm-delete-btn {
     width: 100%;

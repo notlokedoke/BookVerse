@@ -90,7 +90,7 @@ html {
 
 .btn-nav-signup:hover {
   background: white;
-  color: #667eea;
+  color: #2ECC71;
   transform: translateY(-1px);
 }
 
@@ -232,7 +232,7 @@ html {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   color: white;
   border-color: transparent;
 }
@@ -250,17 +250,17 @@ html {
 
 .btn-secondary:hover {
   background: white;
-  color: #667eea;
+  color: #2ECC71;
 }
 
 .btn-outline {
   background: transparent;
-  color: #667eea;
-  border-color: #667eea;
+  color: #2ECC71;
+  border-color: #2ECC71;
 }
 
 .btn-outline:hover {
-  background: #667eea;
+  background: #2ECC71;
   color: white;
 }
 
@@ -272,7 +272,7 @@ html {
 /* Hero Section */
 .hero-section {
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   display: flex;
   align-items: center;
   position: relative;
@@ -392,7 +392,7 @@ section {
 .step-number {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -493,7 +493,7 @@ section {
 }
 
 .safety-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   color: white;
   padding: 2rem;
   border-radius: 20px;
@@ -532,7 +532,7 @@ section {
 .stat-number {
   font-size: 3rem;
   font-weight: 700;
-  color: #667eea;
+  color: #2ECC71;
   margin-bottom: 0.5rem;
 }
 
@@ -605,7 +605,7 @@ section {
   background: #f7fafc;
   padding: 2rem;
   border-radius: 12px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #2ECC71;
 }
 
 .testimonial-content {
@@ -628,7 +628,7 @@ section {
 .author-avatar {
   width: 50px;
   height: 50px;
-  background: #667eea;
+  background: #2ECC71;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -649,7 +649,7 @@ section {
 
 /* Ready to Join Section */
 .ready-to-join {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   color: white;
 }
 
@@ -690,7 +690,7 @@ section {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: #667eea;
+  color: #2ECC71;
 }
 
 .footer-section h4 {
@@ -720,7 +720,7 @@ section {
 }
 
 .footer-section ul li a:hover {
-  color: #667eea;
+  color: #2ECC71;
 }
 
 .footer-bottom {
