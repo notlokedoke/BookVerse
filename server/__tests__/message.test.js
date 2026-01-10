@@ -315,3 +315,307 @@ describe('Message Model', () => {
     });
   });
 });
+
+// API Endpoint Tests
+const request = require('supertest');
+const app = require('../server');
+const { generateToken } = require('../utils/jwt');
+const Notification = require('../models/Notification');
+
+describe('Messages API - Send Message', () => {
+  let user1, user2, user1Token, user2Token;
+  let book1, book2, trade;
+
+  beforeAll(async () => {
+    // Connect to test database if not already connected
+    if (mongoose.connection.readyState === 0) {
+      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bookverse-test';
+      await mongoose.connect(mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      });
+    }
+  });
+
+  beforeEach(async () => {
+    // Clear collections
+    await Message.deleteMany({});
+    await Trade.deleteMany({});
+    await Book.deleteMany({});
+    await User.deleteMany({});
+    await Notification.deleteMany({});
+
+    // Create test users
+    user1 = await User.create({
+      name: 'Test User 1',
+      email: 'testuser1@example.com',
+      password: 'password123',
+      city: 'New York'
+    });
+
+    user2 = await User.create({
+      name: 'Test User 2',
+      email: 'testuser2@example.com',
+      password: 'password123',
+      city: 'Los Angeles'
+    });
+
+    // Generate tokens
+    user1Token = generateToken(user1._id);
+    user2Token = generateToken(user2._id);
+
+    // Create test books
+    book1 = await Book.create({
+      owner: user1._id,
+      title: 'Test Book 1',
+      author: 'Author 1',
+      condition: 'Good',
+      genre: 'Fiction',
+      imageUrl: 'http://example.com/image1.jpg'
+    });
+
+    book2 = await Book.create({
+      owner: user2._id,
+      title: 'Test Book 2',
+      author: 'Author 2',
+      condition: 'Like New',
+      genre: 'Non-Fiction',
+      imageUrl: 'http://example.com/image2.jpg'
+    });
+
+    // Create accepted trade
+    trade = await Trade.create({
+      proposer: user1._id,
+      receiver: user2._id,
+      requestedBook: book2._id,
+      offeredBook: book1._id,
+      status: 'accepted'
+    });
+  });
+
+  describe('POST /api/messages', () => {
+    test('should send message with valid data', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: 'Hello, when can we meet?'
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.trade).toBe(trade._id.toString());
+      expect(response.body.data.sender._id).toBe(user1._id.toString());
+      expect(response.body.data.content).toBe('Hello, when can we meet?');
+      expect(response.body.data.createdAt).toBeDefined();
+      expect(response.body.message).toBe('Message sent successfully');
+    });
+
+    test('should create notification for recipient', async () => {
+      await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: 'Test message'
+        })
+        .expect(201);
+
+      const notification = await Notification.findOne({ recipient: user2._id });
+      expect(notification).toBeDefined();
+      expect(notification.type).toBe('new_message');
+      expect(notification.relatedTrade.toString()).toBe(trade._id.toString());
+      expect(notification.relatedUser.toString()).toBe(user1._id.toString());
+    });
+
+    test('should fail without authentication', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .send({
+          trade: trade._id.toString(),
+          content: 'Test message'
+        })
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should fail with missing trade ID', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          content: 'Test message'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+    });
+
+    test('should fail with missing content', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString()
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+    });
+
+    test('should fail with invalid trade ID format', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: 'invalid-id',
+          content: 'Test message'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+    });
+
+    test('should fail with non-existent trade', async () => {
+      const fakeTradeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: fakeTradeId.toString(),
+          content: 'Test message'
+        })
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('TRADE_NOT_FOUND');
+    });
+
+    test('should fail when user is not part of trade', async () => {
+      const user3 = await User.create({
+        name: 'Test User 3',
+        email: 'testuser3@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+      const user3Token = generateToken(user3._id);
+
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user3Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: 'Test message'
+        })
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_AUTHORIZED');
+    });
+
+    test('should fail when trade status is not accepted', async () => {
+      trade.status = 'proposed';
+      await trade.save();
+
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: 'Test message'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+
+    test('should fail with empty content', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: '   '
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('EMPTY_CONTENT');
+    });
+
+    test('should fail with content exceeding 1000 characters', async () => {
+      const longContent = 'a'.repeat(1001);
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: longContent
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('CONTENT_TOO_LONG');
+    });
+
+    test('should trim whitespace from content', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: '  Hello with spaces  '
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.content).toBe('Hello with spaces');
+    });
+
+    test('should allow receiver to send message', async () => {
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user2Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content: 'Reply from receiver'
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.sender._id).toBe(user2._id.toString());
+    });
+
+    test('should accept content with exactly 1000 characters', async () => {
+      const content = 'a'.repeat(1000);
+      const response = await request(app)
+        .post('/api/messages')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          trade: trade._id.toString(),
+          content
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.content.length).toBe(1000);
+    });
+  });
+
+  afterAll(async () => {
+    // Clean up
+    await Message.deleteMany({});
+    await Trade.deleteMany({});
+    await Book.deleteMany({});
+    await User.deleteMany({});
+    await Notification.deleteMany({});
+  });
+});

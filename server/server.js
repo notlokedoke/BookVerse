@@ -124,6 +124,7 @@ const bookRoutes = require('./routes/books');
 const citiesRoutes = require('./routes/cities');
 const wishlistRoutes = require('./routes/wishlist');
 const tradeRoutes = require('./routes/trades');
+const messageRoutes = require('./routes/messages');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -150,6 +151,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/cities', citiesRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/trades', tradeRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Multer error handling middleware (after routes)
 app.use((error, req, res, next) => {
