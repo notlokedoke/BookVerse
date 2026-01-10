@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BookGrid from '../components/BookGrid';
 import SearchFilters from '../components/SearchFilters';
 import './BrowsePage.css';
 
 const BrowsePage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,11 +16,37 @@ const BrowsePage = () => {
     hasNextPage: false,
     hasPrevPage: false
   });
+
+  // Initialize filters from URL parameters
   const [filters, setFilters] = useState({
-    city: '',
-    genre: '',
-    author: ''
+    city: searchParams.get('city') || '',
+    genre: searchParams.get('genre') || '',
+    author: searchParams.get('author') || ''
   });
+
+  // Update URL parameters when filters change
+  const updateURLParams = (newFilters, page = 1) => {
+    const params = new URLSearchParams();
+    
+    // Add page parameter
+    if (page > 1) {
+      params.set('page', page.toString());
+    }
+    
+    // Add filter parameters if they have values
+    if (newFilters.city.trim()) {
+      params.set('city', newFilters.city.trim());
+    }
+    if (newFilters.genre.trim()) {
+      params.set('genre', newFilters.genre.trim());
+    }
+    if (newFilters.author.trim()) {
+      params.set('author', newFilters.author.trim());
+    }
+    
+    // Update URL without causing a page reload
+    setSearchParams(params);
+  };
 
   // Fetch books from API
   const fetchBooks = async (page = 1, currentFilters = filters) => {
@@ -73,10 +101,32 @@ const BrowsePage = () => {
     }
   };
 
-  // Initial load
+  // Initial load - get page from URL params
   useEffect(() => {
-    fetchBooks(1);
+    const page = parseInt(searchParams.get('page')) || 1;
+    fetchBooks(page);
   }, []);
+
+  // Handle URL parameter changes (back/forward navigation, direct URL access)
+  useEffect(() => {
+    const urlFilters = {
+      city: searchParams.get('city') || '',
+      genre: searchParams.get('genre') || '',
+      author: searchParams.get('author') || ''
+    };
+    
+    // Only update if filters actually changed
+    const filtersChanged = 
+      urlFilters.city !== filters.city ||
+      urlFilters.genre !== filters.genre ||
+      urlFilters.author !== filters.author;
+    
+    if (filtersChanged) {
+      setFilters(urlFilters);
+      const page = parseInt(searchParams.get('page')) || 1;
+      fetchBooks(page, urlFilters);
+    }
+  }, [searchParams]);
 
   // Handle filter changes
   const handleFilterChange = (filterName, value) => {
@@ -86,13 +136,16 @@ const BrowsePage = () => {
     };
     setFilters(newFilters);
     
-    // Reset to page 1 when filters change
+    // Update URL parameters and reset to page 1 when filters change
+    updateURLParams(newFilters, 1);
     fetchBooks(1, newFilters);
   };
 
   // Handle page changes
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
+      // Update URL parameters with new page
+      updateURLParams(filters, newPage);
       fetchBooks(newPage);
     }
   };
@@ -105,6 +158,9 @@ const BrowsePage = () => {
       author: ''
     };
     setFilters(clearedFilters);
+    
+    // Update URL parameters and reset to page 1
+    updateURLParams(clearedFilters, 1);
     fetchBooks(1, clearedFilters);
   };
 

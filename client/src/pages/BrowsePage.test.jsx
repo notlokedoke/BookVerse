@@ -29,6 +29,8 @@ const renderWithProviders = (component) => {
 describe('BrowsePage', () => {
   beforeEach(() => {
     fetch.mockClear();
+    // Reset URL to clean state before each test
+    window.history.replaceState({}, '', '/browse');
   });
 
   test('renders browse page with title and filters', () => {
@@ -187,6 +189,105 @@ describe('BrowsePage', () => {
     });
   });
 
+  test('applies multiple filters simultaneously', async () => {
+    // Mock initial API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    // Mock filtered API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    renderWithProviders(<BrowsePage />);
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+    });
+
+    // Apply multiple filters
+    const cityInput = screen.getByLabelText('City');
+    const genreInput = screen.getByLabelText('Genre');
+    const authorInput = screen.getByLabelText('Author');
+
+    fireEvent.change(cityInput, { target: { value: 'Seattle' } });
+    fireEvent.change(genreInput, { target: { value: 'Fantasy' } });
+    fireEvent.change(authorInput, { target: { value: 'Tolkien' } });
+
+    // Wait for API call with all filters
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Seattle&genre=Fantasy&author=Tolkien');
+    });
+
+    // Verify URL is updated with all parameters
+    expect(window.location.search).toContain('city=Seattle');
+    expect(window.location.search).toContain('genre=Fantasy');
+    expect(window.location.search).toContain('author=Tolkien');
+  });
+
+  test('initializes filters from URL parameters', async () => {
+    // Mock API response
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalBooks: 0,
+            hasNextPage: false,
+            hasPrevPage: false
+          }
+        }
+      })
+    });
+
+    // Render with URL parameters
+    window.history.pushState({}, '', '/browse?city=Seattle&genre=Fiction&author=Tolkien&page=2');
+    
+    renderWithProviders(<BrowsePage />);
+
+    // Wait for API call with URL parameters
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/books?page=2&limit=20&city=Seattle&genre=Fiction&author=Tolkien');
+    });
+
+    // Check that filter inputs show URL values
+    expect(screen.getByDisplayValue('Seattle')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Fiction')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Tolkien')).toBeInTheDocument();
+  });
+
   test('clears filters when clear button is clicked', async () => {
     // Mock initial API response
     fetch.mockResolvedValueOnce({
@@ -262,9 +363,9 @@ describe('BrowsePage', () => {
     const clearButton = screen.getByText('Clear Filters');
     fireEvent.click(clearButton);
 
-    // Wait for cleared API call
+    // Wait for cleared API call (should be the third call)
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenNthCalledWith(3, '/api/books?page=1&limit=20');
     });
 
     // Check that input is cleared
