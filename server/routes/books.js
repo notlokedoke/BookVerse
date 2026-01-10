@@ -314,7 +314,7 @@ router.get('/', async (req, res) => {
 
     // Add filters if provided
     if (genre) {
-      query.genre = new RegExp(genre, 'i'); // Case-insensitive match
+      query.genre = genre; // Exact genre match
     }
     if (author) {
       query.author = new RegExp(author, 'i'); // Case-insensitive partial match
