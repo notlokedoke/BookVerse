@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './BookCard.css';
 
-const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit }) => {
+const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
   if (!book) {
     return null;
   }
@@ -103,20 +103,35 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit }) =>
         </div>
       )}
 
-      {/* Edit Button for Owner */}
-      {showEditButton && onEdit && (
+      {/* Edit and Delete Buttons for Owner */}
+      {(showEditButton || showDeleteButton) && (onEdit || onDelete) && (
         <div className="book-actions">
-          <button 
-            className="edit-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onEdit(book);
-            }}
-            title="Edit this book"
-          >
-            ✏️ Edit
-          </button>
+          {showEditButton && onEdit && (
+            <button 
+              className="edit-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(book);
+              }}
+              title="Edit this book"
+            >
+              ✏️ Edit
+            </button>
+          )}
+          {showDeleteButton && onDelete && (
+            <button 
+              className="delete-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(book);
+              }}
+              title="Delete this book"
+            >
+              🗑️ Delete
+            </button>
+          )}
         </div>
       )}
     </div>

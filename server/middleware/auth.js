@@ -1,5 +1,6 @@
 const { verifyToken } = require('../utils/jwt');
 const User = require('../models/User');
+const { isTokenBlacklisted } = require('../utils/tokenBlacklist');
 
 /**
  * JWT Authentication Middleware
@@ -27,11 +28,23 @@ const authenticateToken = async (req, res, next) => {
     // Extract token from "Bearer <token>" format
     const token = authHeader.substring(7); // Remove "Bearer " prefix
 
+    // Check if token is blacklisted (logged out)
+    if (isTokenBlacklisted(token)) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Token has been invalidated. Please login again.',
+          code: 'TOKEN_BLACKLISTED'
+        }
+      });
+    }
+
     // Verify token signature and expiration
     const decoded = verifyToken(token);
 
     // Attach decoded user ID to request object
     req.userId = decoded.id;
+    req.token = token; // Store token for potential blacklisting
 
     // Optionally, fetch and attach full user object (excluding password)
     // This can be useful for routes that need user information

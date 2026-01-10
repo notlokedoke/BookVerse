@@ -258,6 +258,7 @@
   border-top: 1px solid #f0f0f0;
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .edit-btn {
@@ -283,6 +284,32 @@
 }
 
 .edit-btn:active {
+  transform: translateY(0);
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.delete-btn:active {
   transform: translateY(0);
 }
 

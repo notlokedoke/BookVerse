@@ -16,13 +16,18 @@ vi.mock('axios');
 
 // Mock BookCard component
 vi.mock('../components/BookCard', () => ({
-  default: ({ book, showEditButton, onEdit }) => (
+  default: ({ book, showEditButton, onEdit, showDeleteButton, onDelete }) => (
     <div data-testid="book-card">
       <h3>{book.title}</h3>
       <p>{book.author}</p>
       {showEditButton && (
         <button onClick={() => onEdit(book)} data-testid="edit-button">
           Edit
+        </button>
+      )}
+      {showDeleteButton && (
+        <button onClick={() => onDelete(book)} data-testid="delete-button">
+          Delete
         </button>
       )}
     </div>
@@ -250,5 +255,141 @@ describe('MyBooksPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Updated Title')).toBeInTheDocument();
     });
+  });
+
+  test('shows delete buttons for user books and opens confirmation dialog', async () => {
+    const mockBooks = [
+      {
+        _id: '1',
+        title: 'Test Book 1',
+        author: 'Author 1',
+        condition: 'Good',
+        genre: 'Fiction'
+      }
+    ];
+
+    useAuth.mockReturnValue({ user: mockUser });
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { books: mockBooks }
+      }
+    });
+
+    renderWithRouter(<MyBooksPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('delete-button')).toBeInTheDocument();
+    });
+
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+
+    // Check that confirmation dialog opens
+    expect(screen.getByText('Delete Book Listing')).toBeInTheDocument();
+    expect(screen.getByText('Are you sure you want to delete this book listing?')).toBeInTheDocument();
+    expect(screen.getByText('"Test Book 1"')).toBeInTheDocument();
+    expect(screen.getByText('Author 1')).toBeInTheDocument();
+  });
+
+  test('deletes book when confirmed in dialog', async () => {
+    const mockBooks = [
+      {
+        _id: '1',
+        title: 'Test Book 1',
+        author: 'Author 1',
+        condition: 'Good',
+        genre: 'Fiction'
+      }
+    ];
+
+    useAuth.mockReturnValue({ user: mockUser });
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { books: mockBooks }
+      }
+    });
+    axios.delete.mockResolvedValue({
+      data: {
+        success: true,
+        message: 'Book listing deleted successfully'
+      }
+    });
+
+    // Mock localStorage
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: vi.fn(() => 'mock-token'),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+      },
+      writable: true,
+    });
+
+    renderWithRouter(<MyBooksPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Book 1')).toBeInTheDocument();
+    });
+
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+
+    // Click confirm delete button
+    fireEvent.click(screen.getByText('Delete Book'));
+
+    // Check that delete API was called
+    await waitFor(() => {
+      expect(axios.delete).toHaveBeenCalledWith('/api/books/1', {
+        headers: {
+          Authorization: 'Bearer mock-token'
+        }
+      });
+    });
+
+    // Check that book was removed from the list
+    await waitFor(() => {
+      expect(screen.queryByText('Test Book 1')).not.toBeInTheDocument();
+    });
+  });
+
+  test('cancels delete when cancel button is clicked', async () => {
+    const mockBooks = [
+      {
+        _id: '1',
+        title: 'Test Book 1',
+        author: 'Author 1',
+        condition: 'Good',
+        genre: 'Fiction'
+      }
+    ];
+
+    useAuth.mockReturnValue({ user: mockUser });
+    axios.get.mockResolvedValue({
+      data: {
+        success: true,
+        data: { books: mockBooks }
+      }
+    });
+
+    renderWithRouter(<MyBooksPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Book 1')).toBeInTheDocument();
+    });
+
+    // Click delete button
+    fireEvent.click(screen.getByTestId('delete-button'));
+
+    // Check that confirmation dialog opens
+    expect(screen.getByText('Delete Book Listing')).toBeInTheDocument();
+
+    // Click cancel button
+    fireEvent.click(screen.getByText('Cancel'));
+
+    // Check that dialog closes and book is still there
+    expect(screen.queryByText('Delete Book Listing')).not.toBeInTheDocument();
+    expect(screen.getByText('Test Book 1')).toBeInTheDocument();
   });
 });

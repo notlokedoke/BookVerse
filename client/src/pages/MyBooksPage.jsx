@@ -13,6 +13,8 @@ const MyBooksPage = () => {
   const [error, setError] = useState(null);
   const [editingBook, setEditingBook] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletingBook, setDeletingBook] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const fetchUserBooks = async () => {
@@ -49,6 +51,59 @@ const MyBooksPage = () => {
   const handleEditBook = (book) => {
     setEditingBook(book);
     setIsEditModalOpen(true);
+  };
+
+  // Handle delete book
+  const handleDeleteBook = (book) => {
+    setDeletingBook(book);
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm delete book
+  const confirmDeleteBook = async () => {
+    if (!deletingBook) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required');
+        return;
+      }
+
+      const response = await axios.delete(
+        `${import.meta.env.VITE_API_URL || ''}/api/books/${deletingBook._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Remove the deleted book from the books list
+        setBooks(prevBooks => 
+          prevBooks.filter(book => book._id !== deletingBook._id)
+        );
+        
+        // Close confirmation dialog
+        setShowDeleteConfirm(false);
+        setDeletingBook(null);
+      } else {
+        setError('Failed to delete book');
+      }
+    } catch (err) {
+      console.error('Error deleting book:', err);
+      setError(
+        err.response?.data?.error?.message || 
+        'An error occurred while deleting the book'
+      );
+    }
+  };
+
+  // Cancel delete book
+  const cancelDeleteBook = () => {
+    setShowDeleteConfirm(false);
+    setDeletingBook(null);
   };
 
   // Handle book updated
@@ -135,6 +190,8 @@ const MyBooksPage = () => {
                 showOwner={false} // Don't show owner info since these are user's own books
                 showEditButton={true} // Show edit button for user's own books
                 onEdit={handleEditBook} // Pass edit handler
+                showDeleteButton={true} // Show delete button for user's own books
+                onDelete={handleDeleteBook} // Pass delete handler
               />
             ))}
           </div>
@@ -159,6 +216,40 @@ const MyBooksPage = () => {
           onClose={handleCloseEditModal}
           onBookUpdated={handleBookUpdated}
         />
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && deletingBook && (
+          <div className="modal-overlay">
+            <div className="delete-confirm-modal">
+              <div className="modal-header">
+                <h3>Delete Book Listing</h3>
+              </div>
+              <div className="modal-body">
+                <p>Are you sure you want to delete this book listing?</p>
+                <div className="book-preview">
+                  <strong>"{deletingBook.title}"</strong> by {deletingBook.author}
+                </div>
+                <p className="warning-text">
+                  This action cannot be undone. The book will be permanently removed from your listings.
+                </p>
+              </div>
+              <div className="modal-actions">
+                <button 
+                  className="cancel-btn"
+                  onClick={cancelDeleteBook}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="confirm-delete-btn"
+                  onClick={confirmDeleteBook}
+                >
+                  Delete Book
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

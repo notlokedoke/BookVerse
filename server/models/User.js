@@ -53,10 +53,19 @@ const userSchema = new mongoose.Schema({
 });
 
 // Create index on email field for efficient queries and uniqueness
-userSchema.index({ email: 1 });
+userSchema.index({ email: 1 }, { unique: true });
 
 // Create index on city field for filtering
 userSchema.index({ city: 1 });
+
+// Create compound index for privacy-aware city searches
+userSchema.index({ city: 1, 'privacySettings.showCity': 1 });
+
+// Create index on averageRating for sorting
+userSchema.index({ averageRating: -1 });
+
+// Create index on createdAt for sorting by registration date
+userSchema.index({ createdAt: -1 });
 
 // Pre-save hook to hash password before saving to database
 userSchema.pre('save', async function(next) {

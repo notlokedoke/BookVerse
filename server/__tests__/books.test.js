@@ -4,6 +4,7 @@ const axios = require('axios');
 const app = require('../server');
 const User = require('../models/User');
 const Book = require('../models/Book');
+const Trade = require('../models/Trade');
 const { generateToken } = require('../utils/jwt');
 
 // Mock axios for ISBN lookup tests
@@ -28,6 +29,7 @@ describe('Books API - Privacy Settings', () => {
     // Clear database
     await User.deleteMany({});
     await Book.deleteMany({});
+    await Trade.deleteMany({});
 
     // Create test users
     publicUser = await User.create({
@@ -73,6 +75,7 @@ describe('Books API - Privacy Settings', () => {
   afterEach(async () => {
     await User.deleteMany({});
     await Book.deleteMany({});
+    await Trade.deleteMany({});
   });
 
   afterAll(async () => {
@@ -635,6 +638,250 @@ describe('Books API - Privacy Settings', () => {
       expect(response.body.data.title).toBe('Privacy Test Update');
       expect(response.body.data.owner.name).toBe('Private User');
       expect(response.body.data.owner.city).toBeUndefined(); // Should be hidden due to privacy settings
+    });
+  });
+
+  describe('DELETE /api/books/:id', () => {
+    test('should delete book listing when user is owner', async () => {
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Book listing deleted successfully');
+
+      // Verify book is actually deleted from database
+      const deletedBook = await Book.findById(publicUserBook._id);
+      expect(deletedBook).toBeNull();
+    });
+
+    test('should prevent deletion when book has active trades (Requirement 5.5)', async () => {
+      // Create another user and book for trade
+      const traderUser = await User.create({
+        name: 'Trader User',
+        email: 'trader@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+
+      const traderBook = await Book.create({
+        owner: traderUser._id,
+        title: 'Trader Book',
+        author: 'Trader Author',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/trader.jpg'
+      });
+
+      // Create an active trade (proposed status)
+      const activeTrade = await Trade.create({
+        proposer: traderUser._id,
+        receiver: publicUser._id,
+        requestedBook: publicUserBook._id,
+        offeredBook: traderBook._id,
+        status: 'proposed'
+      });
+
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(409);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('BOOK_HAS_ACTIVE_TRADES');
+      expect(response.body.error.message).toContain('Cannot delete book listing because it is involved in active trades');
+      expect(response.body.error.details.activeTradeCount).toBe(1);
+      expect(response.body.error.details.tradeIds).toContain(activeTrade._id.toString());
+
+      // Verify book still exists in database
+      const existingBook = await Book.findById(publicUserBook._id);
+      expect(existingBook).not.toBeNull();
+    });
+
+    test('should prevent deletion when book has accepted trades (Requirement 5.5)', async () => {
+      // Create another user and book for trade
+      const traderUser = await User.create({
+        name: 'Trader User',
+        email: 'trader@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+
+      const traderBook = await Book.create({
+        owner: traderUser._id,
+        title: 'Trader Book',
+        author: 'Trader Author',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/trader.jpg'
+      });
+
+      // Create an accepted trade
+      const acceptedTrade = await Trade.create({
+        proposer: traderUser._id,
+        receiver: publicUser._id,
+        requestedBook: publicUserBook._id,
+        offeredBook: traderBook._id,
+        status: 'accepted',
+        respondedAt: new Date()
+      });
+
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(409);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('BOOK_HAS_ACTIVE_TRADES');
+      expect(response.body.error.details.activeTradeCount).toBe(1);
+      expect(response.body.error.details.tradeIds).toContain(acceptedTrade._id.toString());
+
+      // Verify book still exists in database
+      const existingBook = await Book.findById(publicUserBook._id);
+      expect(existingBook).not.toBeNull();
+    });
+
+    test('should allow deletion when book has only completed or declined trades', async () => {
+      // Create another user and book for trade
+      const traderUser = await User.create({
+        name: 'Trader User',
+        email: 'trader@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+
+      const traderBook = await Book.create({
+        owner: traderUser._id,
+        title: 'Trader Book',
+        author: 'Trader Author',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/trader.jpg'
+      });
+
+      // Create completed and declined trades
+      await Trade.create({
+        proposer: traderUser._id,
+        receiver: publicUser._id,
+        requestedBook: publicUserBook._id,
+        offeredBook: traderBook._id,
+        status: 'completed',
+        respondedAt: new Date(),
+        completedAt: new Date()
+      });
+
+      await Trade.create({
+        proposer: publicUser._id,
+        receiver: traderUser._id,
+        requestedBook: traderBook._id,
+        offeredBook: publicUserBook._id,
+        status: 'declined',
+        respondedAt: new Date()
+      });
+
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Book listing deleted successfully');
+
+      // Verify book is actually deleted from database
+      const deletedBook = await Book.findById(publicUserBook._id);
+      expect(deletedBook).toBeNull();
+    });
+
+    test('should prevent deletion when book is offered in active trade', async () => {
+      // Create another user and book for trade
+      const traderUser = await User.create({
+        name: 'Trader User',
+        email: 'trader@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+
+      const traderBook = await Book.create({
+        owner: traderUser._id,
+        title: 'Trader Book',
+        author: 'Trader Author',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'https://example.com/trader.jpg'
+      });
+
+      // Create a trade where publicUserBook is the offered book (not requested)
+      const activeTrade = await Trade.create({
+        proposer: publicUser._id,
+        receiver: traderUser._id,
+        requestedBook: traderBook._id,
+        offeredBook: publicUserBook._id, // This book is being offered
+        status: 'proposed'
+      });
+
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(409);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('BOOK_HAS_ACTIVE_TRADES');
+      expect(response.body.error.details.activeTradeCount).toBe(1);
+      expect(response.body.error.details.tradeIds).toContain(activeTrade._id.toString());
+
+      // Verify book still exists in database
+      const existingBook = await Book.findById(publicUserBook._id);
+      expect(existingBook).not.toBeNull();
+    });
+
+    test('should return 403 when user tries to delete book they do not own', async () => {
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .set('Authorization', `Bearer ${privateUserToken}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('UNAUTHORIZED_DELETE');
+      expect(response.body.error.message).toBe('You can only delete your own book listings');
+
+      // Verify book still exists in database
+      const existingBook = await Book.findById(publicUserBook._id);
+      expect(existingBook).not.toBeNull();
+    });
+
+    test('should return 401 when no authentication token provided', async () => {
+      const response = await request(app)
+        .delete(`/api/books/${publicUserBook._id}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+
+      // Verify book still exists in database
+      const existingBook = await Book.findById(publicUserBook._id);
+      expect(existingBook).not.toBeNull();
+    });
+
+    test('should return 404 when book does not exist', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+
+      const response = await request(app)
+        .delete(`/api/books/${fakeId}`)
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('BOOK_NOT_FOUND');
+    });
+
+    test('should return 400 for invalid book ID format', async () => {
+      const response = await request(app)
+        .delete('/api/books/invalid-id')
+        .set('Authorization', `Bearer ${publicUserToken}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_BOOK_ID');
     });
   });
 });
