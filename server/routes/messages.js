@@ -159,4 +159,74 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   GET /api/messages/trade/:tradeId
+ * @desc    Get all messages for a trade
+ * @access  Private (requires authentication)
+ */
+router.get('/trade/:tradeId', authenticateToken, async (req, res) => {
+  try {
+    const { tradeId } = req.params;
+
+    // Validate trade ID format
+    if (!tradeId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid trade ID format',
+          code: 'INVALID_TRADE_ID'
+        }
+      });
+    }
+
+    // Fetch trade to validate it exists and user is part of it
+    const tradeDoc = await Trade.findById(tradeId);
+
+    if (!tradeDoc) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Trade not found',
+          code: 'TRADE_NOT_FOUND'
+        }
+      });
+    }
+
+    // Validate that authenticated user is part of the trade (proposer or receiver)
+    const isProposer = tradeDoc.proposer.toString() === req.userId;
+    const isReceiver = tradeDoc.receiver.toString() === req.userId;
+
+    if (!isProposer && !isReceiver) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'You are not authorized to view messages for this trade',
+          code: 'NOT_AUTHORIZED'
+        }
+      });
+    }
+
+    // Fetch all messages for the trade
+    const messages = await Message.find({ trade: tradeId })
+      .populate('sender', '-password')
+      .sort({ createdAt: 1 }); // Sort by createdAt ascending (chronological order)
+
+    res.status(200).json({
+      success: true,
+      data: messages
+    });
+
+  } catch (error) {
+    console.error('Get trade messages error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching messages',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

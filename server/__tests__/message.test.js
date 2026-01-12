@@ -610,6 +610,196 @@ describe('Messages API - Send Message', () => {
     });
   });
 
+  describe('GET /api/messages/trade/:tradeId', () => {
+    test('should get all messages for a trade in chronological order', async () => {
+      // Create multiple messages
+      await Message.create({
+        trade: trade._id,
+        sender: user1._id,
+        content: 'First message'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await Message.create({
+        trade: trade._id,
+        sender: user2._id,
+        content: 'Second message'
+      });
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await Message.create({
+        trade: trade._id,
+        sender: user1._id,
+        content: 'Third message'
+      });
+
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(3);
+      expect(response.body.data[0].content).toBe('First message');
+      expect(response.body.data[1].content).toBe('Second message');
+      expect(response.body.data[2].content).toBe('Third message');
+      
+      // Verify chronological order
+      const time1 = new Date(response.body.data[0].createdAt).getTime();
+      const time2 = new Date(response.body.data[1].createdAt).getTime();
+      const time3 = new Date(response.body.data[2].createdAt).getTime();
+      expect(time1).toBeLessThan(time2);
+      expect(time2).toBeLessThan(time3);
+    });
+
+    test('should populate sender information', async () => {
+      await Message.create({
+        trade: trade._id,
+        sender: user1._id,
+        content: 'Test message'
+      });
+
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0].sender).toBeDefined();
+      expect(response.body.data[0].sender._id).toBe(user1._id.toString());
+      expect(response.body.data[0].sender.name).toBe('Test User 1');
+      expect(response.body.data[0].sender.password).toBeUndefined();
+    });
+
+    test('should return empty array when no messages exist', async () => {
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toEqual([]);
+    });
+
+    test('should allow receiver to get messages', async () => {
+      await Message.create({
+        trade: trade._id,
+        sender: user1._id,
+        content: 'Test message'
+      });
+
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(1);
+    });
+
+    test('should fail without authentication', async () => {
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should fail with invalid trade ID format', async () => {
+      const response = await request(app)
+        .get('/api/messages/trade/invalid-id')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+    });
+
+    test('should fail with non-existent trade', async () => {
+      const fakeTradeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .get(`/api/messages/trade/${fakeTradeId.toString()}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('TRADE_NOT_FOUND');
+    });
+
+    test('should fail when user is not part of trade', async () => {
+      const user3 = await User.create({
+        name: 'Test User 3',
+        email: 'testuser3@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+      const user3Token = generateToken(user3._id);
+
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user3Token}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_AUTHORIZED');
+    });
+
+    test('should only return messages for specified trade', async () => {
+      // Create another trade
+      const book3 = await Book.create({
+        owner: user1._id,
+        title: 'Test Book 3',
+        author: 'Author 3',
+        condition: 'New',
+        genre: 'Science',
+        imageUrl: 'http://example.com/image3.jpg'
+      });
+
+      const trade2 = await Trade.create({
+        proposer: user2._id,
+        receiver: user1._id,
+        requestedBook: book3._id,
+        offeredBook: book2._id,
+        status: 'accepted'
+      });
+
+      // Create messages for first trade
+      await Message.create({
+        trade: trade._id,
+        sender: user1._id,
+        content: 'Message for trade 1'
+      });
+
+      await Message.create({
+        trade: trade._id,
+        sender: user2._id,
+        content: 'Another message for trade 1'
+      });
+
+      // Create messages for second trade
+      await Message.create({
+        trade: trade2._id,
+        sender: user2._id,
+        content: 'Message for trade 2'
+      });
+
+      // Get messages for first trade
+      const response = await request(app)
+        .get(`/api/messages/trade/${trade._id.toString()}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data[0].content).toBe('Message for trade 1');
+      expect(response.body.data[1].content).toBe('Another message for trade 1');
+    });
+  });
+
   afterAll(async () => {
     // Clean up
     await Message.deleteMany({});
