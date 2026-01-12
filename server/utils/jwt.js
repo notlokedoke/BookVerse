@@ -31,9 +31,20 @@ const generateToken = (userId) => {
  */
 const verifyToken = (token) => {
   try {
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined in environment variables');
+      throw new Error('Server configuration error');
+    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     return decoded;
   } catch (error) {
+    console.error('JWT verification error:', error.message);
+    if (error.name === 'TokenExpiredError') {
+      throw new Error('Invalid or expired token');
+    }
+    if (error.name === 'JsonWebTokenError') {
+      throw new Error('Invalid or expired token');
+    }
     throw new Error('Invalid or expired token');
   }
 };

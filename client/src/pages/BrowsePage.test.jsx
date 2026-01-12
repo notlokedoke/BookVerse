@@ -55,9 +55,9 @@ describe('BrowsePage', () => {
     renderWithProviders(<BrowsePage />);
 
     // Check if main elements are rendered
-    expect(screen.getByText('Browse Books')).toBeInTheDocument();
-    expect(screen.getByText('Discover books available for trade in your community')).toBeInTheDocument();
-    
+    expect(screen.getByText('Discover Books')).toBeInTheDocument();
+    expect(screen.getByText(/books available for trade/)).toBeInTheDocument();
+
     // Check if filter inputs are present
     expect(screen.getByLabelText('City')).toBeInTheDocument();
     expect(screen.getByLabelText('Genre')).toBeInTheDocument();
@@ -274,7 +274,7 @@ describe('BrowsePage', () => {
 
     // Render with URL parameters
     window.history.pushState({}, '', '/browse?city=Seattle&genre=Fiction&author=Tolkien&page=2');
-    
+
     renderWithProviders(<BrowsePage />);
 
     // Wait for API call with URL parameters
@@ -360,7 +360,7 @@ describe('BrowsePage', () => {
     });
 
     // Clear filters
-    const clearButton = screen.getByText('Clear Filters');
+    const clearButton = screen.getByText('Clear All');
     fireEvent.click(clearButton);
 
     // Wait for cleared API call (should be the third call)

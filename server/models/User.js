@@ -23,13 +23,28 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      // Password is required only if not using Google OAuth
+      return !this.googleId;
+    },
     minlength: [8, 'Password must be at least 8 characters long']
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows multiple null values
   },
   city: {
     type: String,
-    required: [true, 'City is required'],
+    required: function() {
+      // City is not required for Google OAuth users
+      return false;
+    },
     trim: true
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
   },
   privacySettings: {
     showCity: {
@@ -54,6 +69,9 @@ const userSchema = new mongoose.Schema({
 
 // Create index on email field for efficient queries and uniqueness
 userSchema.index({ email: 1 }, { unique: true });
+
+// Create index on googleId for OAuth lookups
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 // Create index on city field for filtering
 userSchema.index({ city: 1 });

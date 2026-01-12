@@ -454,4 +454,65 @@ router.put('/profile', [
   }
 });
 
+/**
+ * @route   GET /api/auth/google
+ * @desc    Initiate Google OAuth flow
+ * @access  Public
+ */
+const passport = require('../config/passport');
+
+router.get('/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false
+  })
+);
+
+/**
+ * @route   GET /api/auth/google/callback
+ * @desc    Google OAuth callback
+ * @access  Public
+ */
+router.get('/google/callback',
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: '/login?error=google_auth_failed'
+  }),
+  async (req, res) => {
+    try {
+      console.log('Google OAuth callback - User:', req.user._id);
+      console.log('User email:', req.user.email);
+      console.log('User has city:', !!req.user.city);
+      
+      // Generate JWT token for the authenticated user
+      const token = generateToken(req.user._id);
+      console.log('Generated token length:', token.length);
+      console.log('Token first 20 chars:', token.substring(0, 20));
+
+      // Check if user needs to complete profile (no city)
+      const needsProfile = !req.user.city || req.user.city.trim() === '';
+      console.log('User needs profile completion:', needsProfile);
+
+      // Redirect to frontend with token
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      
+      if (needsProfile) {
+        // For profile completion, use a simpler redirect with token in URL
+        const redirectUrl = `${frontendUrl}/complete-profile?token=${encodeURIComponent(token)}`;
+        console.log('Redirecting to complete-profile');
+        res.redirect(redirectUrl);
+      } else {
+        // For direct login, redirect to auth callback
+        const redirectUrl = `${frontendUrl}/auth/callback?token=${encodeURIComponent(token)}`;
+        console.log('Redirecting to auth/callback');
+        res.redirect(redirectUrl);
+      }
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/login?error=auth_failed`);
+    }
+  }
+);
+
 module.exports = router;

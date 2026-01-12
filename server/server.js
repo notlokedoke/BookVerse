@@ -91,6 +91,10 @@ app.use(cors({
 // Compression middleware
 app.use(compression());
 
+// Initialize Passport for Google OAuth
+const passport = require('./config/passport');
+app.use(passport.initialize());
+
 // Body parsing middleware with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -131,7 +135,8 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'BookVerse API is running',
-    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    jwtConfigured: !!process.env.JWT_SECRET
   });
 });
 

@@ -930,3 +930,356 @@ describe('Trades API - Accept/Decline Trade', () => {
     });
   });
 });
+
+describe('Trades API - Complete Trade', () => {
+  let user1, user2, user1Token, user2Token;
+  let user1Book, user2Book, acceptedTrade;
+
+  beforeAll(async () => {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
+    }
+  });
+
+  beforeEach(async () => {
+    // Clear database
+    await User.deleteMany({});
+    await Book.deleteMany({});
+    await Trade.deleteMany({});
+    await Notification.deleteMany({});
+
+    // Create test users
+    user1 = await User.create({
+      name: 'User One',
+      email: 'user1@example.com',
+      password: 'password123',
+      city: 'New York'
+    });
+
+    user2 = await User.create({
+      name: 'User Two',
+      email: 'user2@example.com',
+      password: 'password123',
+      city: 'Los Angeles'
+    });
+
+    // Generate tokens
+    user1Token = generateToken(user1._id);
+    user2Token = generateToken(user2._id);
+
+    // Create test books
+    user1Book = await Book.create({
+      owner: user1._id,
+      title: 'User 1 Book',
+      author: 'Author One',
+      genre: 'Fiction',
+      condition: 'Good',
+      imageUrl: 'https://example.com/image1.jpg',
+      isAvailable: true
+    });
+
+    user2Book = await Book.create({
+      owner: user2._id,
+      title: 'User 2 Book',
+      author: 'Author Two',
+      genre: 'Science',
+      condition: 'Like New',
+      imageUrl: 'https://example.com/image2.jpg',
+      isAvailable: true
+    });
+
+    // Create an accepted trade (user1 proposes to user2, user2 accepts)
+    acceptedTrade = await Trade.create({
+      proposer: user1._id,
+      receiver: user2._id,
+      requestedBook: user2Book._id,
+      offeredBook: user1Book._id,
+      status: 'accepted',
+      proposedAt: new Date('2025-01-01'),
+      respondedAt: new Date('2025-01-02')
+    });
+  });
+
+  afterEach(async () => {
+    await User.deleteMany({});
+    await Book.deleteMany({});
+    await Trade.deleteMany({});
+    await Notification.deleteMany({});
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  describe('PUT /api/trades/:id/complete', () => {
+    test('should complete trade by proposer (Req 11.1)', async () => {
+      const beforeTime = new Date();
+
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const afterTime = new Date();
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.status).toBe('completed');
+      expect(response.body.data.completedAt).toBeDefined();
+      expect(response.body.message).toContain('complete');
+      expect(response.body.message).toContain('rate');
+
+      // Verify completedAt timestamp is within expected range
+      const completedAt = new Date(response.body.data.completedAt);
+      expect(completedAt.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
+      expect(completedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+    });
+
+    test('should complete trade by receiver (Req 11.1)', async () => {
+      const beforeTime = new Date();
+
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const afterTime = new Date();
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.status).toBe('completed');
+      expect(response.body.data.completedAt).toBeDefined();
+
+      // Verify completedAt timestamp is within expected range
+      const completedAt = new Date(response.body.data.completedAt);
+      expect(completedAt.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
+      expect(completedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+    });
+
+    test('should update trade status in database', async () => {
+      await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const updatedTrade = await Trade.findById(acceptedTrade._id);
+      expect(updatedTrade.status).toBe('completed');
+      expect(updatedTrade.completedAt).toBeDefined();
+    });
+
+    test('should create notification for other party when trade is completed (Req 11.4)', async () => {
+      // user1 (proposer) completes the trade
+      await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      // Check notification was created for user2 (receiver)
+      const notifications = await Notification.find({ recipient: user2._id });
+      expect(notifications).toHaveLength(1);
+
+      const notification = notifications[0];
+      expect(notification.type).toBe('trade_completed');
+      expect(notification.recipient.toString()).toBe(user2._id.toString());
+      expect(notification.relatedTrade.toString()).toBe(acceptedTrade._id.toString());
+      expect(notification.relatedUser.toString()).toBe(user1._id.toString());
+      expect(notification.message).toContain('User One');
+      expect(notification.message).toContain('complete');
+      expect(notification.message).toContain('rate');
+      expect(notification.isRead).toBe(false);
+    });
+
+    test('should create notification for proposer when receiver completes trade', async () => {
+      // user2 (receiver) completes the trade
+      await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      // Check notification was created for user1 (proposer)
+      const notifications = await Notification.find({ recipient: user1._id });
+      expect(notifications).toHaveLength(1);
+
+      const notification = notifications[0];
+      expect(notification.type).toBe('trade_completed');
+      expect(notification.recipient.toString()).toBe(user1._id.toString());
+      expect(notification.relatedTrade.toString()).toBe(acceptedTrade._id.toString());
+      expect(notification.relatedUser.toString()).toBe(user2._id.toString());
+      expect(notification.message).toContain('User Two');
+      expect(notification.message).toContain('complete');
+    });
+
+    test('should reject complete request from non-participant (Req 11.3)', async () => {
+      // Create a third user who is not part of the trade
+      const user3 = await User.create({
+        name: 'User Three',
+        email: 'user3@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+      const user3Token = generateToken(user3._id);
+
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user3Token}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_AUTHORIZED');
+      expect(response.body.error.message).toContain('proposer or receiver');
+    });
+
+    test('should reject complete request without authentication', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should reject complete request with invalid trade ID format', async () => {
+      const response = await request(app)
+        .put('/api/trades/invalid-id/complete')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+    });
+
+    test('should reject complete request for non-existent trade', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .put(`/api/trades/${fakeId}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('TRADE_NOT_FOUND');
+    });
+
+    test('should reject complete request for proposed trade (Req 11.5)', async () => {
+      // Create a proposed trade
+      const proposedTrade = await Trade.create({
+        proposer: user1._id,
+        receiver: user2._id,
+        requestedBook: user2Book._id,
+        offeredBook: user1Book._id,
+        status: 'proposed',
+        proposedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+      expect(response.body.error.message).toContain('accepted');
+    });
+
+    test('should reject complete request for declined trade (Req 11.5)', async () => {
+      // Update trade to declined status
+      await Trade.findByIdAndUpdate(acceptedTrade._id, { 
+        status: 'declined',
+        respondedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+      expect(response.body.error.message).toContain('accepted');
+    });
+
+    test('should reject complete request for already completed trade', async () => {
+      // First complete the trade
+      await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      // Try to complete again
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+      expect(response.body.error.message).toContain('accepted');
+    });
+
+    test('should allow either party to complete the trade', async () => {
+      // Create two accepted trades
+      const trade1 = await Trade.create({
+        proposer: user1._id,
+        receiver: user2._id,
+        requestedBook: user2Book._id,
+        offeredBook: user1Book._id,
+        status: 'accepted',
+        proposedAt: new Date(),
+        respondedAt: new Date()
+      });
+
+      const user2Book2 = await Book.create({
+        owner: user2._id,
+        title: 'User 2 Book 2',
+        author: 'Author Two',
+        genre: 'Mystery',
+        condition: 'Good',
+        imageUrl: 'https://example.com/image3.jpg',
+        isAvailable: true
+      });
+
+      const trade2 = await Trade.create({
+        proposer: user2._id,
+        receiver: user1._id,
+        requestedBook: user1Book._id,
+        offeredBook: user2Book2._id,
+        status: 'accepted',
+        proposedAt: new Date(),
+        respondedAt: new Date()
+      });
+
+      // Proposer completes trade1
+      const response1 = await request(app)
+        .put(`/api/trades/${trade1._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response1.body.data.status).toBe('completed');
+
+      // Receiver completes trade2
+      const response2 = await request(app)
+        .put(`/api/trades/${trade2._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response2.body.data.status).toBe('completed');
+    });
+
+    test('should populate book and user references in response', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.data.proposer).toBeDefined();
+      expect(response.body.data.proposer.name).toBe('User One');
+      expect(response.body.data.proposer.password).toBeUndefined();
+      expect(response.body.data.receiver).toBeDefined();
+      expect(response.body.data.receiver.name).toBe('User Two');
+      expect(response.body.data.receiver.password).toBeUndefined();
+      expect(response.body.data.requestedBook).toBeDefined();
+      expect(response.body.data.requestedBook.title).toBe('User 2 Book');
+      expect(response.body.data.offeredBook).toBeDefined();
+      expect(response.body.data.offeredBook.title).toBe('User 1 Book');
+    });
+  });
+});

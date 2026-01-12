@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 import TradeCard from '../components/TradeCard';
+import { RefreshCw, Clock, CheckCircle, XCircle, TrendingUp, Search, Calendar, ArrowRight } from 'lucide-react';
 import './TradesPage.css';
 
 const TradesPage = () => {
@@ -9,6 +11,23 @@ const TradesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // all, incoming, outgoing
+
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Get today's date formatted
+  const getFormattedDate = () => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   useEffect(() => {
     fetchTrades();
@@ -66,14 +85,30 @@ const TradesPage = () => {
   const filteredTrades = getFilteredTrades();
   const incomingCount = trades.filter(trade => trade.receiver?._id === user?._id).length;
   const outgoingCount = trades.filter(trade => trade.proposer?._id === user?._id).length;
+  const pendingCount = trades.filter(trade => trade.status === 'proposed').length;
+  const activeCount = trades.filter(trade => trade.status === 'accepted').length;
+  const completedCount = trades.filter(trade => trade.status === 'completed').length;
 
+  // Skeleton loading state
   if (loading) {
     return (
       <div className="trades-page">
-        <div className="container">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading your trades...</p>
+        <div className="trades-container">
+          <div className="trades-skeleton">
+            <div className="skeleton-banner"></div>
+            <div className="skeleton-header"></div>
+            <div className="skeleton-stats">
+              <div className="skeleton-stat-card"></div>
+              <div className="skeleton-stat-card"></div>
+              <div className="skeleton-stat-card"></div>
+              <div className="skeleton-stat-card"></div>
+            </div>
+            <div className="skeleton-tabs"></div>
+            <div className="skeleton-grid">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton-card"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -83,8 +118,9 @@ const TradesPage = () => {
   if (error) {
     return (
       <div className="trades-page">
-        <div className="container">
-          <div className="error-state">
+        <div className="trades-container">
+          <div className="error-state glass-card">
+            <div className="error-icon">⚠️</div>
             <h2>Error Loading Trades</h2>
             <p>{error}</p>
             <button onClick={fetchTrades} className="retry-btn">
@@ -98,35 +134,100 @@ const TradesPage = () => {
 
   return (
     <div className="trades-page">
-      <div className="container">
+      <div className="trades-container">
+        {/* Welcome Banner */}
+        <section className="welcome-banner">
+          <div className="welcome-content">
+            <div className="welcome-avatar">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="welcome-text">
+              <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
+              <p className="welcome-date">
+                <Calendar size={14} />
+                {getFormattedDate()}
+              </p>
+            </div>
+          </div>
+          <div className="welcome-stats">
+            {pendingCount > 0 && (
+              <div className="welcome-stat highlight">
+                <Clock size={20} />
+                <div>
+                  <span className="stat-number">{pendingCount}</span>
+                  <span className="stat-text">Pending Actions</span>
+                </div>
+              </div>
+            )}
+            <div className="welcome-stat">
+              <CheckCircle size={20} />
+              <div>
+                <span className="stat-number">{completedCount}</span>
+                <span className="stat-text">Completed</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Page Header */}
-        <div className="page-header">
-          <div className="header-content">
+        <section className="page-header">
+          <div className="header-icon-container">
+            <RefreshCw size={28} />
+          </div>
+          <div className="header-text">
             <h1>My Trades</h1>
             <p className="header-subtitle">
+              <TrendingUp size={14} />
               Manage your trade proposals and exchanges
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* Trades Summary */}
-        <div className="trades-summary">
-          <div className="summary-card">
-            <div className="summary-number">{trades.length}</div>
-            <div className="summary-label">Total Trades</div>
+        {/* Trades Stats */}
+        <section className="trades-stats">
+          <div className="stat-card gradient-blue">
+            <div className="stat-icon-container">
+              <RefreshCw size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{trades.length}</p>
+              <p className="stat-label">Total Trades</p>
+            </div>
           </div>
-          <div className="summary-card">
-            <div className="summary-number">{incomingCount}</div>
-            <div className="summary-label">Incoming</div>
+          <div className="stat-card gradient-amber">
+            <div className="stat-icon-container">
+              <Clock size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{pendingCount}</p>
+              <p className="stat-label">Pending</p>
+            </div>
+            {pendingCount > 0 && (
+              <span className="stat-badge pulse">!</span>
+            )}
           </div>
-          <div className="summary-card">
-            <div className="summary-number">{outgoingCount}</div>
-            <div className="summary-label">Outgoing</div>
+          <div className="stat-card gradient-purple">
+            <div className="stat-icon-container">
+              <CheckCircle size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{activeCount}</p>
+              <p className="stat-label">Active</p>
+            </div>
           </div>
-        </div>
+          <div className="stat-card gradient-green">
+            <div className="stat-icon-container">
+              <CheckCircle size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{completedCount}</p>
+              <p className="stat-label">Completed</p>
+            </div>
+          </div>
+        </section>
 
         {/* Tabs */}
-        <div className="trades-tabs">
+        <section className="trades-tabs glass-card">
           <button
             className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
@@ -148,35 +249,40 @@ const TradesPage = () => {
             Outgoing
             <span className="tab-count">{outgoingCount}</span>
           </button>
-        </div>
+        </section>
 
         {/* Trades List */}
         {filteredTrades.length > 0 ? (
-          <div className="trades-grid">
-            {filteredTrades.map((trade) => (
-              <TradeCard key={trade._id} trade={trade} />
-            ))}
-          </div>
+          <section className="trades-section">
+            <div className="trades-grid">
+              {filteredTrades.map((trade) => (
+                <TradeCard key={trade._id} trade={trade} />
+              ))}
+            </div>
+          </section>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">🔄</div>
-            <h3>
+          <div className="empty-state glass-card">
+            <div className="empty-illustration">
+              <RefreshCw size={64} />
+            </div>
+            <h2>
               {activeTab === 'incoming' && 'No Incoming Trades'}
               {activeTab === 'outgoing' && 'No Outgoing Trades'}
               {activeTab === 'all' && 'No Trades Yet'}
-            </h3>
+            </h2>
             <p>
-              {activeTab === 'incoming' && 
+              {activeTab === 'incoming' &&
                 'You haven\'t received any trade proposals yet. Keep your books listed and wait for offers!'}
-              {activeTab === 'outgoing' && 
+              {activeTab === 'outgoing' &&
                 'You haven\'t proposed any trades yet. Browse books and start trading!'}
-              {activeTab === 'all' && 
+              {activeTab === 'all' &&
                 'Start trading by browsing available books and proposing exchanges.'}
             </p>
             {activeTab !== 'incoming' && (
-              <a href="/browse" className="browse-books-btn">
+              <Link to="/browse" className="btn-get-started">
+                <Search size={18} />
                 Browse Books
-              </a>
+              </Link>
             )}
           </div>
         )}
