@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Button, Spinner } from './ui';
+import ChatBox from './ChatBox';
 import './TradeDetailView.css';
 
 const TradeDetailView = () => {
@@ -396,7 +397,7 @@ const TradeDetailView = () => {
 
         {/* Status Messages */}
         {trade.status === 'accepted' && (
-          <div className="bg-success-50 border border-success-200 rounded-xl p-6">
+          <div className="bg-success-50 border border-success-200 rounded-xl p-6 mb-6">
             <div className="flex items-start gap-3">
               <div className="text-3xl">✓</div>
               <div>
@@ -457,6 +458,16 @@ const TradeDetailView = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Chat Section - Only show for accepted trades */}
+        {trade.status === 'accepted' && (
+          <div className="mt-6">
+            <ChatBox 
+              tradeId={trade._id} 
+              otherUserName={otherUser?.name} 
+            />
           </div>
         )}
       </div>
