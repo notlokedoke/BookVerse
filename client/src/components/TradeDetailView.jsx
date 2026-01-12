@@ -133,6 +133,44 @@ const TradeDetailView = () => {
     }
   };
 
+  const handleCompleteTrade = async () => {
+    if (!trade || actionLoading) return;
+
+    // Confirm before completing
+    if (!window.confirm('Are you sure you want to mark this trade as complete? This action confirms that the physical book exchange has been completed.')) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`${apiUrl}/api/trades/${trade._id}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(data.message || 'Trade marked as complete!');
+        setTrade(data.data);
+      } else {
+        toast.error(data.error?.message || 'Failed to complete trade');
+      }
+    } catch (err) {
+      console.error('Error completing trade:', err);
+      toast.error('Unable to complete trade. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -410,6 +448,26 @@ const TradeDetailView = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Complete Trade Button - Show for both proposer and receiver on accepted trades */}
+        {trade.status === 'accepted' && (isProposer || isReceiver) && (
+          <div className="bg-white rounded-xl shadow-card p-6 mb-6">
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Complete Trade</h2>
+            <p className="text-neutral-600 mb-6">
+              Once you have successfully exchanged books with {otherUser?.name}, mark this trade as complete.
+              After completion, you'll be able to rate your trading partner.
+            </p>
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleCompleteTrade}
+              disabled={actionLoading}
+              className="w-full sm:w-auto"
+            >
+              {actionLoading ? <Spinner size="sm" /> : '✓ Mark as Complete'}
+            </Button>
           </div>
         )}
 
