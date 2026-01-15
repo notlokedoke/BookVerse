@@ -39,6 +39,10 @@ const tradeSchema = new mongoose.Schema({
   },
   completedAt: {
     type: Date
+  },
+  ratingEnabled: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

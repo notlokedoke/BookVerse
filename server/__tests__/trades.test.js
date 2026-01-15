@@ -1035,6 +1035,26 @@ describe('Trades API - Complete Trade', () => {
       expect(completedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
     });
 
+    test('should enable rating after trade completion (Req 11.2)', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.ratingEnabled).toBe(true);
+    });
+
+    test('should set ratingEnabled flag in database (Req 11.2)', async () => {
+      await request(app)
+        .put(`/api/trades/${acceptedTrade._id}/complete`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const updatedTrade = await Trade.findById(acceptedTrade._id);
+      expect(updatedTrade.ratingEnabled).toBe(true);
+    });
+
     test('should complete trade by receiver (Req 11.1)', async () => {
       const beforeTime = new Date();
 
