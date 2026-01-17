@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import WishlistItem from './WishlistItem';
 import './WishlistSection.css';
 
 const WishlistSection = ({ userId, isOwnProfile }) => {
@@ -7,6 +8,13 @@ const WishlistSection = ({ userId, isOwnProfile }) => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Handle removing an item from the wishlist
+  const handleRemoveItem = (removedItemId) => {
+    setWishlistItems(prevItems => 
+      prevItems.filter(item => item._id !== removedItemId)
+    );
+  };
 
   useEffect(() => {
     const fetchWishlist = async () => {
@@ -103,23 +111,12 @@ const WishlistSection = ({ userId, isOwnProfile }) => {
       ) : (
         <div className="wishlist-items">
           {wishlistItems.map((item) => (
-            <div key={item._id} className="wishlist-item">
-              <div className="wishlist-item-content">
-                <h3 className="wishlist-item-title">{item.title}</h3>
-                {item.author && (
-                  <p className="wishlist-item-author">by {item.author}</p>
-                )}
-                {item.isbn && (
-                  <p className="wishlist-item-isbn">ISBN: {item.isbn}</p>
-                )}
-                {item.notes && (
-                  <p className="wishlist-item-notes">{item.notes}</p>
-                )}
-                <p className="wishlist-item-date">
-                  Added {new Date(item.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
+            <WishlistItem
+              key={item._id}
+              item={item}
+              onRemove={handleRemoveItem}
+              isOwnProfile={isOwnProfile}
+            />
           ))}
         </div>
       )}
