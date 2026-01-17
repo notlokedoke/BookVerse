@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import BookGrid from '../components/BookGrid';
 import SearchFilters from '../components/SearchFilters';
 import './BrowsePage.css';
 
 const BrowsePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -170,6 +172,24 @@ const BrowsePage = () => {
   return (
     <div className="browse-page">
       <div className="container">
+        {/* Authentication Banner for Guests */}
+        {!isAuthenticated && (
+          <div className="guest-banner">
+            <div className="banner-content">
+              <h3>👋 Welcome to BookVerse!</h3>
+              <p>You're browsing as a guest. Sign up to propose trades and connect with book owners.</p>
+              <div className="banner-actions">
+                <Link to="/register" className="banner-btn primary">
+                  Sign Up Free
+                </Link>
+                <Link to="/login" className="banner-btn secondary">
+                  Log In
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="browse-header">
           <h1 className="browse-title">Browse Books</h1>

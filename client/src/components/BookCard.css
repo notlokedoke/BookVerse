@@ -327,3 +327,37 @@
     gap: 12px;
   }
 }
+/* Guest owner info styles */
+.owner-info-guest {
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.owner-info-guest .owner-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.owner-info-guest .owner-name {
+  font-weight: 500;
+  color: #374151;
+}
+
+.owner-info-guest .owner-location {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.owner-info-guest .owner-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}

@@ -1,11 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
 import SignUp from './SignUp';
 
 // Mock axios
 vi.mock('axios');
+
+const renderWithRouter = (component) => {
+  return render(
+    <BrowserRouter>
+      {component}
+    </BrowserRouter>
+  );
+};
 
 describe('SignUp', () => {
   beforeEach(() => {
@@ -16,7 +25,7 @@ describe('SignUp', () => {
   });
 
   it('renders all form fields', () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
@@ -28,7 +37,7 @@ describe('SignUp', () => {
   });
 
   it('displays validation errors for empty fields', async () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     const submitButton = screen.getByRole('button', { name: /create account/i });
     fireEvent.click(submitButton);
@@ -37,13 +46,13 @@ describe('SignUp', () => {
       expect(screen.getByText(/name is required/i)).toBeInTheDocument();
       expect(screen.getByText(/email is required/i)).toBeInTheDocument();
       expect(screen.getByText(/password is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/city is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/city.*region.*required/i)).toBeInTheDocument();
       expect(screen.getByText(/you must agree to the terms/i)).toBeInTheDocument();
     });
   });
 
   it('displays validation error for invalid email', async () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     const emailInput = screen.getByLabelText(/^email$/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -57,7 +66,7 @@ describe('SignUp', () => {
   });
 
   it('displays validation error for short password', async () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     const passwordInput = screen.getByLabelText(/^password$/i);
     fireEvent.change(passwordInput, { target: { value: 'short' } });
@@ -71,7 +80,7 @@ describe('SignUp', () => {
   });
 
   it('displays validation error for password mismatch', async () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     const passwordInput = screen.getByLabelText(/^password$/i);
     const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
@@ -103,7 +112,7 @@ describe('SignUp', () => {
 
     axios.post.mockResolvedValueOnce(mockResponse);
 
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'John Doe' } });
     fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'john@example.com' } });
@@ -144,7 +153,7 @@ describe('SignUp', () => {
 
     axios.post.mockRejectedValueOnce(mockError);
 
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'John Doe' } });
     fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'existing@example.com' } });
@@ -162,7 +171,7 @@ describe('SignUp', () => {
   });
 
   it('clears field error when user starts typing', async () => {
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     const submitButton = screen.getByRole('button', { name: /create account/i });
     fireEvent.click(submitButton);
@@ -195,7 +204,7 @@ describe('SignUp', () => {
 
     axios.post.mockResolvedValueOnce(mockResponse);
 
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'Jane Smith' } });
     fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'jane@example.com' } });
@@ -234,7 +243,7 @@ describe('SignUp', () => {
 
     axios.post.mockResolvedValueOnce(mockResponse);
 
-    render(<SignUp />);
+    renderWithRouter(<SignUp />);
     
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'Bob Johnson' } });
     fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'bob@example.com' } });

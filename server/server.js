@@ -122,6 +122,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const bookRoutes = require('./routes/books');
 const citiesRoutes = require('./routes/cities');
+const wishlistRoutes = require('./routes/wishlist');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -146,6 +147,7 @@ app.use('/api/auth', authLimiter, authRoutes); // Apply auth rate limiter to aut
 app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/cities', citiesRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 // Multer error handling middleware (after routes)
 app.use((error, req, res, next) => {

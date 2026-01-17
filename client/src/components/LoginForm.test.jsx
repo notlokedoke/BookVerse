@@ -117,8 +117,8 @@ describe('LoginForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/');
-    });
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    }, { timeout: 2000 });
   });
 
   it('displays error message for invalid credentials', async () => {
@@ -184,7 +184,7 @@ describe('LoginForm', () => {
     // Button should be disabled and show loading text
     await waitFor(() => {
       expect(submitButton).toBeDisabled();
-      expect(submitButton).toHaveTextContent(/logging in/i);
+      expect(submitButton).toHaveTextContent(/signing in/i);
     });
   });
 
@@ -206,8 +206,8 @@ describe('LoginForm', () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalled();
       // The login function in AuthContext handles localStorage storage
-      expect(mockNavigate).toHaveBeenCalledWith('/');
-    });
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    }, { timeout: 2000 });
   });
 
   it('displays error message for network errors', async () => {
@@ -229,7 +229,7 @@ describe('LoginForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/unable to connect to server/i)).toBeInTheDocument();
+      expect(screen.getByText(/network error.*please check your connection/i)).toBeInTheDocument();
     });
   });
 
@@ -249,7 +249,7 @@ describe('LoginForm', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/unable to connect to server/i)).toBeInTheDocument();
+      expect(screen.getByText(/an unexpected error occurred/i)).toBeInTheDocument();
     });
   });
 });

@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './BookCard.css';
 
 const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
+  const { isAuthenticated } = useAuth();
+  
   if (!book) {
     return null;
   }
@@ -84,22 +87,41 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
       {/* Owner Information */}
       {showOwner && owner && (
         <div className="book-owner">
-          <Link to={`/profile/${owner._id}`} className="owner-link">
-            <div className="owner-info">
-              <span className="owner-name">{owner.name}</span>
-              {owner.city && owner.privacySettings?.showCity !== false && (
-                <span className="owner-location">📍 {owner.city}</span>
+          {isAuthenticated ? (
+            <Link to={`/profile/${owner._id}`} className="owner-link">
+              <div className="owner-info">
+                <span className="owner-name">{owner.name}</span>
+                {owner.city && owner.privacySettings?.showCity !== false && (
+                  <span className="owner-location">📍 {owner.city}</span>
+                )}
+              </div>
+              {owner.averageRating > 0 && (
+                <div className="owner-rating">
+                  <span className="rating-stars">⭐</span>
+                  <span className="rating-value">
+                    {owner.averageRating.toFixed(1)}
+                  </span>
+                </div>
+              )}
+            </Link>
+          ) : (
+            <div className="owner-info-guest">
+              <div className="owner-info">
+                <span className="owner-name">{owner.name}</span>
+                {owner.city && owner.privacySettings?.showCity !== false && (
+                  <span className="owner-location">📍 {owner.city}</span>
+                )}
+              </div>
+              {owner.averageRating > 0 && (
+                <div className="owner-rating">
+                  <span className="rating-stars">⭐</span>
+                  <span className="rating-value">
+                    {owner.averageRating.toFixed(1)}
+                  </span>
+                </div>
               )}
             </div>
-            {owner.averageRating > 0 && (
-              <div className="owner-rating">
-                <span className="rating-stars">⭐</span>
-                <span className="rating-value">
-                  {owner.averageRating.toFixed(1)}
-                </span>
-              </div>
-            )}
-          </Link>
+          )}
         </div>
       )}
 
