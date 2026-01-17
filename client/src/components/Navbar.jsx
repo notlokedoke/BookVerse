@@ -27,6 +27,7 @@ const Navbar = () => {
               <Link to="/dashboard" className="navbar-link">Dashboard</Link>
               <Link to="/browse" className="navbar-link">Browse</Link>
               <Link to="/my-books" className="navbar-link">My Books</Link>
+              <Link to="/wishlist/create" className="navbar-link">Add to Wishlist</Link>
               <Link to="/profile" className="navbar-link">Profile</Link>
               <button 
                 onClick={handleLogout}

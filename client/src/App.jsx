@@ -12,6 +12,7 @@ import RegisterPage from './pages/RegisterPage'
 import UserProfilePage from './pages/UserProfilePage'
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import CreateBookPage from './pages/CreateBookPage'
+import CreateWishlistPage from './pages/CreateWishlistPage'
 import MyBooksPage from './pages/MyBooksPage'
 import './App.css'
 
@@ -70,6 +71,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <CreateBookPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/wishlist/create" 
+              element={
+                <ProtectedRoute>
+                  <CreateWishlistPage />
                 </ProtectedRoute>
               } 
             />
