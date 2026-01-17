@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import WishlistSection from '../components/WishlistSection'
 import './UserProfilePage.css'
 
 const UserProfilePage = () => {
@@ -143,12 +144,7 @@ const UserProfilePage = () => {
 
             {/* Wishlist */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                {isOwnProfile ? 'My Wishlist' : 'Wishlist'}
-              </h2>
-              <div className="text-gray-600">
-                <p>Wishlist items will be displayed here once the wishlist system is implemented.</p>
-              </div>
+              <WishlistSection userId={userId} isOwnProfile={isOwnProfile} />
             </div>
           </div>
 
