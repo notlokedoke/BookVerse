@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Button, Spinner } from './ui';
 import ChatBox from './ChatBox';
+import RatingForm from './RatingForm';
 import './TradeDetailView.css';
 
 const TradeDetailView = () => {
@@ -16,10 +17,20 @@ const TradeDetailView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [userRating, setUserRating] = useState(null);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [showRatingForm, setShowRatingForm] = useState(false);
 
   useEffect(() => {
     fetchTradeDetails();
   }, [id]);
+
+  useEffect(() => {
+    // Fetch user's rating when trade is completed
+    if (trade && trade.status === 'completed') {
+      fetchUserRating();
+    }
+  }, [trade]);
 
   const fetchTradeDetails = async () => {
     try {
@@ -60,6 +71,45 @@ const TradeDetailView = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchUserRating = async () => {
+    try {
+      setRatingLoading(true);
+
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/api/ratings/trade/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setUserRating(data.data);
+      } else if (response.status === 404) {
+        // User hasn't rated yet - this is expected
+        setUserRating(null);
+      }
+    } catch (err) {
+      console.error('Error fetching user rating:', err);
+      // Don't show error to user - just means they haven't rated yet
+    } finally {
+      setRatingLoading(false);
+    }
+  };
+
+  const handleRatingSuccess = (rating) => {
+    setUserRating(rating);
+    setShowRatingForm(false);
+    toast.success('Rating submitted successfully!');
   };
 
   const handleAcceptTrade = async () => {
@@ -488,7 +538,7 @@ const TradeDetailView = () => {
         )}
 
         {trade.status === 'completed' && (
-          <div className="bg-primary-50 border border-primary-200 rounded-xl p-6">
+          <div className="bg-primary-50 border border-primary-200 rounded-xl p-6 mb-6">
             <div className="flex items-start gap-3">
               <div className="text-3xl">🎉</div>
               <div>
@@ -500,6 +550,96 @@ const TradeDetailView = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Rating Section - Show for completed trades */}
+        {trade.status === 'completed' && (isProposer || isReceiver) && (
+          <div className="bg-white rounded-xl shadow-card p-6 mb-6">
+            <h2 className="text-xl font-bold text-neutral-900 mb-4">Rate Your Trading Partner</h2>
+            
+            {ratingLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="md" />
+              </div>
+            ) : userRating ? (
+              // Show submitted rating
+              <div className="bg-success-50 border border-success-200 rounded-lg p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="text-2xl">✓</div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-success-800 mb-1">
+                      You've rated this trade
+                    </h3>
+                    <p className="text-success-700 text-sm">
+                      Thank you for providing feedback!
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-success-200 pt-4 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-neutral-700 font-medium">Your Rating:</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className={`w-5 h-5 ${star <= userRating.stars ? 'text-warning-500' : 'text-neutral-300'}`}
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                      ))}
+                      <span className="ml-2 text-neutral-600">
+                        ({userRating.stars} {userRating.stars === 1 ? 'star' : 'stars'})
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {userRating.comment && (
+                    <div className="mt-3">
+                      <span className="text-neutral-700 font-medium">Your Comment:</span>
+                      <p className="text-neutral-600 mt-1 italic">"{userRating.comment}"</p>
+                    </div>
+                  )}
+                  
+                  <p className="text-neutral-500 text-sm mt-3">
+                    Submitted on {new Date(userRating.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+            ) : showRatingForm ? (
+              // Show rating form
+              <div>
+                <p className="text-neutral-600 mb-6">
+                  How was your experience trading with {otherUser?.name}? Your feedback helps build trust in the community.
+                </p>
+                <RatingForm
+                  tradeId={trade._id}
+                  onSuccess={handleRatingSuccess}
+                  onCancel={() => setShowRatingForm(false)}
+                />
+              </div>
+            ) : (
+              // Show prompt to rate
+              <div>
+                <p className="text-neutral-600 mb-6">
+                  You haven't rated {otherUser?.name} yet. Share your experience to help build trust in the community.
+                </p>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => setShowRatingForm(true)}
+                >
+                  ⭐ Rate {otherUser?.name}
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

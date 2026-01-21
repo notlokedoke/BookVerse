@@ -5,6 +5,62 @@ const Trade = require('../models/Trade');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
+ * @route   GET /api/ratings/trade/:tradeId
+ * @desc    Get rating for a specific trade by the authenticated user
+ * @access  Private (requires authentication)
+ */
+router.get('/trade/:tradeId', authenticateToken, async (req, res) => {
+  try {
+    const { tradeId } = req.params;
+
+    // Validate trade ID format
+    if (!tradeId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid trade ID format',
+          code: 'INVALID_TRADE_ID'
+        }
+      });
+    }
+
+    // Find rating by trade and authenticated user
+    const rating = await Rating.findOne({
+      trade: tradeId,
+      rater: req.userId
+    })
+      .populate('rater', '-password')
+      .populate('ratedUser', '-password')
+      .populate('trade');
+
+    if (!rating) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Rating not found',
+          code: 'RATING_NOT_FOUND'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: rating
+    });
+
+  } catch (error) {
+    console.error('Get rating error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching the rating',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   POST /api/ratings
  * @desc    Submit a rating for a completed trade
  * @access  Private (requires authentication)
