@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Rating = require('../models/Rating');
 const Trade = require('../models/Trade');
+const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
@@ -205,6 +206,25 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     await rating.save();
+
+    // Calculate and update the rated user's average rating
+    // Fetch all ratings for the rated user
+    const allRatings = await Rating.find({ ratedUser: ratedUserId });
+    
+    // Calculate the new average rating
+    const totalStars = allRatings.reduce((sum, r) => sum + r.stars, 0);
+    const ratingCount = allRatings.length;
+    const averageRating = ratingCount > 0 ? totalStars / ratingCount : 0;
+    
+    // Update the rated user's averageRating and ratingCount fields
+    await User.findByIdAndUpdate(
+      ratedUserId,
+      {
+        averageRating: averageRating,
+        ratingCount: ratingCount
+      },
+      { new: true }
+    );
 
     // Populate the rating for response
     await rating.populate([

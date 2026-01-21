@@ -665,4 +665,277 @@ describe('Rating API Endpoints', () => {
       });
     });
   });
+
+  describe('Average Rating Calculation', () => {
+    test('should update rated user average rating after first rating', async () => {
+      // Submit first rating
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 5
+        });
+
+      // Fetch updated user
+      const updatedUser = await User.findById(testUser2._id);
+
+      expect(updatedUser.averageRating).toBe(5);
+      expect(updatedUser.ratingCount).toBe(1);
+    });
+
+    test('should calculate average rating correctly with multiple ratings', async () => {
+      // Create additional trades for multiple ratings
+      const testBook3 = new Book({
+        owner: testUser1._id,
+        title: 'Test Book 3',
+        author: 'Author 3',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'http://example.com/image3.jpg'
+      });
+      await testBook3.save();
+
+      const testBook4 = new Book({
+        owner: testUser2._id,
+        title: 'Test Book 4',
+        author: 'Author 4',
+        genre: 'Non-Fiction',
+        condition: 'Like New',
+        imageUrl: 'http://example.com/image4.jpg'
+      });
+      await testBook4.save();
+
+      const testTrade2 = new Trade({
+        proposer: testUser1._id,
+        receiver: testUser2._id,
+        requestedBook: testBook4._id,
+        offeredBook: testBook3._id,
+        status: 'completed',
+        completedAt: new Date()
+      });
+      await testTrade2.save();
+
+      // Submit first rating (5 stars)
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 5
+        });
+
+      // Submit second rating (3 stars)
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade2._id.toString(),
+          stars: 3,
+          comment: 'Trade was okay'
+        });
+
+      // Fetch updated user
+      const updatedUser = await User.findById(testUser2._id);
+
+      // Average should be (5 + 3) / 2 = 4
+      expect(updatedUser.averageRating).toBe(4);
+      expect(updatedUser.ratingCount).toBe(2);
+    });
+
+    test('should calculate average rating with three ratings', async () => {
+      // Create additional trades
+      const testBook3 = new Book({
+        owner: testUser1._id,
+        title: 'Test Book 3',
+        author: 'Author 3',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'http://example.com/image3.jpg'
+      });
+      await testBook3.save();
+
+      const testBook4 = new Book({
+        owner: testUser2._id,
+        title: 'Test Book 4',
+        author: 'Author 4',
+        genre: 'Non-Fiction',
+        condition: 'Like New',
+        imageUrl: 'http://example.com/image4.jpg'
+      });
+      await testBook4.save();
+
+      const testBook5 = new Book({
+        owner: testUser1._id,
+        title: 'Test Book 5',
+        author: 'Author 5',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'http://example.com/image5.jpg'
+      });
+      await testBook5.save();
+
+      const testBook6 = new Book({
+        owner: testUser2._id,
+        title: 'Test Book 6',
+        author: 'Author 6',
+        genre: 'Non-Fiction',
+        condition: 'Like New',
+        imageUrl: 'http://example.com/image6.jpg'
+      });
+      await testBook6.save();
+
+      const testTrade2 = new Trade({
+        proposer: testUser1._id,
+        receiver: testUser2._id,
+        requestedBook: testBook4._id,
+        offeredBook: testBook3._id,
+        status: 'completed',
+        completedAt: new Date()
+      });
+      await testTrade2.save();
+
+      const testTrade3 = new Trade({
+        proposer: testUser1._id,
+        receiver: testUser2._id,
+        requestedBook: testBook6._id,
+        offeredBook: testBook5._id,
+        status: 'completed',
+        completedAt: new Date()
+      });
+      await testTrade3.save();
+
+      // Submit three ratings: 5, 4, 3
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 5
+        });
+
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade2._id.toString(),
+          stars: 4
+        });
+
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade3._id.toString(),
+          stars: 3,
+          comment: 'Trade was okay'
+        });
+
+      // Fetch updated user
+      const updatedUser = await User.findById(testUser2._id);
+
+      // Average should be (5 + 4 + 3) / 3 = 4
+      expect(updatedUser.averageRating).toBe(4);
+      expect(updatedUser.ratingCount).toBe(3);
+    });
+
+    test('should handle low ratings correctly in average calculation', async () => {
+      // Create additional trade
+      const testBook3 = new Book({
+        owner: testUser1._id,
+        title: 'Test Book 3',
+        author: 'Author 3',
+        genre: 'Fiction',
+        condition: 'Good',
+        imageUrl: 'http://example.com/image3.jpg'
+      });
+      await testBook3.save();
+
+      const testBook4 = new Book({
+        owner: testUser2._id,
+        title: 'Test Book 4',
+        author: 'Author 4',
+        genre: 'Non-Fiction',
+        condition: 'Like New',
+        imageUrl: 'http://example.com/image4.jpg'
+      });
+      await testBook4.save();
+
+      const testTrade2 = new Trade({
+        proposer: testUser1._id,
+        receiver: testUser2._id,
+        requestedBook: testBook4._id,
+        offeredBook: testBook3._id,
+        status: 'completed',
+        completedAt: new Date()
+      });
+      await testTrade2.save();
+
+      // Submit ratings: 1 and 2
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 1,
+          comment: 'Very bad experience'
+        });
+
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade2._id.toString(),
+          stars: 2,
+          comment: 'Poor communication'
+        });
+
+      // Fetch updated user
+      const updatedUser = await User.findById(testUser2._id);
+
+      // Average should be (1 + 2) / 2 = 1.5
+      expect(updatedUser.averageRating).toBe(1.5);
+      expect(updatedUser.ratingCount).toBe(2);
+    });
+
+    test('should update different users independently', async () => {
+      // User 1 rates User 2
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token1}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 5
+        });
+
+      // User 2 rates User 1
+      await request(app)
+        .post('/api/ratings')
+        .set('Authorization', `Bearer ${token2}`)
+        .send({
+          trade: testTrade._id.toString(),
+          stars: 3,
+          comment: 'Trade was okay'
+        });
+
+      // Fetch both users
+      const updatedUser1 = await User.findById(testUser1._id);
+      const updatedUser2 = await User.findById(testUser2._id);
+
+      // User 1 should have average of 3 (rated by User 2)
+      expect(updatedUser1.averageRating).toBe(3);
+      expect(updatedUser1.ratingCount).toBe(1);
+
+      // User 2 should have average of 5 (rated by User 1)
+      expect(updatedUser2.averageRating).toBe(5);
+      expect(updatedUser2.ratingCount).toBe(1);
+    });
+
+    test('should start with zero rating for new users', async () => {
+      // Check initial state
+      const initialUser = await User.findById(testUser2._id);
+      expect(initialUser.averageRating).toBe(0);
+      expect(initialUser.ratingCount).toBe(0);
+    });
+  });
 });
