@@ -291,4 +291,119 @@ describe('RatingForm', () => {
       );
     });
   });
+
+  it('displays error when trade is not completed', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        error: {
+          message: 'Cannot rate trade with status "accepted". Only completed trades can be rated.',
+          code: 'TRADE_NOT_COMPLETED'
+        }
+      })
+    });
+
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    fireEvent.click(screen.getByLabelText('Rate 5 stars'));
+    fireEvent.click(screen.getByText('Submit Rating'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cannot rate trade with status "accepted". Only completed trades can be rated.')).toBeInTheDocument();
+    });
+  });
+
+  it('displays error when user is not authorized to rate', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        error: {
+          message: 'You can only rate trades you are part of',
+          code: 'NOT_AUTHORIZED'
+        }
+      })
+    });
+
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    fireEvent.click(screen.getByLabelText('Rate 4 stars'));
+    fireEvent.click(screen.getByText('Submit Rating'));
+
+    await waitFor(() => {
+      expect(screen.getByText('You can only rate trades you are part of')).toBeInTheDocument();
+    });
+  });
+
+  it('displays error when trade is not found', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        error: {
+          message: 'Trade not found',
+          code: 'TRADE_NOT_FOUND'
+        }
+      })
+    });
+
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    fireEvent.click(screen.getByLabelText('Rate 5 stars'));
+    fireEvent.click(screen.getByText('Submit Rating'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Trade not found')).toBeInTheDocument();
+    });
+  });
+
+  it('displays generic error message on network failure', async () => {
+    fetch.mockRejectedValueOnce(new Error('Network error'));
+
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    fireEvent.click(screen.getByLabelText('Rate 5 stars'));
+    fireEvent.click(screen.getByText('Submit Rating'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Unable to submit rating. Please try again.')).toBeInTheDocument();
+    });
+  });
+
+  it('clears error message when user changes rating', async () => {
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    // Trigger validation error
+    fireEvent.click(screen.getByLabelText('Rate 3 stars'));
+    const form = screen.getByText('Submit Rating').closest('form');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByText('Comment is required for ratings of 3 stars or lower')).toBeInTheDocument();
+    });
+
+    // Change rating - error should clear
+    fireEvent.click(screen.getByLabelText('Rate 5 stars'));
+    expect(screen.queryByText('Comment is required for ratings of 3 stars or lower')).not.toBeInTheDocument();
+  });
+
+  it('clears error message when user types in comment field', async () => {
+    render(<RatingForm tradeId={mockTradeId} />);
+
+    // Trigger validation error
+    fireEvent.click(screen.getByLabelText('Rate 2 stars'));
+    const form = screen.getByText('Submit Rating').closest('form');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByText('Comment is required for ratings of 3 stars or lower')).toBeInTheDocument();
+    });
+
+    // Type in comment - error should clear
+    const commentTextarea = screen.getByPlaceholderText('Share your experience with this trade...');
+    fireEvent.change(commentTextarea, { target: { value: 'Adding comment' } });
+    
+    expect(screen.queryByText('Comment is required for ratings of 3 stars or lower')).not.toBeInTheDocument();
+  });
 });
