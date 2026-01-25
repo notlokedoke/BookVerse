@@ -39,14 +39,16 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
           const availableBooks = data.data.filter(book => book.isAvailable);
           setUserBooks(availableBooks);
         } else {
-          setError('Failed to load your books');
+          setError('Failed to load your books. Please try again.');
         }
+      } else if (response.status === 401) {
+        setError('Your session has expired. Please log in again.');
       } else {
-        setError('Failed to load your books');
+        setError('Failed to load your books. Please try again.');
       }
     } catch (err) {
       console.error('Error fetching user books:', err);
-      setError('Unable to connect to server. Please try again.');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -87,13 +89,67 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
           handleClose();
         }, 2000);
       } else {
-        setError(data.error?.message || 'Failed to propose trade');
+        // Handle all validation error cases
+        const errorMessage = getErrorMessage(data.error, response.status);
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Error proposing trade:', err);
       setError('Unable to connect to server. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Helper function to provide user-friendly error messages for all validation cases
+  const getErrorMessage = (error, statusCode) => {
+    if (!error) {
+      return 'Failed to propose trade. Please try again.';
+    }
+
+    // Handle specific error codes with user-friendly messages
+    switch (error.code) {
+      case 'MISSING_REQUIRED_FIELDS':
+        return 'Please select a book to offer for this trade.';
+      
+      case 'INVALID_BOOK_ID':
+        return 'Invalid book selection. Please try again.';
+      
+      case 'REQUESTED_BOOK_NOT_FOUND':
+        return 'The requested book is no longer available.';
+      
+      case 'OFFERED_BOOK_NOT_FOUND':
+        return 'The book you selected is no longer available. Please refresh and try again.';
+      
+      case 'NOT_BOOK_OWNER':
+        return 'You can only offer books that you own.';
+      
+      case 'CANNOT_REQUEST_OWN_BOOK':
+        return 'You cannot propose a trade for your own book.';
+      
+      case 'REQUESTED_BOOK_UNAVAILABLE':
+        return 'This book is no longer available for trade.';
+      
+      case 'OFFERED_BOOK_UNAVAILABLE':
+        return 'The book you selected is no longer available. Please select another book.';
+      
+      case 'VALIDATION_ERROR':
+        // Handle validation errors with details if available
+        if (error.details && Array.isArray(error.details)) {
+          return error.details.join('. ');
+        }
+        return error.message || 'Validation failed. Please check your input.';
+      
+      case 'NO_TOKEN':
+      case 'INVALID_TOKEN':
+        return 'Your session has expired. Please log in again.';
+      
+      case 'INTERNAL_ERROR':
+        return 'A server error occurred. Please try again later.';
+      
+      default:
+        // Use the error message from the server if available
+        return error.message || 'Failed to propose trade. Please try again.';
     }
   };
 

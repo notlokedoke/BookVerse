@@ -353,6 +353,468 @@ describe('TradeProposalModal', () => {
     });
   });
 
+  test('displays user-friendly error for CANNOT_REQUEST_OWN_BOOK error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'You cannot request your own book',
+            code: 'CANNOT_REQUEST_OWN_BOOK'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('You cannot propose a trade for your own book.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for NOT_BOOK_OWNER error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'You can only offer books that you own',
+            code: 'NOT_BOOK_OWNER'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('You can only offer books that you own.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for REQUESTED_BOOK_NOT_FOUND error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Requested book not found',
+            code: 'REQUESTED_BOOK_NOT_FOUND'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('The requested book is no longer available.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for OFFERED_BOOK_NOT_FOUND error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Offered book not found',
+            code: 'OFFERED_BOOK_NOT_FOUND'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('The book you selected is no longer available. Please refresh and try again.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for REQUESTED_BOOK_UNAVAILABLE error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Requested book is not available for trade',
+            code: 'REQUESTED_BOOK_UNAVAILABLE'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('This book is no longer available for trade.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for OFFERED_BOOK_UNAVAILABLE error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Offered book is not available for trade',
+            code: 'OFFERED_BOOK_UNAVAILABLE'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('The book you selected is no longer available. Please select another book.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for INVALID_BOOK_ID error code', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Invalid book ID format',
+            code: 'INVALID_BOOK_ID'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid book selection. Please try again.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for authentication errors', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'No token provided',
+            code: 'NO_TOKEN'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Your session has expired. Please log in again.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays user-friendly error for validation errors with details', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Validation failed',
+            code: 'VALIDATION_ERROR',
+            details: ['Book title is required', 'Book author is required']
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Book title is required. Book author is required')).toBeInTheDocument();
+    });
+  });
+
+  test('displays generic error message when error code is unknown', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({
+          success: false,
+          error: { 
+            message: 'Something went wrong',
+            code: 'UNKNOWN_ERROR'
+          }
+        })
+      });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    });
+  });
+
+  test('displays error when fetching user books fails with 401', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ success: false, error: { code: 'NO_TOKEN' } })
+    });
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Your session has expired. Please log in again.')).toBeInTheDocument();
+    });
+  });
+
+  test('displays network error when fetch throws exception', async () => {
+    fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: mockUserBooks })
+      })
+      .mockRejectedValueOnce(new Error('Network error'));
+
+    render(
+      <TradeProposalModal
+        isOpen={true}
+        onClose={mockOnClose}
+        requestedBook={mockRequestedBook}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
+    });
+
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    fireEvent.click(bookOption);
+
+    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Unable to connect to server. Please try again.')).toBeInTheDocument();
+    });
+  });
+
   test('closes modal when close button is clicked', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
