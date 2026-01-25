@@ -14,6 +14,7 @@ import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import CreateBookPage from './pages/CreateBookPage'
 import CreateWishlistPage from './pages/CreateWishlistPage'
 import MyBooksPage from './pages/MyBooksPage'
+import TradesPage from './pages/TradesPage'
 import './App.css'
 
 // Component to conditionally render navbar
@@ -87,6 +88,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <MyBooksPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/trades" 
+              element={
+                <ProtectedRoute>
+                  <TradesPage />
                 </ProtectedRoute>
               } 
             />
