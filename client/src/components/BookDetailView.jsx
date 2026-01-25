@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import TradeProposalModal from './TradeProposalModal';
 import './BookDetailView.css';
 
 const BookDetailView = () => {
@@ -10,6 +11,7 @@ const BookDetailView = () => {
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -294,6 +296,7 @@ const BookDetailView = () => {
                 <button 
                   className="propose-trade-button"
                   disabled={!book.isAvailable}
+                  onClick={() => setIsModalOpen(true)}
                 >
                   {book.isAvailable ? 'Propose Trade' : 'Not Available'}
                 </button>
@@ -310,6 +313,15 @@ const BookDetailView = () => {
           </div>
         </div>
       </div>
+
+      {/* Trade Proposal Modal */}
+      {book && (
+        <TradeProposalModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          requestedBook={book}
+        />
+      )}
     </div>
   );
 };
