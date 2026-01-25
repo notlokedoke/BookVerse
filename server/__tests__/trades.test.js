@@ -4,6 +4,7 @@ const app = require('../server');
 const User = require('../models/User');
 const Book = require('../models/Book');
 const Trade = require('../models/Trade');
+const Notification = require('../models/Notification');
 const { generateToken } = require('../utils/jwt');
 
 describe('Trades API - Propose Trade', () => {
@@ -22,6 +23,7 @@ describe('Trades API - Propose Trade', () => {
     await User.deleteMany({});
     await Book.deleteMany({});
     await Trade.deleteMany({});
+    await Notification.deleteMany({});
 
     // Create test users
     user1 = await User.create({
@@ -68,6 +70,7 @@ describe('Trades API - Propose Trade', () => {
     await User.deleteMany({});
     await Book.deleteMany({});
     await Trade.deleteMany({});
+    await Notification.deleteMany({});
   });
 
   afterAll(async () => {
@@ -308,6 +311,30 @@ describe('Trades API - Propose Trade', () => {
       expect(tradesInDb[0].status).toBe('proposed');
       expect(tradesInDb[0].proposer.toString()).toBe(user1._id.toString());
       expect(tradesInDb[0].receiver.toString()).toBe(user2._id.toString());
+    });
+
+    test('should create notification for receiver when trade is proposed (Req 8.3)', async () => {
+      const response = await request(app)
+        .post('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          requestedBook: user2Book._id.toString(),
+          offeredBook: user1Book._id.toString()
+        })
+        .expect(201);
+
+      // Check that notification was created
+      const notifications = await Notification.find({ recipient: user2._id });
+      expect(notifications).toHaveLength(1);
+      
+      const notification = notifications[0];
+      expect(notification.type).toBe('trade_request');
+      expect(notification.recipient.toString()).toBe(user2._id.toString());
+      expect(notification.relatedTrade.toString()).toBe(response.body.data._id);
+      expect(notification.relatedUser.toString()).toBe(user1._id.toString());
+      expect(notification.message).toContain('User One');
+      expect(notification.message).toContain('User 2 Book');
+      expect(notification.isRead).toBe(false);
     });
   });
 
