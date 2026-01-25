@@ -256,7 +256,7 @@ const BookListingForm = () => {
         formDataToSend.append('publisher', publisher.trim());
       }
       
-      formDataToSend.append('image', imageFile);
+      formDataToSend.append('coverImage', imageFile);
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await axios.post(`${apiUrl}/api/books`, formDataToSend, {
