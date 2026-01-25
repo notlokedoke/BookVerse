@@ -5,6 +5,84 @@ const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
+ * @route   GET /api/trades
+ * @desc    Get user's trades (where user is either proposer or receiver)
+ * @access  Private (requires authentication)
+ */
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.query;
+
+    // Build query to find trades where user is either proposer or receiver
+    const query = {
+      $or: [
+        { proposer: req.userId },
+        { receiver: req.userId }
+      ]
+    };
+
+    // Add optional status filter if provided
+    if (status) {
+      // Validate status value
+      const validStatuses = ['proposed', 'accepted', 'declined', 'completed'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Invalid status value. Must be one of: proposed, accepted, declined, completed',
+            code: 'INVALID_STATUS'
+          }
+        });
+      }
+      query.status = status;
+    }
+
+    // Fetch trades with populated references, sorted by creation date descending
+    const trades = await Trade.find(query)
+      .populate({
+        path: 'proposer',
+        select: '-password'
+      })
+      .populate({
+        path: 'receiver',
+        select: '-password'
+      })
+      .populate({
+        path: 'requestedBook',
+        populate: {
+          path: 'owner',
+          select: '-password'
+        }
+      })
+      .populate({
+        path: 'offeredBook',
+        populate: {
+          path: 'owner',
+          select: '-password'
+        }
+      })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: trades,
+      count: trades.length
+    });
+
+  } catch (error) {
+    console.error('Get trades error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching trades',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   POST /api/trades
  * @desc    Propose a new trade
  * @access  Private (requires authentication)

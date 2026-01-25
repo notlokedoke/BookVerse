@@ -310,4 +310,225 @@ describe('Trades API - Propose Trade', () => {
       expect(tradesInDb[0].receiver.toString()).toBe(user2._id.toString());
     });
   });
+
+  describe('GET /api/trades', () => {
+    let trade1, trade2, trade3;
+
+    beforeEach(async () => {
+      // Create multiple trades for testing
+      // Trade 1: user1 proposes to user2
+      trade1 = await Trade.create({
+        proposer: user1._id,
+        receiver: user2._id,
+        requestedBook: user2Book._id,
+        offeredBook: user1Book._id,
+        status: 'proposed',
+        proposedAt: new Date('2025-01-01')
+      });
+
+      // Create another book for user2
+      const user2Book2 = await Book.create({
+        owner: user2._id,
+        title: 'User 2 Book 2',
+        author: 'Author Two',
+        genre: 'Mystery',
+        condition: 'Good',
+        imageUrl: 'https://example.com/image3.jpg',
+        isAvailable: true
+      });
+
+      // Trade 2: user2 proposes to user1 (accepted)
+      trade2 = await Trade.create({
+        proposer: user2._id,
+        receiver: user1._id,
+        requestedBook: user1Book._id,
+        offeredBook: user2Book2._id,
+        status: 'accepted',
+        proposedAt: new Date('2025-01-02'),
+        respondedAt: new Date('2025-01-03')
+      });
+
+      // Create a third user and book for testing filtering
+      const user3 = await User.create({
+        name: 'User Three',
+        email: 'user3@example.com',
+        password: 'password123',
+        city: 'Chicago'
+      });
+
+      const user3Book = await Book.create({
+        owner: user3._id,
+        title: 'User 3 Book',
+        author: 'Author Three',
+        genre: 'History',
+        condition: 'Fair',
+        imageUrl: 'https://example.com/image4.jpg',
+        isAvailable: true
+      });
+
+      // Trade 3: user3 proposes to user2 (should not appear in user1's trades)
+      trade3 = await Trade.create({
+        proposer: user3._id,
+        receiver: user2._id,
+        requestedBook: user2Book._id,
+        offeredBook: user3Book._id,
+        status: 'declined',
+        proposedAt: new Date('2025-01-04'),
+        respondedAt: new Date('2025-01-05')
+      });
+    });
+
+    test('should get all trades where user is proposer or receiver', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.count).toBe(2); // user1 is involved in trade1 and trade2
+      expect(response.body.data).toHaveLength(2);
+    });
+
+    test('should populate book and user references', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const trade = response.body.data[0];
+      expect(trade.proposer).toBeDefined();
+      expect(trade.proposer.name).toBeDefined();
+      expect(trade.proposer.password).toBeUndefined();
+      expect(trade.receiver).toBeDefined();
+      expect(trade.receiver.name).toBeDefined();
+      expect(trade.receiver.password).toBeUndefined();
+      expect(trade.requestedBook).toBeDefined();
+      expect(trade.requestedBook.title).toBeDefined();
+      expect(trade.offeredBook).toBeDefined();
+      expect(trade.offeredBook.title).toBeDefined();
+    });
+
+    test('should sort trades by creation date descending', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.data).toHaveLength(2);
+      // trade2 was created after trade1, so it should come first
+      const dates = response.body.data.map(t => new Date(t.createdAt).getTime());
+      expect(dates[0]).toBeGreaterThanOrEqual(dates[1]);
+    });
+
+    test('should filter trades by status when status query parameter provided', async () => {
+      const response = await request(app)
+        .get('/api/trades?status=proposed')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(1);
+      expect(response.body.data[0].status).toBe('proposed');
+    });
+
+    test('should filter trades by accepted status', async () => {
+      const response = await request(app)
+        .get('/api/trades?status=accepted')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(1);
+      expect(response.body.data[0].status).toBe('accepted');
+    });
+
+    test('should return empty array when no trades match status filter', async () => {
+      const response = await request(app)
+        .get('/api/trades?status=completed')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(0);
+      expect(response.body.data).toHaveLength(0);
+    });
+
+    test('should reject request with invalid status value', async () => {
+      const response = await request(app)
+        .get('/api/trades?status=invalid')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_STATUS');
+      expect(response.body.error.message).toContain('Invalid status value');
+    });
+
+    test('should require authentication', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should return empty array when user has no trades', async () => {
+      // Create a new user with no trades
+      const user4 = await User.create({
+        name: 'User Four',
+        email: 'user4@example.com',
+        password: 'password123',
+        city: 'Boston'
+      });
+      const user4Token = generateToken(user4._id);
+
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user4Token}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(0);
+      expect(response.body.data).toHaveLength(0);
+    });
+
+    test('should include trades where user is proposer', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const proposedTrades = response.body.data.filter(
+        t => t.proposer._id === user1._id.toString()
+      );
+      expect(proposedTrades.length).toBeGreaterThan(0);
+    });
+
+    test('should include trades where user is receiver', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      const receivedTrades = response.body.data.filter(
+        t => t.receiver._id === user1._id.toString()
+      );
+      expect(receivedTrades.length).toBeGreaterThan(0);
+    });
+
+    test('should not include trades where user is not involved', async () => {
+      const response = await request(app)
+        .get('/api/trades')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .expect(200);
+
+      // trade3 is between user3 and user2, should not appear for user1
+      const trade3InResults = response.body.data.find(
+        t => t._id === trade3._id.toString()
+      );
+      expect(trade3InResults).toBeUndefined();
+    });
+  });
 });
