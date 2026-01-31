@@ -5,7 +5,7 @@ const Book = require('../models/Book');
 const Trade = require('../models/Trade');
 const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
-const { uploadSingleImage } = require('../middleware/upload');
+const { uploadSingleImage, uploadBookImages } = require('../middleware/upload');
 const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
 
 /**
@@ -157,9 +157,9 @@ router.post('/isbn/:isbn', async (req, res) => {
  * @desc    Create new book listing with image upload
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, sanitizeInput, uploadSingleImage('coverImage'), (req, res, next) => {
+router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), (req, res, next) => {
   // Validate required fields after upload middleware
-  const { title, author, condition, genre } = req.body;
+  const { title, author, condition, genre, googleBooksImageUrl } = req.body;
   
   if (!title || !author || !condition || !genre) {
     return res.status(400).json({
@@ -171,21 +171,24 @@ router.post('/', authenticateToken, sanitizeInput, uploadSingleImage('coverImage
     });
   }
   
+  // Check if at least one image source is provided
+  if (!req.frontImageUrl && !req.backImageUrl && !googleBooksImageUrl) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: 'At least one image is required. Please upload front/back images or use ISBN lookup.',
+        code: 'IMAGE_REQUIRED'
+      }
+    });
+  }
+  
   next();
 }, async (req, res) => {
   try {
-    const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
+    const { title, author, condition, genre, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
 
-    // Validate that an image was uploaded
-    if (!req.imageUrl) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Image is required for book listing',
-          code: 'IMAGE_REQUIRED'
-        }
-      });
-    }
+    // Determine primary image URL (prefer front, then Google Books, then back)
+    const imageUrl = req.frontImageUrl || googleBooksImageUrl || req.backImageUrl;
 
     // Create new book listing with sanitized data
     const bookData = {
@@ -194,7 +197,10 @@ router.post('/', authenticateToken, sanitizeInput, uploadSingleImage('coverImage
       author: sanitizeString(author.trim()),
       condition,
       genre: sanitizeString(genre.trim()),
-      imageUrl: req.imageUrl,
+      imageUrl: imageUrl,
+      googleBooksImageUrl: googleBooksImageUrl || null,
+      frontImageUrl: req.frontImageUrl || null,
+      backImageUrl: req.backImageUrl || null,
       isAvailable: true
     };
 
@@ -482,10 +488,10 @@ router.get('/user/:userId', async (req, res) => {
  * @desc    Update book listing (owner only)
  * @access  Private (requires authentication and ownership)
  */
-router.put('/:id', authenticateToken, sanitizeInput, uploadSingleImage('coverImage'), async (req, res) => {
+router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, author, condition, genre, isbn, description, publicationYear, publisher } = req.body;
+    const { title, author, condition, genre, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
 
     // Validate book ID format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -588,9 +594,21 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadSingleImage('coverIma
       updateData.publisher = trimmedPublisher === '' ? null : sanitizeString(trimmedPublisher);
     }
 
-    // Update image URL if new image was uploaded
-    if (req.imageUrl) {
-      updateData.imageUrl = req.imageUrl;
+    // Update image URLs if new images were uploaded or provided
+    if (req.frontImageUrl) {
+      updateData.frontImageUrl = req.frontImageUrl;
+      // Update primary imageUrl if front image is uploaded
+      updateData.imageUrl = req.frontImageUrl;
+    }
+    if (req.backImageUrl) {
+      updateData.backImageUrl = req.backImageUrl;
+    }
+    if (googleBooksImageUrl !== undefined) {
+      updateData.googleBooksImageUrl = googleBooksImageUrl || null;
+      // If no front image but Google Books image is provided, use it as primary
+      if (!req.frontImageUrl && googleBooksImageUrl) {
+        updateData.imageUrl = googleBooksImageUrl;
+      }
     }
 
     // Update the book

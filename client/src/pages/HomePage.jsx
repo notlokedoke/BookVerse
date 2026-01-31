@@ -29,7 +29,7 @@ const HomePage = () => {
             <BookOpen size={24} strokeWidth={2.5} />
             <span className="logo-text">BookVerse</span>
           </Link>
-          
+
           <div className="navbar-menu">
             <Link to="/browse" className="navbar-link">
               <Search size={18} />
@@ -38,7 +38,7 @@ const HomePage = () => {
             <a href="#how-it-works" className="navbar-link">How It Works</a>
             <a href="#features" className="navbar-link">Features</a>
           </div>
-          
+
           <div className="navbar-actions">
             <Link to="/login" className="btn-signin">Sign In</Link>
             <Link to="/register" className="btn-getstarted">
@@ -47,7 +47,7 @@ const HomePage = () => {
             </Link>
           </div>
 
-          <button 
+          <button
             onClick={toggleMobileMenu}
             className="mobile-toggle"
             aria-label="Toggle menu"
@@ -91,7 +91,7 @@ const HomePage = () => {
           <div className="hero-content">
             <div className="hero-badge">
               <Sparkles size={16} />
-              <span>Join 1,500+ Book Lovers</span>
+              <span>Join Other Book Lovers</span>
             </div>
             <h1 className="hero-title">
               Trade Books with
@@ -110,20 +110,6 @@ const HomePage = () => {
                 Browse Books
               </Link>
             </div>
-            <div className="hero-stats">
-              <div className="hero-stat">
-                <div className="stat-number">5,000+</div>
-                <div className="stat-label">Books Traded</div>
-              </div>
-              <div className="hero-stat">
-                <div className="stat-number">300+</div>
-                <div className="stat-label">Cities</div>
-              </div>
-              <div className="hero-stat">
-                <div className="stat-number">98%</div>
-                <div className="stat-label">Satisfaction</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -137,7 +123,7 @@ const HomePage = () => {
               Start trading books in three simple steps
             </p>
           </div>
-          
+
           <div className="steps-grid">
             <div className="step-card">
               <div className="step-icon gradient-blue">
@@ -147,7 +133,7 @@ const HomePage = () => {
               <h3>Create Your Profile</h3>
               <p>Sign up and set up your profile to connect with other book lovers in your community.</p>
             </div>
-            
+
             <div className="step-card">
               <div className="step-icon gradient-green">
                 <BookOpen size={28} />
@@ -156,7 +142,7 @@ const HomePage = () => {
               <h3>List Your Books</h3>
               <p>Add books you want to trade with photos and descriptions. Build your trading library.</p>
             </div>
-            
+
             <div className="step-card">
               <div className="step-icon gradient-amber">
                 <Heart size={28} />
@@ -178,7 +164,7 @@ const HomePage = () => {
               Everything you need for a seamless book trading experience
             </p>
           </div>
-          
+
           <div className="features-grid">
             <div className="feature-card glass-card">
               <div className="feature-icon-wrapper gradient-blue">
@@ -187,7 +173,7 @@ const HomePage = () => {
               <h3>Smart Search</h3>
               <p>Advanced filters to find exactly what you're looking for by genre, author, location, and condition.</p>
             </div>
-            
+
             <div className="feature-card glass-card">
               <div className="feature-icon-wrapper gradient-green">
                 <Shield size={24} />
@@ -195,7 +181,7 @@ const HomePage = () => {
               <h3>Safe & Secure</h3>
               <p>User ratings, verified profiles, and safety guidelines to ensure trustworthy trades.</p>
             </div>
-            
+
             <div className="feature-card glass-card">
               <div className="feature-icon-wrapper gradient-amber">
                 <MessageCircle size={24} />
@@ -203,7 +189,7 @@ const HomePage = () => {
               <h3>Built-in Chat</h3>
               <p>Coordinate trades easily with our secure messaging system. No need for external apps.</p>
             </div>
-            
+
             <div className="feature-card glass-card">
               <div className="feature-icon-wrapper gradient-pink">
                 <TrendingUp size={24} />
@@ -240,7 +226,7 @@ const HomePage = () => {
               </div>
               <p>Connecting book lovers worldwide through the joy of sharing stories.</p>
             </div>
-            
+
             <div className="footer-links">
               <div className="footer-column">
                 <h4>Product</h4>
@@ -248,14 +234,14 @@ const HomePage = () => {
                 <Link to="/register">Sign Up</Link>
                 <Link to="/login">Login</Link>
               </div>
-              
+
               <div className="footer-column">
                 <h4>Company</h4>
                 <a href="#about">About Us</a>
                 <a href="#contact">Contact</a>
                 <a href="#help">Help Center</a>
               </div>
-              
+
               <div className="footer-column">
                 <h4>Legal</h4>
                 <a href="#privacy">Privacy Policy</a>
@@ -264,7 +250,7 @@ const HomePage = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="footer-bottom">
             <p>&copy; 2024 BookVerse. All rights reserved.</p>
           </div>

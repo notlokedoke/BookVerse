@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import CitySelector from '../components/common/CitySelector';
 import './CompleteProfilePage.css';
 
 const CompleteProfilePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setUser, setIsAuthenticated } = useAuth();
-  
+  const { updateUser } = useAuth();
+
   const [city, setCity] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,11 +17,11 @@ const CompleteProfilePage = () => {
   useEffect(() => {
     // Get token from URL and decode if needed
     let token = searchParams.get('token');
-    
+
     console.log('=== CompleteProfilePage useEffect ===');
     console.log('Current URL:', window.location.href);
     console.log('Token in URL params:', token ? 'YES' : 'NO');
-    
+
     if (token) {
       // Token might be URL encoded, try to decode it
       try {
@@ -32,29 +33,29 @@ const CompleteProfilePage = () => {
       } catch (e) {
         console.log('Token does not need decoding');
       }
-      
+
       console.log('Token length:', token.length);
       console.log('Token first 30 chars:', token.substring(0, 30));
       console.log('Token last 30 chars:', token.substring(token.length - 30));
-      
+
       console.log('Storing token in localStorage...');
       localStorage.setItem('token', token);
       console.log('Token stored. Verifying localStorage:', !!localStorage.getItem('token'));
-      
+
       // Verify token is valid by fetching user data
       const verifyToken = async () => {
         try {
           const apiUrl = import.meta.env.VITE_API_URL || '';
           console.log('Verifying token with API:', apiUrl);
-          
+
           const response = await fetch(`${apiUrl}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
-          
+
           console.log('Token verification response status:', response.status);
-          
+
           if (!response.ok) {
             const errorData = await response.json();
             console.error('Token verification failed:', errorData);
@@ -65,7 +66,7 @@ const CompleteProfilePage = () => {
             }, 3000);
             return;
           }
-          
+
           const data = await response.json();
           console.log('Token verified successfully for user:', data.data?.email);
           setError('');
@@ -78,13 +79,13 @@ const CompleteProfilePage = () => {
           }, 3000);
         }
       };
-      
+
       verifyToken();
     } else {
       console.log('No token in URL');
       const storedToken = localStorage.getItem('token');
       console.log('Checking localStorage for token:', storedToken ? 'FOUND' : 'NOT FOUND');
-      
+
       if (!storedToken) {
         console.log('No token found anywhere, redirecting to login in 2 seconds...');
         setError('No authentication token found. Redirecting to login...');
@@ -102,14 +103,14 @@ const CompleteProfilePage = () => {
                 'Authorization': `Bearer ${storedToken}`
               }
             });
-            
+
             if (!response.ok) {
               console.error('Stored token is invalid');
               localStorage.removeItem('token');
               navigate('/login');
               return;
             }
-            
+
             console.log('Stored token is valid');
             setError('');
           } catch (error) {
@@ -118,7 +119,7 @@ const CompleteProfilePage = () => {
             navigate('/login');
           }
         };
-        
+
         verifyStoredToken();
       }
     }
@@ -126,7 +127,7 @@ const CompleteProfilePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!city.trim()) {
       setError('City is required');
       return;
@@ -137,9 +138,28 @@ const CompleteProfilePage = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const token = localStorage.getItem('token');
+      // Try to get token from URL first, then localStorage
+      let token = searchParams.get('token') || localStorage.getItem('token');
 
-      console.log('Submitting profile with token:', token ? 'Token exists' : 'No token');
+      console.log('Submitting profile');
+      console.log('Token from URL:', !!searchParams.get('token'));
+      console.log('Token from localStorage:', !!localStorage.getItem('token'));
+      console.log('Using token:', !!token);
+
+      if (!token) {
+        console.error('No token found in URL or localStorage');
+        setError('Your session has expired. Please sign in again.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+        return;
+      }
+
+      // Store token if it came from URL
+      if (searchParams.get('token')) {
+        console.log('Storing token from URL to localStorage');
+        localStorage.setItem('token', token);
+      }
 
       const response = await axios.put(
         `${apiUrl}/api/auth/profile`,
@@ -152,17 +172,17 @@ const CompleteProfilePage = () => {
       );
 
       if (response.data.success) {
-        setUser(response.data.data);
-        setIsAuthenticated(true);
+        updateUser(response.data.data);
         navigate('/dashboard');
       }
     } catch (err) {
       console.error('Profile completion error:', err);
       console.error('Error response:', err.response?.data);
-      
+
       // Check if it's a token error
-      if (err.response?.data?.error?.code === 'INVALID_TOKEN' || 
-          err.response?.data?.error?.code === 'NO_TOKEN') {
+      if (err.response?.status === 401 ||
+        err.response?.data?.error?.code === 'INVALID_TOKEN' ||
+        err.response?.data?.error?.code === 'NO_TOKEN') {
         setError('Your session has expired. Please sign in again.');
         setTimeout(() => {
           localStorage.removeItem('token');
@@ -182,16 +202,27 @@ const CompleteProfilePage = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      const token = localStorage.getItem('token');
+      // Try to get token from URL first, then localStorage
+      let token = searchParams.get('token') || localStorage.getItem('token');
 
-      console.log('Skip button clicked, token exists:', !!token);
+      console.log('Skip button clicked');
+      console.log('Token from URL:', !!searchParams.get('token'));
+      console.log('Token from localStorage:', !!localStorage.getItem('token'));
+      console.log('Using token:', !!token);
 
       if (!token) {
+        console.error('No token found in URL or localStorage');
         setError('No authentication token found. Please sign in again.');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
         return;
+      }
+
+      // Store token if it came from URL
+      if (searchParams.get('token')) {
+        console.log('Storing token from URL to localStorage');
+        localStorage.setItem('token', token);
       }
 
       // Fetch user data with the token
@@ -207,14 +238,13 @@ const CompleteProfilePage = () => {
       console.log('Skip profile - User data fetched:', response.data);
 
       if (response.data.success) {
-        setUser(response.data.data);
-        setIsAuthenticated(true);
+        updateUser(response.data.data);
         navigate('/dashboard');
       }
     } catch (err) {
       console.error('Skip profile error:', err);
       console.error('Error response:', err.response?.data);
-      
+
       // Check if it's a token error
       if (err.response?.status === 401) {
         setError('Your session has expired. Please sign in again.');
@@ -242,37 +272,34 @@ const CompleteProfilePage = () => {
 
           <form onSubmit={handleSubmit} className="profile-form">
             <div className="form-group">
-              <label htmlFor="city">Your City / Region</label>
-              <input
-                type="text"
-                id="city"
-                placeholder="e.g., New York, NY"
+              <CitySelector
                 value={city}
                 onChange={(e) => {
                   setCity(e.target.value);
                   setError('');
                 }}
-                className={error ? 'error' : ''}
+                error={error}
                 disabled={isSubmitting}
+                required
                 autoFocus
+                placeholder="e.g., New York, NY"
               />
               <small className="field-hint">
                 We use your location to connect you with nearby book traders
               </small>
-              {error && <span className="field-error">{error}</span>}
             </div>
 
-            <button 
-              type="submit" 
-              className="complete-btn" 
+            <button
+              type="submit"
+              className="complete-btn"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : 'Complete Profile'}
             </button>
 
-            <button 
-              type="button" 
-              className="skip-btn" 
+            <button
+              type="button"
+              className="skip-btn"
               onClick={handleSkip}
               disabled={isSubmitting}
             >

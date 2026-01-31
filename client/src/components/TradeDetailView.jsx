@@ -5,6 +5,20 @@ import { useToast } from '../context/ToastContext';
 import { Button, Spinner } from './ui';
 import ChatBox from './ChatBox';
 import RatingForm from './RatingForm';
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Star,
+  CheckCircle,
+  XCircle,
+  Clock,
+  MessageSquare,
+  ArrowRightLeft,
+  BookOpen,
+  User,
+  Shield
+} from 'lucide-react';
 import './TradeDetailView.css';
 
 const TradeDetailView = () => {
@@ -12,7 +26,7 @@ const TradeDetailView = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToast();
-  
+
   const [trade, setTrade] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,7 +40,6 @@ const TradeDetailView = () => {
   }, [id]);
 
   useEffect(() => {
-    // Fetch user's rating when trade is completed
     if (trade && trade.status === 'completed') {
       fetchUserRating();
     }
@@ -55,7 +68,6 @@ const TradeDetailView = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Find the specific trade by ID
         const foundTrade = data.data.find(t => t._id === id);
         if (foundTrade) {
           setTrade(foundTrade);
@@ -80,9 +92,7 @@ const TradeDetailView = () => {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const token = localStorage.getItem('token');
 
-      if (!token) {
-        return;
-      }
+      if (!token) return;
 
       const response = await fetch(`${apiUrl}/api/ratings/trade/${id}`, {
         headers: {
@@ -95,12 +105,10 @@ const TradeDetailView = () => {
       if (response.ok && data.success) {
         setUserRating(data.data);
       } else if (response.status === 404) {
-        // User hasn't rated yet - this is expected
         setUserRating(null);
       }
     } catch (err) {
       console.error('Error fetching user rating:', err);
-      // Don't show error to user - just means they haven't rated yet
     } finally {
       setRatingLoading(false);
     }
@@ -117,7 +125,6 @@ const TradeDetailView = () => {
 
     try {
       setActionLoading(true);
-
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const token = localStorage.getItem('token');
 
@@ -148,14 +155,12 @@ const TradeDetailView = () => {
   const handleDeclineTrade = async () => {
     if (!trade || actionLoading) return;
 
-    // Confirm before declining
     if (!window.confirm('Are you sure you want to decline this trade proposal?')) {
       return;
     }
 
     try {
       setActionLoading(true);
-
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const token = localStorage.getItem('token');
 
@@ -186,14 +191,12 @@ const TradeDetailView = () => {
   const handleCompleteTrade = async () => {
     if (!trade || actionLoading) return;
 
-    // Confirm before completing
     if (!window.confirm('Are you sure you want to mark this trade as complete? This action confirms that the physical book exchange has been completed.')) {
       return;
     }
 
     try {
       setActionLoading(true);
-
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const token = localStorage.getItem('token');
 
@@ -233,20 +236,10 @@ const TradeDetailView = () => {
     });
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      proposed: { text: 'Pending', color: 'bg-warning-100 text-warning-700' },
-      accepted: { text: 'Accepted', color: 'bg-success-100 text-success-700' },
-      declined: { text: 'Declined', color: 'bg-error-100 text-error-700' },
-      completed: { text: 'Completed', color: 'bg-primary-100 text-primary-700' }
-    };
-    return badges[status] || { text: status, color: 'bg-neutral-100 text-neutral-700' };
-  };
-
   if (loading) {
     return (
       <div className="trade-detail-page">
-        <div className="container">
+        <div className="trade-detail-container">
           <div className="flex items-center justify-center py-20">
             <Spinner size="lg" />
           </div>
@@ -258,20 +251,18 @@ const TradeDetailView = () => {
   if (error || !trade) {
     return (
       <div className="trade-detail-page">
-        <div className="container">
-          <div className="max-w-2xl mx-auto py-12">
-            <div className="bg-error-50 border border-error-200 rounded-lg p-6 text-center">
-              <div className="text-4xl mb-4">⚠️</div>
-              <h2 className="text-xl font-semibold text-error-700 mb-2">
-                {error || 'Trade Not Found'}
-              </h2>
-              <p className="text-error-600 mb-4">
-                {error || 'The trade you\'re looking for doesn\'t exist or you don\'t have access to it.'}
-              </p>
-              <Button variant="primary" onClick={() => navigate('/trades')}>
-                Back to Trades
-              </Button>
-            </div>
+        <div className="trade-detail-container">
+          <div className="glass-card text-center py-12">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold text-neutral-800 mb-2">
+              {error || 'Trade Not Found'}
+            </h2>
+            <p className="text-neutral-600 mb-6">
+              {error || 'The trade you\'re looking for doesn\'t exist or you don\'t have access to it.'}
+            </p>
+            <Button variant="primary" onClick={() => navigate('/trades')}>
+              Back to Trades
+            </Button>
           </div>
         </div>
       </div>
@@ -281,393 +272,270 @@ const TradeDetailView = () => {
   const isProposer = user?._id === trade.proposer?._id;
   const isReceiver = user?._id === trade.receiver?._id;
   const otherUser = isProposer ? trade.receiver : trade.proposer;
-  const statusBadge = getStatusBadge(trade.status);
 
   return (
     <div className="trade-detail-page">
-      <div className="container max-w-5xl mx-auto px-4 py-8">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/trades')}
-          className="flex items-center gap-2 text-neutral-600 hover:text-primary-500 mb-6 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Trades
-        </button>
+      <div className="trade-detail-container">
 
-        {/* Trade Header */}
-        <div className="bg-white rounded-xl shadow-card p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                Trade Details
-              </h1>
-              <p className="text-neutral-600">
-                {isProposer ? 'You proposed this trade' : 'Trade proposed by'} {isProposer ? '' : otherUser?.name}
-              </p>
-            </div>
-            <div className={`px-4 py-2 rounded-lg font-semibold ${statusBadge.color}`}>
-              {statusBadge.text}
-            </div>
-          </div>
-
-          {/* Timeline */}
-          <div className="border-t border-neutral-200 pt-4 mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-neutral-500">Proposed</span>
-                <p className="font-medium text-neutral-900">{formatDate(trade.proposedAt)}</p>
+        {/* Premium Header */}
+        <div className="page-header-premium">
+          <div className="header-content">
+            <div className="header-title-row">
+              <button onClick={() => navigate('/trades')} className="back-button">
+                <ArrowLeft size={28} />
+              </button>
+              <h1 className="header-title">Trade Details</h1>
+              <div className={`header-badge ${trade.status}`}>
+                {trade.status}
               </div>
-              {trade.respondedAt && (
-                <div>
-                  <span className="text-neutral-500">Responded</span>
-                  <p className="font-medium text-neutral-900">{formatDate(trade.respondedAt)}</p>
-                </div>
-              )}
-              {trade.completedAt && (
-                <div>
-                  <span className="text-neutral-500">Completed</span>
-                  <p className="font-medium text-neutral-900">{formatDate(trade.completedAt)}</p>
-                </div>
-              )}
+            </div>
+            <div className="header-subtitle">
+              <Clock size={16} />
+              <span>Proposed on {formatDate(trade.proposedAt)}</span>
             </div>
           </div>
         </div>
 
-        {/* Books Exchange */}
-        <div className="bg-white rounded-xl shadow-card p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-900 mb-6">Books Exchange</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Offered Book */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg font-semibold text-neutral-700">
-                  {isProposer ? 'You Offer' : `${otherUser?.name} Offers`}
-                </span>
+        <div className="trade-content-grid">
+          {/* Left Column - Main Content */}
+          <div className="trade-main-col">
+            {/* Books Exchange Section */}
+            <div className="glass-card">
+              <div className="section-title">
+                <ArrowRightLeft size={24} className="text-primary" />
+                <span>Books Exchange</span>
               </div>
-              <div className="border border-neutral-200 rounded-lg p-4">
-                <img
-                  src={trade.offeredBook?.imageUrl}
-                  alt={trade.offeredBook?.title}
-                  className="w-full h-64 object-cover rounded-lg mb-4"
-                  onError={(e) => {
-                    e.target.src = '/placeholder-book.png';
-                  }}
-                />
-                <h3 className="text-lg font-bold text-neutral-900 mb-1">
-                  {trade.offeredBook?.title}
-                </h3>
-                <p className="text-neutral-600 mb-2">by {trade.offeredBook?.author}</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
-                    {trade.offeredBook?.condition}
-                  </span>
-                  <span className="px-3 py-1 bg-accent-50 text-accent-700 rounded-full text-sm font-medium">
-                    {trade.offeredBook?.genre}
-                  </span>
-                </div>
-                {trade.offeredBook?.description && (
-                  <p className="text-sm text-neutral-600 line-clamp-3">
-                    {trade.offeredBook.description}
-                  </p>
-                )}
-              </div>
-            </div>
 
-            {/* Exchange Arrow */}
-            <div className="hidden md:flex items-center justify-center">
-              <div className="text-5xl text-primary-500">⇄</div>
-            </div>
-            <div className="md:hidden flex items-center justify-center py-4">
-              <div className="text-4xl text-primary-500 rotate-90">⇄</div>
-            </div>
-
-            {/* Requested Book */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg font-semibold text-neutral-700">
-                  {isProposer ? 'You Want' : `${otherUser?.name} Wants`}
-                </span>
-              </div>
-              <div className="border border-neutral-200 rounded-lg p-4">
-                <img
-                  src={trade.requestedBook?.imageUrl}
-                  alt={trade.requestedBook?.title}
-                  className="w-full h-64 object-cover rounded-lg mb-4"
-                  onError={(e) => {
-                    e.target.src = '/placeholder-book.png';
-                  }}
-                />
-                <h3 className="text-lg font-bold text-neutral-900 mb-1">
-                  {trade.requestedBook?.title}
-                </h3>
-                <p className="text-neutral-600 mb-2">by {trade.requestedBook?.author}</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
-                    {trade.requestedBook?.condition}
-                  </span>
-                  <span className="px-3 py-1 bg-accent-50 text-accent-700 rounded-full text-sm font-medium">
-                    {trade.requestedBook?.genre}
-                  </span>
-                </div>
-                {trade.requestedBook?.description && (
-                  <p className="text-sm text-neutral-600 line-clamp-3">
-                    {trade.requestedBook.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trading Partner Info */}
-        <div className="bg-white rounded-xl shadow-card p-6 mb-6">
-          <h2 className="text-xl font-bold text-neutral-900 mb-4">Trading Partner</h2>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              {otherUser?.name?.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-neutral-900">{otherUser?.name}</h3>
-              {otherUser?.city && otherUser?.privacySettings?.showCity !== false && (
-                <p className="text-neutral-600 flex items-center gap-1">
-                  <span>📍</span>
-                  {otherUser.city}
-                </p>
-              )}
-              {otherUser?.averageRating > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-warning-500">⭐</span>
-                  <span className="font-medium text-neutral-700">
-                    {otherUser.averageRating.toFixed(1)}
-                  </span>
-                  <span className="text-neutral-500 text-sm">
-                    ({otherUser.ratingCount} {otherUser.ratingCount === 1 ? 'rating' : 'ratings'})
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        {isReceiver && trade.status === 'proposed' && (
-          <div className="bg-white rounded-xl shadow-card p-6">
-            <h2 className="text-xl font-bold text-neutral-900 mb-4">Respond to Trade</h2>
-            <p className="text-neutral-600 mb-6">
-              Review the trade details above and decide whether to accept or decline this proposal.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleAcceptTrade}
-                disabled={actionLoading}
-                className="flex-1"
-              >
-                {actionLoading ? <Spinner size="sm" /> : '✓ Accept Trade'}
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleDeclineTrade}
-                disabled={actionLoading}
-                className="flex-1 border-error-500 text-error-600 hover:bg-error-50"
-              >
-                {actionLoading ? <Spinner size="sm" /> : '✗ Decline Trade'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Status Messages */}
-        {trade.status === 'accepted' && (
-          <div className="bg-success-50 border border-success-200 rounded-xl p-6 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">✓</div>
-              <div>
-                <h3 className="text-lg font-semibold text-success-800 mb-2">
-                  Trade Accepted!
-                </h3>
-                <p className="text-success-700">
-                  This trade has been accepted. You can now communicate with {otherUser?.name} to arrange the exchange.
-                  Once the trade is complete, you can mark it as completed.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Complete Trade Button - Show for both proposer and receiver on accepted trades */}
-        {trade.status === 'accepted' && (isProposer || isReceiver) && (
-          <div className="bg-white rounded-xl shadow-card p-6 mb-6">
-            <h2 className="text-xl font-bold text-neutral-900 mb-4">Complete Trade</h2>
-            <p className="text-neutral-600 mb-6">
-              Once you have successfully exchanged books with {otherUser?.name}, mark this trade as complete.
-              After completion, you'll be able to rate your trading partner.
-            </p>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleCompleteTrade}
-              disabled={actionLoading}
-              className="w-full sm:w-auto"
-            >
-              {actionLoading ? <Spinner size="sm" /> : '✓ Mark as Complete'}
-            </Button>
-          </div>
-        )}
-
-        {trade.status === 'declined' && (
-          <div className="bg-error-50 border border-error-200 rounded-xl p-6">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">✗</div>
-              <div>
-                <h3 className="text-lg font-semibold text-error-800 mb-2">
-                  Trade Declined
-                </h3>
-                <p className="text-error-700">
-                  This trade proposal was declined. You can browse for other books or propose different trades.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {trade.status === 'completed' && (
-          <div className="bg-primary-50 border border-primary-200 rounded-xl p-6 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">🎉</div>
-              <div>
-                <h3 className="text-lg font-semibold text-primary-800 mb-2">
-                  Trade Completed!
-                </h3>
-                <p className="text-primary-700">
-                  This trade has been successfully completed. Don't forget to rate your trading partner!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Rating Section - Show for completed trades */}
-        {trade.status === 'completed' && (isProposer || isReceiver) && (
-          <div className="bg-white rounded-xl shadow-card p-6 mb-6">
-            <h2 className="text-xl font-bold text-neutral-900 mb-4">Rate Your Trading Partner</h2>
-            
-            {ratingLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner size="md" />
-              </div>
-            ) : userRating ? (
-              // Show submitted rating
-              <div className="bg-success-50 border border-success-200 rounded-lg p-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="text-2xl">✓</div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-success-800 mb-1">
-                      You've rated this trade
-                    </h3>
-                    <p className="text-success-700 text-sm">
-                      Thank you for providing feedback!
-                    </p>
+              <div className="exchange-container">
+                {/* My Offer (or Proposer's Offer) */}
+                <div className="exchange-side">
+                  <div className="exchange-side-header">
+                    <span className="user-badge">{isProposer ? 'You Offer' : `${trade.proposer?.name} Offers`}</span>
                   </div>
-                </div>
-                
-                <div className="border-t border-success-200 pt-4 mt-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-neutral-700 font-medium">Your Rating:</span>
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg
-                          key={star}
-                          className={`w-5 h-5 ${star <= userRating.stars ? 'text-warning-500' : 'text-neutral-300'}`}
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                      ))}
-                      <span className="ml-2 text-neutral-600">
-                        ({userRating.stars} {userRating.stars === 1 ? 'star' : 'stars'})
-                      </span>
+                  <div className="book-card">
+                    <div className="book-image-container">
+                      <img
+                        src={trade.offeredBook?.imageUrl}
+                        alt={trade.offeredBook?.title}
+                        className="book-image"
+                        onError={(e) => { e.target.src = '/placeholder-book.png'; }}
+                      />
+                    </div>
+                    <div className="book-info-section">
+                      <h3 className="book-title">{trade.offeredBook?.title}</h3>
+                      <p className="book-author">by {trade.offeredBook?.author}</p>
                     </div>
                   </div>
-                  
-                  {userRating.comment && (
-                    <div className="mt-3">
-                      <span className="text-neutral-700 font-medium">Your Comment:</span>
-                      <p className="text-neutral-600 mt-1 italic">"{userRating.comment}"</p>
+                </div>
+
+                {/* Exchange Status Icon */}
+                <div className="exchange-icon-container">
+                  <ArrowRightLeft size={24} />
+                </div>
+
+                {/* Their Offer (or Receiver's Request) */}
+                <div className="exchange-side">
+                  <div className="exchange-side-header">
+                    <span className="user-badge">{isProposer ? 'You Want' : `${otherUser?.name} Wants`}</span>
+                  </div>
+                  <div className="book-card">
+                    <div className="book-image-container">
+                      <img
+                        src={trade.requestedBook?.imageUrl}
+                        alt={trade.requestedBook?.title}
+                        className="book-image"
+                        onError={(e) => { e.target.src = '/placeholder-book.png'; }}
+                      />
                     </div>
-                  )}
-                  
-                  <p className="text-neutral-500 text-sm mt-3">
-                    Submitted on {new Date(userRating.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
+                    <div className="book-info-section">
+                      <h3 className="book-title">{trade.requestedBook?.title}</h3>
+                      <p className="book-author">by {trade.requestedBook?.author}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ) : showRatingForm ? (
-              // Show rating form
-              <div>
-                <p className="text-neutral-600 mb-6">
-                  How was your experience trading with {otherUser?.name}? Your feedback helps build trust in the community.
-                </p>
-                <RatingForm
+            </div>
+
+            {/* Chat Section */}
+            {trade.status === 'accepted' && (
+              <div className="mt-8">
+                <ChatBox
                   tradeId={trade._id}
-                  onSuccess={handleRatingSuccess}
-                  onCancel={() => setShowRatingForm(false)}
+                  otherUserName={otherUser?.name}
                 />
               </div>
-            ) : (
-              // Show prompt to rate
-              <div>
-                <p className="text-neutral-600 mb-6">
-                  You haven't rated {otherUser?.name} yet. Share your experience to help build trust in the community.
-                </p>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => setShowRatingForm(true)}
-                >
-                  ⭐ Rate {otherUser?.name}
-                </Button>
+            )}
+
+            {/* Rating Section (Completed Trades) - Moved to main column bottom */}
+            {trade.status === 'completed' && (isProposer || isReceiver) && (
+              <div className="glass-card mt-8">
+                <div className="section-title">
+                  <Star size={24} className="text-primary" />
+                  <span>Rate Experience</span>
+                </div>
+
+                {ratingLoading ? (
+                  <div className="flex justify-center p-8"><Spinner /></div>
+                ) : userRating ? (
+                  <div className="status-banner success mb-0">
+                    <div className="status-icon">✓</div>
+                    <div className="status-content">
+                      <h3>Rating Submitted</h3>
+                      <div className="flex items-center gap-1 mt-2">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <Star
+                            key={star}
+                            size={16}
+                            className={star <= userRating.stars ? "text-warning-500 fill-warning-500" : "text-neutral-300"}
+                          />
+                        ))}
+                      </div>
+                      {userRating.comment && <p className="mt-2 italic">"{userRating.comment}"</p>}
+                    </div>
+                  </div>
+                ) : showRatingForm ? (
+                  <RatingForm
+                    tradeId={trade._id}
+                    onSuccess={handleRatingSuccess}
+                    onCancel={() => setShowRatingForm(false)}
+                  />
+                ) : (
+                  <div>
+                    <p className="text-neutral-600 mb-6">How was your exchange with {otherUser?.name}?</p>
+                    <Button variant="primary" onClick={() => setShowRatingForm(true)}>
+                      Rate {otherUser?.name}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
 
-        {isProposer && trade.status === 'proposed' && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-6">
-            <div className="flex items-start gap-3">
-              <div className="text-3xl">⏳</div>
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-800 mb-2">
-                  Waiting for Response
-                </h3>
-                <p className="text-neutral-700">
-                  Your trade proposal is pending. {otherUser?.name} will review it and respond soon.
-                </p>
+          {/* Right Column - Sidebar */}
+          <div className="trade-sidebar-col">
+            {/* Action Banners / Buttons - Priority 1 */}
+            <div className="sidebar-group">
+              {/* Status Hints */}
+              {isProposer && trade.status === 'proposed' && (
+                <div className="status-banner info compact">
+                  <div className="status-icon">⏳</div>
+                  <div className="status-content">
+                    <h3>Pending</h3>
+                    <p>Waiting for {otherUser?.name} to respond.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Responder Actions */}
+              {isReceiver && trade.status === 'proposed' && (
+                <div className="glass-card mb-6 highlight-card">
+                  <div className="section-title small">
+                    <Shield size={20} className="text-primary" />
+                    <span>Response Required</span>
+                  </div>
+                  <div className="action-buttons-vertical">
+                    <button
+                      onClick={handleAcceptTrade}
+                      disabled={actionLoading}
+                      className="btn-large btn-primary-gradient w-full"
+                    >
+                      {actionLoading ? <Spinner size="sm" /> : <><CheckCircle size={20} /> Accept Trade</>}
+                    </button>
+                    <button
+                      onClick={handleDeclineTrade}
+                      disabled={actionLoading}
+                      className="btn-large btn-outline-danger w-full"
+                    >
+                      {actionLoading ? <Spinner size="sm" /> : <><XCircle size={20} /> Decline Trade</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Completion Action */}
+              {trade.status === 'accepted' && (isProposer || isReceiver) && (
+                <div className="glass-card mb-6 highlight-card">
+                  <div className="section-title small">
+                    <CheckCircle size={20} className="text-primary" />
+                    <span>Complete Trade</span>
+                  </div>
+                  <p className="text-sm text-neutral-600 mb-4">
+                    Mark as complete after physical exchange.
+                  </p>
+                  <button
+                    onClick={handleCompleteTrade}
+                    disabled={actionLoading}
+                    className="btn-large btn-primary-gradient w-full"
+                  >
+                    {actionLoading ? <Spinner size="sm" /> : <><CheckCircle size={20} /> Mark Complete</>}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Trading Partner Info */}
+            <div className="glass-card mb-6">
+              <div className="section-title small">
+                <User size={20} className="text-primary" />
+                <span>Trading Partner</span>
+              </div>
+              <div className="partner-card-content compact">
+                <div className="partner-avatar">
+                  {otherUser?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="partner-info">
+                  <h3>{otherUser?.name}</h3>
+                  <div className="partner-meta">
+                    {otherUser?.city && otherUser?.privacySettings?.showCity !== false && (
+                      <div className="partner-meta-item">
+                        <MapPin size={14} />
+                        {otherUser.city}
+                      </div>
+                    )}
+                    {otherUser?.averageRating > 0 && (
+                      <div className="partner-meta-item">
+                        <Star size={14} className="text-warning-500 fill-warning-500" />
+                        <span className="font-semibold">{otherUser.averageRating.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline Section */}
+            <div className="glass-card">
+              <div className="section-title small">
+                <Clock size={20} className="text-primary" />
+                <span>Timeline</span>
+              </div>
+              <div className="timeline-list">
+                <div className="timeline-item">
+                  <span className="timeline-label">Proposed</span>
+                  <span className="timeline-value">
+                    {formatDate(trade.proposedAt)}
+                  </span>
+                </div>
+                {trade.respondedAt && (
+                  <div className="timeline-item">
+                    <span className="timeline-label">Responded</span>
+                    <span className="timeline-value">
+                      {formatDate(trade.respondedAt)}
+                    </span>
+                  </div>
+                )}
+                {trade.completedAt && (
+                  <div className="timeline-item">
+                    <span className="timeline-label">Completed</span>
+                    <span className="timeline-value">
+                      {formatDate(trade.completedAt)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        )}
-
-        {/* Chat Section - Only show for accepted trades */}
-        {trade.status === 'accepted' && (
-          <div className="mt-6">
-            <ChatBox 
-              tradeId={trade._id} 
-              otherUserName={otherUser?.name} 
-            />
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

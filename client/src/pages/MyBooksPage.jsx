@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
 import EditBookModal from '../components/EditBookModal';
-import { BookOpen, Plus, Library, TrendingUp, Calendar, Sparkles } from 'lucide-react';
+import { BookOpen, Plus, Library, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 import './MyBooksPage.css';
 
@@ -16,23 +16,6 @@ const MyBooksPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingBook, setDeletingBook] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Get time-based greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  // Get today's date formatted
-  const getFormattedDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   useEffect(() => {
     const fetchUserBooks = async () => {
@@ -185,22 +168,6 @@ const MyBooksPage = () => {
   return (
     <div className="my-books-page">
       <div className="my-books-container">
-        {/* Welcome Banner */}
-        <section className="welcome-banner">
-          <div className="welcome-content">
-            <div className="welcome-avatar">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div className="welcome-text">
-              <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
-              <p className="welcome-date">
-                <Calendar size={14} />
-                {getFormattedDate()}
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Page Header */}
         <section className="page-header">
           <div className="header-icon-container">

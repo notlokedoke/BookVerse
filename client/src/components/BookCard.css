@@ -35,7 +35,8 @@
 .book-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
   transition: transform 0.3s ease;
 }
 
@@ -88,7 +89,7 @@
   padding: 16px;
 }
 
-.book-title {
+.book-card .book-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: #1a1a1a;
@@ -99,10 +100,11 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 2.8rem; /* Ensure consistent height */
+  min-height: 2.8rem;
+  /* Ensure consistent height */
 }
 
-.book-author {
+.book-card .book-author {
   font-size: 0.9375rem;
   color: #6b7280;
   margin: 0 0 12px 0;
@@ -198,15 +200,15 @@
   .book-image-container {
     height: 200px;
   }
-  
+
   .book-title {
     font-size: 1rem;
   }
-  
+
   .book-author {
     font-size: 0.875rem;
   }
-  
+
   .book-meta {
     flex-direction: column;
     align-items: flex-start;
@@ -218,11 +220,11 @@
   .book-details {
     padding: 12px;
   }
-  
+
   .book-owner {
     padding: 10px 12px;
   }
-  
+
   .book-image-container {
     height: 180px;
   }
@@ -235,9 +237,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -327,6 +332,7 @@
     gap: 12px;
   }
 }
+
 /* Guest owner info styles */
 .owner-info-guest {
   padding: 0.75rem;
@@ -360,4 +366,122 @@
   gap: 0.25rem;
   font-size: 0.8125rem;
   color: #6b7280;
+}
+
+/* Quick Action Overlay */
+.quick-action-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+  border-radius: 12px 12px 0 0;
+}
+
+.book-image-container:hover .quick-action-overlay {
+  opacity: 1;
+}
+
+.quick-trade-btn {
+  background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+}
+
+.quick-trade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
+  background: linear-gradient(135deg, #27AE60 0%, #229954 100%);
+}
+
+.quick-trade-btn:active {
+  transform: translateY(0);
+}
+
+.trade-icon {
+  font-size: 1.2rem;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.quick-trade-btn:hover .trade-icon {
+  animation-play-state: paused;
+}
+
+/* Unavailable Overlay */
+.unavailable-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border-radius: 12px 12px 0 0;
+}
+
+.unavailable-badge {
+  background: #dc2626;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+
+  /* Show overlay on tap/touch for mobile */
+  .quick-action-overlay {
+    opacity: 0;
+  }
+
+  .book-card:active .quick-action-overlay {
+    opacity: 1;
+  }
+
+  .quick-trade-btn {
+    padding: 10px 20px;
+    font-size: 0.9375rem;
+  }
+}
+
+/* Ensure overlay doesn't interfere with card link on desktop */
+@media (min-width: 769px) {
+  .book-image-container {
+    position: relative;
+  }
 }
