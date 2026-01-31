@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import RatingDisplay from '../components/RatingDisplay';
+import RatingCard from '../components/RatingCard';
 import './UserProfilePage.css';
 
 const UserProfilePage = () => {
@@ -10,6 +12,7 @@ const UserProfilePage = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [userBooks, setUserBooks] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isOwnProfile = !userId || userId === user?._id;
@@ -36,6 +39,10 @@ const UserProfilePage = () => {
       // Fetch wishlist
       const wishlistRes = await axios.get(`/api/wishlist/user/${targetUserId}`);
       setWishlist(wishlistRes.data.data || []);
+
+      // Fetch ratings
+      const ratingsRes = await axios.get(`/api/ratings/user/${targetUserId}`);
+      setRatings(ratingsRes.data.data || []);
 
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -73,12 +80,15 @@ const UserProfilePage = () => {
           {profileUser.city && profileUser.privacySettings?.showCity !== false && (
             <span className="meta-item">📍 {profileUser.city}</span>
           )}
-          <span className="meta-item">
-            ⭐ {profileUser.averageRating > 0 
-              ? `${profileUser.averageRating.toFixed(1)} (${profileUser.ratingCount})`
-              : 'No ratings yet'
-            }
-          </span>
+        </div>
+
+        {/* Rating Display */}
+        <div className="profile-rating">
+          <RatingDisplay 
+            averageRating={profileUser.averageRating || 0} 
+            ratingCount={profileUser.ratingCount || 0}
+            size="lg"
+          />
         </div>
 
         {isOwnProfile && (
@@ -163,6 +173,25 @@ const UserProfilePage = () => {
             {isOwnProfile && (
               <Link to="/wishlist/create" className="btn-primary">Add to Wishlist</Link>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Ratings Section */}
+      <section className="profile-section">
+        <div className="section-header">
+          <h2>Reviews</h2>
+        </div>
+
+        {ratings.length > 0 ? (
+          <div className="ratings-list">
+            {ratings.map(rating => (
+              <RatingCard key={rating._id} rating={rating} />
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No ratings yet</p>
           </div>
         )}
       </section>

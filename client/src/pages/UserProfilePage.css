@@ -250,6 +250,20 @@
   margin: 0 0 1rem 0;
 }
 
+/* Profile Rating Display */
+.profile-rating {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Ratings List */
+.ratings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .btn-primary {
   display: inline-block;
   padding: 0.625rem 1.5rem;

@@ -2,7 +2,11 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 import { vi } from 'vitest';
+import axios from 'axios';
 import UserProfilePage from './UserProfilePage';
+
+// Mock axios
+vi.mock('axios');
 
 // Mock AuthContext
 const mockAuthContext = {
@@ -15,9 +19,6 @@ const mockAuthContext = {
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => mockAuthContext,
 }));
-
-// Mock fetch
-global.fetch = vi.fn();
 
 const renderWithProviders = (component, initialEntries = ['/']) => {
   return render(
@@ -32,42 +33,68 @@ const renderWithProviders = (component, initialEntries = ['/']) => {
 
 describe('UserProfilePage', () => {
   beforeEach(() => {
-    fetch.mockClear();
+    axios.get.mockClear();
+    localStorage.setItem('token', 'fake-token');
   });
 
-  test('renders user profile with wishlist section', async () => {
-    // Mock user profile API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          _id: '507f191e810c19729de860ea',
-          name: 'Test User',
-          city: 'New York',
-          averageRating: 4.5,
-          ratingCount: 10
-        }
-      })
-    });
+  test('renders user profile with ratings section', async () => {
+    const mockUser = {
+      _id: '507f191e810c19729de860ea',
+      name: 'Test User',
+      city: 'New York',
+      averageRating: 4.5,
+      ratingCount: 2,
+      privacySettings: { showCity: true }
+    };
 
-    // Mock wishlist API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: [
-          {
-            _id: '507f1f77bcf86cd799439011',
-            title: 'The Great Gatsby',
-            author: 'F. Scott Fitzgerald',
-            isbn: '9780743273565',
-            notes: 'Looking for a good condition copy',
-            createdAt: '2025-01-17T10:00:00Z'
-          }
-        ]
-      })
-    });
+    const mockBooks = [
+      {
+        _id: 'book1',
+        title: 'Test Book',
+        author: 'Test Author',
+        imageUrl: 'http://example.com/image.jpg'
+      }
+    ];
+
+    const mockWishlist = [
+      {
+        _id: 'wish1',
+        title: 'The Great Gatsby',
+        author: 'F. Scott Fitzgerald'
+      }
+    ];
+
+    const mockRatings = [
+      {
+        _id: 'rating1',
+        stars: 5,
+        comment: 'Great trader!',
+        createdAt: '2025-01-17T10:00:00Z',
+        rater: {
+          _id: 'rater1',
+          name: 'John Doe',
+          city: 'Boston'
+        }
+      },
+      {
+        _id: 'rating2',
+        stars: 4,
+        comment: 'Good experience',
+        createdAt: '2025-01-16T10:00:00Z',
+        rater: {
+          _id: 'rater2',
+          name: 'Jane Smith',
+          city: 'Chicago'
+        }
+      }
+    ];
+
+    // Mock API responses
+    axios.get
+      .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
+      .mockResolvedValueOnce({ data: { success: true, data: { books: mockBooks } } }) // Books
+      .mockResolvedValueOnce({ data: { success: true, data: mockWishlist } }) // Wishlist
+      .mockResolvedValueOnce({ data: { success: true, data: mockRatings } }); // Ratings
 
     renderWithProviders(<UserProfilePage />, ['/profile']);
 
@@ -76,44 +103,44 @@ describe('UserProfilePage', () => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
     });
 
-    // Check if wishlist section is present
-    expect(screen.getByText('My Wishlist')).toBeInTheDocument();
-    
-    // Wait for wishlist to load
+    // Check if ratings section is present
     await waitFor(() => {
-      expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
+      expect(screen.getAllByText('Reviews')).toHaveLength(2); // One in stats, one in section header
     });
 
-    // Check if wishlist item is properly formatted
-    expect(screen.getByText('by F. Scott Fitzgerald')).toBeInTheDocument();
-    expect(screen.getByText('ISBN: 9780743273565')).toBeInTheDocument();
-    expect(screen.getByText('Looking for a good condition copy')).toBeInTheDocument();
+    // Check if ratings are displayed
+    await waitFor(() => {
+      expect(screen.getByText('Great trader!')).toBeInTheDocument();
+      expect(screen.getByText('Good experience')).toBeInTheDocument();
+    });
+
+    // Verify RatingDisplay is shown in header
+    expect(screen.getByText('(2 ratings)')).toBeInTheDocument();
+
+    // Verify API calls
+    expect(axios.get).toHaveBeenCalledWith(
+      '/api/users/507f191e810c19729de860ea',
+      expect.any(Object)
+    );
+    expect(axios.get).toHaveBeenCalledWith('/api/ratings/user/507f191e810c19729de860ea');
   });
 
-  test('displays empty wishlist state appropriately', async () => {
-    // Mock user profile API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          _id: '507f191e810c19729de860ea',
-          name: 'Test User',
-          city: 'New York',
-          averageRating: 0,
-          ratingCount: 0
-        }
-      })
-    });
+  test('displays "No ratings yet" when user has no ratings', async () => {
+    const mockUser = {
+      _id: '507f191e810c19729de860ea',
+      name: 'Test User',
+      city: 'New York',
+      averageRating: 0,
+      ratingCount: 0,
+      privacySettings: { showCity: true }
+    };
 
-    // Mock empty wishlist API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: []
-      })
-    });
+    // Mock API responses
+    axios.get
+      .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
+      .mockResolvedValueOnce({ data: { success: true, data: { books: [] } } }) // Books
+      .mockResolvedValueOnce({ data: { success: true, data: [] } }) // Wishlist
+      .mockResolvedValueOnce({ data: { success: true, data: [] } }); // Ratings (empty)
 
     renderWithProviders(<UserProfilePage />, ['/profile']);
 
@@ -122,84 +149,66 @@ describe('UserProfilePage', () => {
       expect(screen.getByText('Test User')).toBeInTheDocument();
     });
 
-    // Check if wishlist section is present
-    expect(screen.getByText('My Wishlist')).toBeInTheDocument();
-    
-    // Wait for empty wishlist message
+    // Check if ratings section is present
     await waitFor(() => {
-      expect(screen.getByText(/You haven't added any books to your wishlist yet/)).toBeInTheDocument();
+      expect(screen.getAllByText('Reviews')).toHaveLength(2); // One in stats, one in section header
     });
 
-    // Check if add book button is present for own profile
-    expect(screen.getByText('Add Your First Book')).toBeInTheDocument();
+    // Check if "No ratings yet" message is displayed
+    await waitFor(() => {
+      expect(screen.getByText('No ratings yet')).toBeInTheDocument();
+    });
+
+    // Verify RatingDisplay shows 0 ratings
+    expect(screen.getByText('(0 ratings)')).toBeInTheDocument();
   });
 
-  test('displays other user\'s wishlist publicly (Requirement 7.5)', async () => {
-    // Test that wishlist endpoint is publicly accessible by testing the WishlistSection component directly
-    // This verifies that the wishlist can be viewed without authentication
-    
+  test('fetches and displays ratings when viewing another user profile', async () => {
     const otherUserId = '507f191e810c19729de860eb';
     
-    // Mock other user's wishlist API response (publicly accessible - no auth required)
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: [
-          {
-            _id: '507f1f77bcf86cd799439012',
-            title: '1984',
-            author: 'George Orwell',
-            isbn: '9780451524935',
-            notes: 'Looking for first edition',
-            createdAt: '2025-01-17T09:00:00Z'
-          },
-          {
-            _id: '507f1f77bcf86cd799439013',
-            title: 'To Kill a Mockingbird',
-            author: 'Harper Lee',
-            createdAt: '2025-01-17T08:00:00Z'
-          }
-        ]
-      })
-    });
+    const mockUser = {
+      _id: otherUserId,
+      name: 'Other User',
+      city: 'Boston',
+      averageRating: 4.8,
+      ratingCount: 5,
+      privacySettings: { showCity: true }
+    };
 
-    // Import and render WishlistSection directly to test public access
-    const { default: WishlistSection } = await import('../components/WishlistSection');
-    
-    render(
-      <WishlistSection 
-        userId={otherUserId} 
-        isOwnProfile={false} 
-      />
-    );
+    const mockRatings = [
+      {
+        _id: 'rating1',
+        stars: 5,
+        comment: 'Excellent trader!',
+        createdAt: '2025-01-17T10:00:00Z',
+        rater: {
+          _id: 'rater1',
+          name: 'Alice',
+          city: 'Seattle'
+        }
+      }
+    ];
 
-    // Wait for wishlist items to load
+    // Mock API responses
+    axios.get
+      .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
+      .mockResolvedValueOnce({ data: { success: true, data: { books: [] } } }) // Books
+      .mockResolvedValueOnce({ data: { success: true, data: [] } }) // Wishlist
+      .mockResolvedValueOnce({ data: { success: true, data: mockRatings } }); // Ratings
+
+    renderWithProviders(<UserProfilePage />, [`/profile/${otherUserId}`]);
+
+    // Wait for profile to load
     await waitFor(() => {
-      expect(screen.getByText('1984')).toBeInTheDocument();
+      expect(screen.getByText('Other User')).toBeInTheDocument();
     });
 
-    // Verify wishlist items are displayed
-    expect(screen.getByText('by George Orwell')).toBeInTheDocument();
-    expect(screen.getByText('ISBN: 9780451524935')).toBeInTheDocument();
-    expect(screen.getByText('Looking for first edition')).toBeInTheDocument();
-    expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
-    expect(screen.getByText('by Harper Lee')).toBeInTheDocument();
+    // Check if ratings are displayed
+    await waitFor(() => {
+      expect(screen.getByText('Excellent trader!')).toBeInTheDocument();
+    });
 
-    // Check that it shows "Wishlist" (not "My Wishlist") for other users
-    expect(screen.getByText('Wishlist')).toBeInTheDocument();
-    expect(screen.queryByText('My Wishlist')).not.toBeInTheDocument();
-
-    // Verify that add/remove buttons are NOT shown for other users
-    expect(screen.queryByText('+ Add Book')).not.toBeInTheDocument();
-    expect(screen.queryByText('Add Your First Book')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
-
-    // Verify the API call was made correctly (publicly accessible)
-    expect(fetch).toHaveBeenCalledWith(`/api/wishlist/user/${otherUserId}`);
-    
-    // Verify no Authorization header was sent (public access)
-    const fetchCall = fetch.mock.calls[0];
-    expect(fetchCall[1]).toBeUndefined(); // No second parameter means no headers
+    // Verify API call was made for the correct user
+    expect(axios.get).toHaveBeenCalledWith(`/api/ratings/user/${otherUserId}`);
   });
 });
