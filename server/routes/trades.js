@@ -271,4 +271,202 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/trades/:id/accept
+ * @desc    Accept a trade proposal
+ * @access  Private (requires authentication, receiver only)
+ */
+router.put('/:id/accept', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate trade ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid trade ID format',
+          code: 'INVALID_TRADE_ID'
+        }
+      });
+    }
+
+    // Fetch trade with populated references
+    const trade = await Trade.findById(id)
+      .populate('proposer', '-password')
+      .populate('receiver', '-password')
+      .populate('requestedBook')
+      .populate('offeredBook');
+
+    // Validate that trade exists
+    if (!trade) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Trade not found',
+          code: 'TRADE_NOT_FOUND'
+        }
+      });
+    }
+
+    // Validate that authenticated user is the receiver (Req 9.4)
+    if (trade.receiver._id.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Only the receiver can accept this trade',
+          code: 'NOT_AUTHORIZED'
+        }
+      });
+    }
+
+    // Validate that trade status is "proposed"
+    if (trade.status !== 'proposed') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: `Cannot accept trade with status "${trade.status}". Only proposed trades can be accepted.`,
+          code: 'INVALID_TRADE_STATUS'
+        }
+      });
+    }
+
+    // Update trade status to "accepted" and set respondedAt timestamp
+    trade.status = 'accepted';
+    trade.respondedAt = new Date();
+    await trade.save();
+
+    // Create notification for the proposer (Req 9.3)
+    try {
+      const notification = new Notification({
+        recipient: trade.proposer._id,
+        type: 'trade_accepted',
+        relatedTrade: trade._id,
+        relatedUser: req.userId,
+        message: `${trade.receiver.name} accepted your trade proposal for "${trade.requestedBook.title}"`
+      });
+      await notification.save();
+    } catch (notificationError) {
+      // Log notification error but don't fail the trade acceptance
+      console.error('Failed to create notification:', notificationError);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: trade,
+      message: 'Trade accepted successfully. You can now communicate with the other user.'
+    });
+
+  } catch (error) {
+    console.error('Accept trade error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while accepting the trade',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/trades/:id/decline
+ * @desc    Decline a trade proposal
+ * @access  Private (requires authentication, receiver only)
+ */
+router.put('/:id/decline', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate trade ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid trade ID format',
+          code: 'INVALID_TRADE_ID'
+        }
+      });
+    }
+
+    // Fetch trade with populated references
+    const trade = await Trade.findById(id)
+      .populate('proposer', '-password')
+      .populate('receiver', '-password')
+      .populate('requestedBook')
+      .populate('offeredBook');
+
+    // Validate that trade exists
+    if (!trade) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Trade not found',
+          code: 'TRADE_NOT_FOUND'
+        }
+      });
+    }
+
+    // Validate that authenticated user is the receiver (Req 9.4)
+    if (trade.receiver._id.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Only the receiver can decline this trade',
+          code: 'NOT_AUTHORIZED'
+        }
+      });
+    }
+
+    // Validate that trade status is "proposed"
+    if (trade.status !== 'proposed') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: `Cannot decline trade with status "${trade.status}". Only proposed trades can be declined.`,
+          code: 'INVALID_TRADE_STATUS'
+        }
+      });
+    }
+
+    // Update trade status to "declined" and set respondedAt timestamp
+    trade.status = 'declined';
+    trade.respondedAt = new Date();
+    await trade.save();
+
+    // Create notification for the proposer (Req 9.3)
+    try {
+      const notification = new Notification({
+        recipient: trade.proposer._id,
+        type: 'trade_declined',
+        relatedTrade: trade._id,
+        relatedUser: req.userId,
+        message: `${trade.receiver.name} declined your trade proposal for "${trade.requestedBook.title}"`
+      });
+      await notification.save();
+    } catch (notificationError) {
+      // Log notification error but don't fail the trade decline
+      console.error('Failed to create notification:', notificationError);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: trade,
+      message: 'Trade declined successfully'
+    });
+
+  } catch (error) {
+    console.error('Decline trade error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while declining the trade',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

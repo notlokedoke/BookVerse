@@ -157,7 +157,7 @@
 }
 
 .retry-btn {
-  background: #3b82f6;
+  background: #2ECC71;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -330,9 +330,9 @@
 }
 
 .page-number.active {
-  background: #3b82f6;
+  background: #2ECC71;
   color: white;
-  border-color: #3b82f6;
+  border-color: #2ECC71;
 }
 
 .page-number.active:hover {

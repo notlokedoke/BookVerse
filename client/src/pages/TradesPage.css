@@ -1,36 +1,35 @@
-/* Import the same font as other pages for consistency */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+/* TradesPage - Uses global theme */
 
 .trades-page {
-  min-height: 100vh;
-  background: #ffffff;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1a1a1a;
-  padding: 2rem 0;
+  min-height: calc(100vh - 64px);
+  background: var(--bg-page);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  padding: var(--spacing-xl) 0;
 }
 
-.container {
-  max-width: 1200px;
+.trades-page .container {
+  max-width: var(--container-max-width);
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 var(--container-padding);
 }
 
 /* Page Header */
-.page-header {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #e5e7eb;
+.trades-page .page-header {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.header-content h1 {
+.trades-page .header-content h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
-.header-subtitle {
-  color: #6b7280;
+.trades-page .header-subtitle {
+  color: var(--color-text-muted);
   font-size: 1rem;
   margin: 0;
 }
@@ -39,34 +38,34 @@
 .trades-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .summary-card {
-  background: #fafafa;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
   text-align: center;
-  transition: all 0.2s ease;
+  transition: all var(--transition-normal);
 }
 
 .summary-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: var(--border-color-dark);
+  box-shadow: var(--shadow-sm);
 }
 
 .summary-number {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
 }
 
 .summary-label {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--color-text-muted);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -75,38 +74,38 @@
 /* Tabs */
 .trades-tabs {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #e5e7eb;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xl);
+  border-bottom: 2px solid var(--border-color);
   overflow-x: auto;
 }
 
 .tab-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   padding: 0.875rem 1.5rem;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
   white-space: nowrap;
   margin-bottom: -2px;
 }
 
 .tab-button:hover {
-  color: #1a1a1a;
-  background: #fafafa;
+  color: var(--color-text);
+  background: var(--bg-hover);
 }
 
 .tab-button.active {
-  color: #1a1a1a;
-  border-bottom-color: #1a1a1a;
+  color: var(--color-text);
+  border-bottom-color: var(--color-primary);
 }
 
 .tab-count {
@@ -115,16 +114,16 @@
   justify-content: center;
   min-width: 24px;
   height: 24px;
-  padding: 0 0.5rem;
-  background: #e5e7eb;
-  color: #374151;
-  border-radius: 12px;
+  padding: 0 var(--spacing-sm);
+  background: var(--bg-active);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .tab-button.active .tab-count {
-  background: #1a1a1a;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -157,8 +156,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-state p {

@@ -559,3 +559,374 @@ describe('Trades API - Propose Trade', () => {
     });
   });
 });
+
+describe('Trades API - Accept/Decline Trade', () => {
+  let user1, user2, user1Token, user2Token;
+  let user1Book, user2Book, proposedTrade;
+
+  beforeAll(async () => {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
+    }
+  });
+
+  beforeEach(async () => {
+    // Clear database
+    await User.deleteMany({});
+    await Book.deleteMany({});
+    await Trade.deleteMany({});
+    await Notification.deleteMany({});
+
+    // Create test users
+    user1 = await User.create({
+      name: 'User One',
+      email: 'user1@example.com',
+      password: 'password123',
+      city: 'New York'
+    });
+
+    user2 = await User.create({
+      name: 'User Two',
+      email: 'user2@example.com',
+      password: 'password123',
+      city: 'Los Angeles'
+    });
+
+    // Generate tokens
+    user1Token = generateToken(user1._id);
+    user2Token = generateToken(user2._id);
+
+    // Create test books
+    user1Book = await Book.create({
+      owner: user1._id,
+      title: 'User 1 Book',
+      author: 'Author One',
+      genre: 'Fiction',
+      condition: 'Good',
+      imageUrl: 'https://example.com/image1.jpg',
+      isAvailable: true
+    });
+
+    user2Book = await Book.create({
+      owner: user2._id,
+      title: 'User 2 Book',
+      author: 'Author Two',
+      genre: 'Science',
+      condition: 'Like New',
+      imageUrl: 'https://example.com/image2.jpg',
+      isAvailable: true
+    });
+
+    // Create a proposed trade (user1 proposes to user2)
+    proposedTrade = await Trade.create({
+      proposer: user1._id,
+      receiver: user2._id,
+      requestedBook: user2Book._id,
+      offeredBook: user1Book._id,
+      status: 'proposed',
+      proposedAt: new Date()
+    });
+  });
+
+  afterEach(async () => {
+    await User.deleteMany({});
+    await Book.deleteMany({});
+    await Trade.deleteMany({});
+    await Notification.deleteMany({});
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
+  });
+
+  describe('PUT /api/trades/:id/accept', () => {
+    test('should accept trade proposal by receiver (Req 9.1)', async () => {
+      const beforeTime = new Date();
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const afterTime = new Date();
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.status).toBe('accepted');
+      expect(response.body.data.respondedAt).toBeDefined();
+      expect(response.body.message).toContain('accepted successfully');
+
+      // Verify respondedAt timestamp is within expected range
+      const respondedAt = new Date(response.body.data.respondedAt);
+      expect(respondedAt.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
+      expect(respondedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+    });
+
+    test('should update trade status in database', async () => {
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const updatedTrade = await Trade.findById(proposedTrade._id);
+      expect(updatedTrade.status).toBe('accepted');
+      expect(updatedTrade.respondedAt).toBeDefined();
+    });
+
+    test('should create notification for proposer when trade is accepted (Req 9.3)', async () => {
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const notifications = await Notification.find({ recipient: user1._id });
+      expect(notifications).toHaveLength(1);
+
+      const notification = notifications[0];
+      expect(notification.type).toBe('trade_accepted');
+      expect(notification.recipient.toString()).toBe(user1._id.toString());
+      expect(notification.relatedTrade.toString()).toBe(proposedTrade._id.toString());
+      expect(notification.relatedUser.toString()).toBe(user2._id.toString());
+      expect(notification.message).toContain('User Two');
+      expect(notification.message).toContain('accepted');
+      expect(notification.isRead).toBe(false);
+    });
+
+    test('should reject accept request from non-receiver (Req 9.4)', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user1Token}`) // user1 is proposer, not receiver
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_AUTHORIZED');
+      expect(response.body.error.message).toContain('Only the receiver can accept');
+    });
+
+    test('should reject accept request without authentication', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should reject accept request with invalid trade ID format', async () => {
+      const response = await request(app)
+        .put('/api/trades/invalid-id/accept')
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+    });
+
+    test('should reject accept request for non-existent trade', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .put(`/api/trades/${fakeId}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('TRADE_NOT_FOUND');
+    });
+
+    test('should reject accept request for already accepted trade', async () => {
+      // First accept the trade
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      // Try to accept again
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+      expect(response.body.error.message).toContain('accepted');
+    });
+
+    test('should reject accept request for declined trade', async () => {
+      // Update trade to declined status
+      await Trade.findByIdAndUpdate(proposedTrade._id, { 
+        status: 'declined',
+        respondedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+
+    test('should reject accept request for completed trade', async () => {
+      // Update trade to completed status
+      await Trade.findByIdAndUpdate(proposedTrade._id, { 
+        status: 'completed',
+        respondedAt: new Date(),
+        completedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/accept`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+  });
+
+  describe('PUT /api/trades/:id/decline', () => {
+    test('should decline trade proposal by receiver (Req 9.2)', async () => {
+      const beforeTime = new Date();
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const afterTime = new Date();
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.status).toBe('declined');
+      expect(response.body.data.respondedAt).toBeDefined();
+      expect(response.body.message).toContain('declined successfully');
+
+      // Verify respondedAt timestamp is within expected range
+      const respondedAt = new Date(response.body.data.respondedAt);
+      expect(respondedAt.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
+      expect(respondedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
+    });
+
+    test('should update trade status in database', async () => {
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const updatedTrade = await Trade.findById(proposedTrade._id);
+      expect(updatedTrade.status).toBe('declined');
+      expect(updatedTrade.respondedAt).toBeDefined();
+    });
+
+    test('should create notification for proposer when trade is declined (Req 9.3)', async () => {
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      const notifications = await Notification.find({ recipient: user1._id });
+      expect(notifications).toHaveLength(1);
+
+      const notification = notifications[0];
+      expect(notification.type).toBe('trade_declined');
+      expect(notification.recipient.toString()).toBe(user1._id.toString());
+      expect(notification.relatedTrade.toString()).toBe(proposedTrade._id.toString());
+      expect(notification.relatedUser.toString()).toBe(user2._id.toString());
+      expect(notification.message).toContain('User Two');
+      expect(notification.message).toContain('declined');
+      expect(notification.isRead).toBe(false);
+    });
+
+    test('should reject decline request from non-receiver (Req 9.4)', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user1Token}`) // user1 is proposer, not receiver
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NOT_AUTHORIZED');
+      expect(response.body.error.message).toContain('Only the receiver can decline');
+    });
+
+    test('should reject decline request without authentication', async () => {
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+    });
+
+    test('should reject decline request with invalid trade ID format', async () => {
+      const response = await request(app)
+        .put('/api/trades/invalid-id/decline')
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+    });
+
+    test('should reject decline request for non-existent trade', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
+      const response = await request(app)
+        .put(`/api/trades/${fakeId}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(404);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('TRADE_NOT_FOUND');
+    });
+
+    test('should reject decline request for already accepted trade', async () => {
+      // Update trade to accepted status
+      await Trade.findByIdAndUpdate(proposedTrade._id, { 
+        status: 'accepted',
+        respondedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+
+    test('should reject decline request for already declined trade', async () => {
+      // First decline the trade
+      await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(200);
+
+      // Try to decline again
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+
+    test('should reject decline request for completed trade', async () => {
+      // Update trade to completed status
+      await Trade.findByIdAndUpdate(proposedTrade._id, { 
+        status: 'completed',
+        respondedAt: new Date(),
+        completedAt: new Date()
+      });
+
+      const response = await request(app)
+        .put(`/api/trades/${proposedTrade._id}/decline`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TRADE_STATUS');
+    });
+  });
+});

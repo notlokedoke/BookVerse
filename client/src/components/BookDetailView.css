@@ -546,7 +546,7 @@
 }
 
 .auth-prompt {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   color: white;
   padding: 2rem;
   border-radius: 12px;
@@ -585,7 +585,7 @@
 
 .signup-button {
   background: white;
-  color: #667eea;
+  color: #2ECC71;
   border: 2px solid white;
 }
 
@@ -623,18 +623,18 @@
 }
 
 .login-to-view a {
-  color: #667eea;
+  color: #2ECC71;
   text-decoration: none;
   font-weight: 500;
   font-size: 0.9375rem;
   padding: 0.5rem 1rem;
-  border: 1px solid #667eea;
+  border: 1px solid #2ECC71;
   border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .login-to-view a:hover {
-  background: #667eea;
+  background: #2ECC71;
   color: white;
   transform: translateY(-1px);
 }

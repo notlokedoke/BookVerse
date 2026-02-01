@@ -307,12 +307,15 @@ router.get('/:id', async (req, res) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20, city, genre, author } = req.query;
+    const { page = 1, limit = 20, city, genre, author, title } = req.query;
 
     // Build query object
     const query = { isAvailable: true };
 
     // Add filters if provided
+    if (title) {
+      query.title = new RegExp(title, 'i'); // Case-insensitive partial match
+    }
     if (genre) {
       query.genre = genre; // Exact genre match
     }

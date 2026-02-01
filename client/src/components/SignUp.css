@@ -69,7 +69,7 @@
 
 /* Left Side - Branding */
 .signup-left {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -467,7 +467,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #2ECC71;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -551,8 +551,8 @@
 }
 
 .checkbox-label input[type="checkbox"]:checked {
-  background: #667eea;
-  border-color: #667eea;
+  background: #2ECC71;
+  border-color: #2ECC71;
 }
 
 .checkbox-label input[type="checkbox"]:checked::after {
@@ -575,7 +575,7 @@
 .create-btn {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: #667eea;
+  background: #2ECC71;
   color: white;
   border: none;
   border-radius: 8px;

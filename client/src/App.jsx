@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import BookDetailView from './components/BookDetailView'
+import TradeDetailView from './components/TradeDetailView'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import BrowsePage from './pages/BrowsePage'
@@ -22,11 +23,10 @@ const AppContent = () => {
   const location = useLocation()
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
   const isLandingPage = location.pathname === '/'
-  const isDashboardPage = location.pathname === '/dashboard'
 
   return (
     <div className="App">
-      {!isAuthPage && !isLandingPage && !isDashboardPage && <Navbar />}
+      {!isAuthPage && !isLandingPage && <Navbar />}
       <Routes>
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
@@ -96,6 +96,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <TradesPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/trades/:id" 
+              element={
+                <ProtectedRoute>
+                  <TradeDetailView />
                 </ProtectedRoute>
               } 
             />
