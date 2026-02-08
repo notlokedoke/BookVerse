@@ -92,8 +92,7 @@ const LoginForm = () => {
 
   // Handle forgot password
   const handleForgotPassword = () => {
-    // For now, just show an alert since we don't have a forgot password page yet
-    alert('Forgot password functionality will be implemented soon. Please contact support for now.');
+    navigate('/forgot-password');
   };
 
   return (

@@ -145,20 +145,35 @@
   align-items: center;
   gap: 1rem;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(46, 204, 113, 0.15);
   border-radius: 1rem;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: white;
 }
 
 .stat-card:hover {
-  background: white;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card:nth-child(1) {
+  background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+}
+
+.stat-card:nth-child(2) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(3) {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.stat-card:nth-child(4) {
+  background: linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%);
 }
 
 .stat-card svg {
-  color: #2ECC71;
+  color: white;
   flex-shrink: 0;
 }
 
@@ -170,14 +185,14 @@
 .stat-value {
   font-size: 1.875rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: white;
   line-height: 1;
   margin-bottom: 0.25rem;
 }
 
 .stat-label {
   font-size: 0.8125rem;
-  color: #000000;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
 }
 

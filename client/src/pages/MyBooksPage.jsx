@@ -184,7 +184,7 @@ const MyBooksPage = () => {
 
         {/* Books Stats */}
         <section className="books-stats">
-          <div className="stat-card gradient-blue">
+          <div className="stat-card gradient-purple">
             <div className="stat-icon-container">
               <BookOpen size={24} />
             </div>

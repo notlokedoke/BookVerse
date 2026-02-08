@@ -9,6 +9,7 @@
   --gradient-green: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
   --gradient-amber: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
   --gradient-purple: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+  --gradient-pink: linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%);
   --glass-bg: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(255, 255, 255, 0.3);
   --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
@@ -289,6 +290,18 @@
   color: white;
   overflow: hidden;
   transition: all 0.3s ease;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-card.clickable:active {
+  transform: translateY(-2px);
 }
 
 .stat-card::before {
@@ -305,6 +318,10 @@
 .stat-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.gradient-pink {
+  background: linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%);
 }
 
 .stat-card.gradient-blue {

@@ -74,8 +74,7 @@ export const useCitySearch = (initialValue = '') => {
             }
 
         } catch (err) {
-            console.error("City search error:", err);
-            // Fallback
+            // Silently fallback to local data (CORS errors are expected in development)
             const local = worldCities.filter(c =>
                 c.toLowerCase().includes(searchTerm.toLowerCase())
             ).slice(0, 5);
@@ -136,13 +135,12 @@ export const useCitySearch = (initialValue = '') => {
                 setSuggestions([]);
 
             } catch (err) {
-                console.error(err);
+                // Silently fail - CORS errors are expected in development
                 setError('Failed to detect location');
             } finally {
                 setIsLocating(false);
             }
         }, (err) => {
-            console.error(err);
             setError('Location access denied or failed');
             setIsLocating(false);
         });

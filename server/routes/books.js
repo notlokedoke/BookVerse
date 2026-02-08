@@ -55,7 +55,7 @@ router.post('/isbn/:isbn', async (req, res) => {
 
     // Query Google Books API
     const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}&key=${process.env.GOOGLE_BOOKS_API_KEY}`;
-    
+
     const response = await axios.get(googleBooksUrl, {
       timeout: 10000 // 10 second timeout
     });
@@ -73,13 +73,13 @@ router.post('/isbn/:isbn', async (req, res) => {
 
     // Extract book information from the first result
     const bookInfo = response.data.items[0].volumeInfo;
-    
+
     // Format the response data
     const formattedBookData = {
       title: bookInfo.title || '',
       author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
       publisher: bookInfo.publisher || '',
-      publicationYear: bookInfo.publishedDate ? 
+      publicationYear: bookInfo.publishedDate ?
         parseInt(bookInfo.publishedDate.split('-')[0]) : null,
       isbn: cleanIsbn,
       description: bookInfo.description || '',
@@ -119,7 +119,7 @@ router.post('/isbn/:isbn', async (req, res) => {
           }
         });
       }
-      
+
       if (error.response.status === 400) {
         return res.status(400).json({
           success: false,
@@ -153,6 +153,109 @@ router.post('/isbn/:isbn', async (req, res) => {
 });
 
 /**
+ * @route   GET /api/books/search-external
+ * @desc    Search for books using Google Books API globally
+ * @access  Public
+ */
+router.get('/search-external', async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Search query is required',
+          code: 'QUERY_REQUIRED'
+        }
+      });
+    }
+
+    if (!process.env.GOOGLE_BOOKS_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          message: 'Google Books API is not configured',
+          code: 'API_NOT_CONFIGURED'
+        }
+      });
+    }
+
+    const cleanQuery = q.trim();
+    const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(cleanQuery)}&key=${process.env.GOOGLE_BOOKS_API_KEY}&maxResults=10`;
+
+    const response = await axios.get(googleBooksUrl, {
+      timeout: 10000
+    });
+
+    if (!response.data.items || response.data.items.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: 'No books found'
+      });
+    }
+
+    // Extract book information from the results
+    const books = response.data.items.map(item => {
+      const bookInfo = item.volumeInfo;
+      let isbn = null;
+      if (bookInfo.industryIdentifiers) {
+        const isbn13 = bookInfo.industryIdentifiers.find(identifier => identifier.type === 'ISBN_13');
+        const isbn10 = bookInfo.industryIdentifiers.find(identifier => identifier.type === 'ISBN_10');
+        isbn = isbn13 ? isbn13.identifier : (isbn10 ? isbn10.identifier : null);
+      }
+
+      return {
+        id: item.id,
+        title: bookInfo.title || '',
+        author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
+        isbn: isbn,
+        thumbnail: bookInfo.imageLinks?.thumbnail || null,
+        publishedDate: bookInfo.publishedDate || null
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: books,
+      message: 'Books retrieved successfully'
+    });
+
+  } catch (error) {
+    console.error('External book search error:', error);
+
+    if (error.code === 'ECONNABORTED') {
+      return res.status(408).json({
+        success: false,
+        error: {
+          message: 'Request timeout. Please try again.',
+          code: 'REQUEST_TIMEOUT'
+        }
+      });
+    }
+
+    if (error.response && error.response.status === 403) {
+      return res.status(503).json({
+        success: false,
+        error: {
+          message: 'Google Books API quota exceeded or invalid API key',
+          code: 'API_QUOTA_EXCEEDED'
+        }
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while searching for books',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   POST /api/books
  * @desc    Create new book listing with image upload
  * @access  Private (requires authentication)
@@ -160,7 +263,7 @@ router.post('/isbn/:isbn', async (req, res) => {
 router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), (req, res, next) => {
   // Validate required fields after upload middleware
   const { title, author, condition, genre, googleBooksImageUrl } = req.body;
-  
+
   if (!title || !author || !condition || !genre) {
     return res.status(400).json({
       success: false,
@@ -170,7 +273,7 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), (req, res
       }
     });
   }
-  
+
   // Check if at least one image source is provided
   if (!req.frontImageUrl && !req.backImageUrl && !googleBooksImageUrl) {
     return res.status(400).json({
@@ -181,7 +284,7 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), (req, res
       }
     });
   }
-  
+
   next();
 }, async (req, res) => {
   try {
@@ -438,9 +541,9 @@ router.get('/user/:userId', async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Find books owned by the user and populate owner information
-    const books = await Book.find({ 
-      owner: userId, 
-      isAvailable: true 
+    const books = await Book.find({
+      owner: userId,
+      isAvailable: true
     })
       .populate('owner', '-password')
       .sort({ createdAt: -1 })
@@ -449,9 +552,9 @@ router.get('/user/:userId', async (req, res) => {
       .exec();
 
     // Get total count for pagination
-    const total = await Book.countDocuments({ 
-      owner: userId, 
-      isAvailable: true 
+    const total = await Book.countDocuments({
+      owner: userId,
+      isAvailable: true
     });
 
     // Apply privacy settings to all books
@@ -506,7 +609,7 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
 
     // Find the book first
     const book = await Book.findById(id);
-    
+
     if (!book) {
       return res.status(404).json({
         success: false,
@@ -575,7 +678,7 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
 
     // Build update object with only provided fields (with sanitization)
     const updateData = {};
-    
+
     if (title !== undefined) updateData.title = sanitizeString(title.trim());
     if (author !== undefined) updateData.author = sanitizeString(author.trim());
     if (condition !== undefined) updateData.condition = condition;
@@ -615,7 +718,7 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
     const updatedBook = await Book.findByIdAndUpdate(
       id,
       updateData,
-      { 
+      {
         new: true, // Return updated document
         runValidators: true // Run schema validation
       }
@@ -689,7 +792,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     // Find the book first
     const book = await Book.findById(id);
-    
+
     if (!book) {
       return res.status(404).json({
         success: false,

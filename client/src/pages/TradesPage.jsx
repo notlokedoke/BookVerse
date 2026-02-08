@@ -1,16 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import TradeCard from '../components/TradeCard';
 import { RefreshCw, Clock, CheckCircle, XCircle, TrendingUp, Search } from 'lucide-react';
 import './TradesPage.css';
 
 const TradesPage = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // all, incoming, outgoing
+  const [statusFilter, setStatusFilter] = useState('all'); // all, pending, active, completed
+
+  // Set initial status filter from URL parameter
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam && ['pending', 'active', 'completed'].includes(statusParam)) {
+      setStatusFilter(statusParam);
+    }
+  }, [searchParams]);
+
+  // Update URL when status filter changes
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+    if (status === 'all') {
+      // Remove status parameter if showing all
+      searchParams.delete('status');
+      setSearchParams(searchParams);
+    } else {
+      // Update status parameter
+      setSearchParams({ status });
+    }
+  };
 
   useEffect(() => {
     fetchTrades();
@@ -51,18 +75,42 @@ const TradesPage = () => {
     }
   };
 
-  // Filter trades based on active tab
+  // Filter trades based on active tab and status filter
   const getFilteredTrades = () => {
     if (!user) return [];
 
+    let filtered = trades;
+
+    // Apply tab filter (incoming/outgoing)
     switch (activeTab) {
       case 'incoming':
-        return trades.filter(trade => trade.receiver?._id === user._id);
+        filtered = filtered.filter(trade => trade.receiver?._id === user._id);
+        break;
       case 'outgoing':
-        return trades.filter(trade => trade.proposer?._id === user._id);
+        filtered = filtered.filter(trade => trade.proposer?._id === user._id);
+        break;
       default:
-        return trades;
+        // 'all' - no filtering by direction
+        break;
     }
+
+    // Apply status filter
+    switch (statusFilter) {
+      case 'pending':
+        filtered = filtered.filter(trade => trade.status === 'proposed');
+        break;
+      case 'active':
+        filtered = filtered.filter(trade => trade.status === 'accepted');
+        break;
+      case 'completed':
+        filtered = filtered.filter(trade => trade.status === 'completed');
+        break;
+      default:
+        // 'all' - no filtering by status
+        break;
+    }
+
+    return filtered;
   };
 
   const filteredTrades = getFilteredTrades();
@@ -134,16 +182,10 @@ const TradesPage = () => {
 
         {/* Trades Stats */}
         <section className="trades-stats">
-          <div className="stat-card gradient-blue">
-            <div className="stat-icon-container">
-              <RefreshCw size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{trades.length}</p>
-              <p className="stat-label">Total Trades</p>
-            </div>
-          </div>
-          <div className="stat-card gradient-amber">
+          <button 
+            className="stat-card gradient-pink clickable"
+            onClick={() => handleStatusFilterChange('pending')}
+          >
             <div className="stat-icon-container">
               <Clock size={24} />
             </div>
@@ -154,8 +196,11 @@ const TradesPage = () => {
             {pendingCount > 0 && (
               <span className="stat-badge pulse">!</span>
             )}
-          </div>
-          <div className="stat-card gradient-purple">
+          </button>
+          <button 
+            className="stat-card gradient-amber clickable"
+            onClick={() => handleStatusFilterChange('active')}
+          >
             <div className="stat-icon-container">
               <CheckCircle size={24} />
             </div>
@@ -163,8 +208,11 @@ const TradesPage = () => {
               <p className="stat-value">{activeCount}</p>
               <p className="stat-label">Active</p>
             </div>
-          </div>
-          <div className="stat-card gradient-green">
+          </button>
+          <button 
+            className="stat-card gradient-blue clickable"
+            onClick={() => handleStatusFilterChange('completed')}
+          >
             <div className="stat-icon-container">
               <CheckCircle size={24} />
             </div>
@@ -172,7 +220,19 @@ const TradesPage = () => {
               <p className="stat-value">{completedCount}</p>
               <p className="stat-label">Completed</p>
             </div>
-          </div>
+          </button>
+          <button 
+            className="stat-card gradient-purple clickable"
+            onClick={() => handleStatusFilterChange('all')}
+          >
+            <div className="stat-icon-container">
+              <RefreshCw size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{trades.length}</p>
+              <p className="stat-label">Total Trades</p>
+            </div>
+          </button>
         </section>
 
         {/* Tabs */}

@@ -18,6 +18,9 @@ import CreateBookPage from './pages/CreateBookPage'
 import CreateWishlistPage from './pages/CreateWishlistPage'
 import MyBooksPage from './pages/MyBooksPage'
 import TradesPage from './pages/TradesPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import './App.css'
 
 // Component to conditionally render navbar
@@ -26,7 +29,10 @@ const AppContent = () => {
   const isAuthPage = location.pathname === '/login' || 
                      location.pathname === '/register' || 
                      location.pathname === '/auth/callback' ||
-                     location.pathname === '/complete-profile'
+                     location.pathname === '/complete-profile' ||
+                     location.pathname === '/verify-email' ||
+                     location.pathname === '/forgot-password' ||
+                     location.pathname === '/reset-password'
   const isLandingPage = location.pathname === '/'
 
   return (
@@ -39,6 +45,9 @@ const AppContent = () => {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/complete-profile" element={<CompleteProfilePage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/browse" element={<BrowsePage />} />
             
             {/* Protected routes */}

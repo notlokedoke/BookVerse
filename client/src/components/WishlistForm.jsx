@@ -1,97 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { Search, BookOpen, X, Check, Loader2 } from 'lucide-react';
 import './WishlistForm.css';
 
 const WishlistForm = ({ onSuccess, onCancel }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: '',
-    author: '',
-    isbn: '',
-    notes: ''
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [notes, setNotes] = useState('');
+
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const searchTimeoutRef = useRef(null);
 
-  const { title, author, isbn, notes } = formData;
+  // Handle Search Input
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
 
-  // Handle input changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+    // Clear timeout if there's one
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (query.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
+    // Debounce search
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 500);
+  };
+
+  const performSearch = async (query) => {
+    setIsSearching(true);
+    setErrors({});
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await axios.get(`${apiUrl}/api/books/search-external?q=${encodeURIComponent(query)}`);
+
+      if (response.data.success) {
+        setSearchResults(response.data.data);
+      }
+    } catch (error) {
+      setErrors({ search: 'Unable to connect to book search service' });
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  // Client-side validation
-  const validateForm = () => {
-    const newErrors = {};
+  const handleSelectBook = (book) => {
+    setSelectedBook(book);
+    setSearchQuery('');
+    setSearchResults([]);
+    setErrors({});
+  };
 
-    // Required fields validation
-    if (!title.trim()) {
-      newErrors.title = 'Title is required';
-    } else if (title.trim().length > 200) {
-      newErrors.title = 'Title must be less than 200 characters';
-    }
-
-    // Optional field validations
-    if (author && author.trim().length > 200) {
-      newErrors.author = 'Author must be less than 200 characters';
-    }
-
-    if (isbn && isbn.trim()) {
-      // Basic ISBN validation (10 or 13 digits, may contain hyphens)
-      const isbnPattern = /^(?:\d{9}[\dX]|\d{13})$/;
-      const cleanIsbn = isbn.replace(/[-\s]/g, '');
-      if (!isbnPattern.test(cleanIsbn)) {
-        newErrors.isbn = 'Please enter a valid ISBN (10 or 13 digits)';
-      } else if (isbn.trim().length > 20) {
-        newErrors.isbn = 'ISBN must be less than 20 characters';
-      }
-    }
-
-    if (notes && notes.trim().length > 500) {
-      newErrors.notes = 'Notes must be less than 500 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleClearSelection = () => {
+    setSelectedBook(null);
+    setNotes('');
+    setErrors({});
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage('');
+    setErrors({});
 
-    // Validate form
-    if (!validateForm()) {
+    if (!selectedBook) {
+      setErrors({ general: 'Please select a book to add to your wishlist' });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Prepare data to send
+      // Prepare data to send matching the backend expectation
       const dataToSend = {
-        title: title.trim()
+        title: selectedBook.title.trim()
       };
 
-      // Add optional fields if provided
-      if (author && author.trim()) {
-        dataToSend.author = author.trim();
+      if (selectedBook.author) {
+        dataToSend.author = selectedBook.author.trim();
       }
-      if (isbn && isbn.trim()) {
-        dataToSend.isbn = isbn.trim();
+      if (selectedBook.isbn) {
+        dataToSend.isbn = selectedBook.isbn.trim();
       }
       if (notes && notes.trim()) {
         dataToSend.notes = notes.trim();
@@ -102,65 +104,25 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
 
       if (response.data.success) {
         setSuccessMessage('Book added to wishlist successfully!');
-        
-        // Clear form
-        setFormData({
-          title: '',
-          author: '',
-          isbn: '',
-          notes: ''
-        });
-        setErrors({});
-        
-        // Call success callback if provided
-        if (onSuccess) {
-          onSuccess(response.data.data);
-        }
 
-        // Clear success message after 3 seconds
+        // Call success callback immediately
         setTimeout(() => {
-          setSuccessMessage('');
-        }, 3000);
+          if (onSuccess) onSuccess(response.data.data);
+        }, 1500);
       }
     } catch (error) {
       if (error.response) {
-        // Server responded with error
         const errorData = error.response.data;
-        
         if (errorData.error) {
-          if (errorData.error.code === 'VALIDATION_ERROR') {
-            // Handle validation errors from server
-            if (errorData.error.details) {
-              const serverErrors = {};
-              if (Array.isArray(errorData.error.details)) {
-                errorData.error.details.forEach(err => {
-                  if (err.path) {
-                    serverErrors[err.path] = err.msg;
-                  }
-                });
-              } else {
-                // Handle mongoose validation errors
-                Object.keys(errorData.error.details).forEach(field => {
-                  serverErrors[field] = errorData.error.details[field].message;
-                });
-              }
-              setErrors(serverErrors);
-            } else {
-              setErrors({ general: errorData.error.message });
-            }
-          } else if (errorData.error.code === 'DUPLICATE_WISHLIST_ITEM') {
-            setErrors({ isbn: errorData.error.message });
+          if (errorData.error.code === 'DUPLICATE_WISHLIST_ITEM') {
+            setErrors({ general: errorData.error.message });
           } else {
-            setErrors({ general: errorData.error.message || 'Failed to add book to wishlist. Please try again.' });
+            setErrors({ general: errorData.error.message || 'Failed to add book to wishlist.' });
           }
         } else {
           setErrors({ general: 'Failed to add book to wishlist. Please try again.' });
         }
-      } else if (error.request) {
-        // Request made but no response
-        setErrors({ general: 'Unable to connect to server. Please check your connection.' });
       } else {
-        // Something else happened
         setErrors({ general: 'An unexpected error occurred. Please try again.' });
       }
     } finally {
@@ -172,13 +134,13 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
     <div className="wishlist-form-container">
       <div className="wishlist-form-header">
         <h2>Add Book to Wishlist</h2>
-        <p>Add books you're looking for to help other users find potential trades</p>
+        <p>Find books you're looking for to help other users spot potential trades</p>
       </div>
 
       <div className="wishlist-form-content">
         {successMessage && (
           <div className="success-message">
-            {successMessage}
+            <Check size={18} /> {successMessage}
           </div>
         )}
 
@@ -187,94 +149,126 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
             {errors.general}
           </div>
         )}
-        
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Required Fields */}
-          <div className="form-group">
-            <label htmlFor="title">Book Title *</label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              placeholder="Enter the book title you're looking for"
-              value={title}
-              onChange={handleChange}
-              className={errors.title ? 'error' : ''}
-              disabled={isSubmitting}
-              required
-            />
-            {errors.title && <span className="field-error">{errors.title}</span>}
-          </div>
 
-          {/* Optional Fields */}
-          <div className="form-group">
-            <label htmlFor="author">Author</label>
-            <input
-              type="text"
-              id="author"
-              name="author"
-              placeholder="Enter the author's name (optional)"
-              value={author}
-              onChange={handleChange}
-              className={errors.author ? 'error' : ''}
-              disabled={isSubmitting}
-            />
-            <small>Helps other users find the exact book you want</small>
-            {errors.author && <span className="field-error">{errors.author}</span>}
-          </div>
+        {!selectedBook ? (
+          // SEARCH STATE
+          <div className="wishlist-search-section">
+            <div className="search-input-wrapper">
+              <Search className="search-icon" size={20} />
+              <input
+                type="text"
+                className="wishlist-search-input"
+                placeholder="Search by title, author, or ISBN..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                autoFocus
+              />
+              {isSearching && <Loader2 className="loading-icon rotating" size={20} />}
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="isbn">ISBN</label>
-            <input
-              type="text"
-              id="isbn"
-              name="isbn"
-              placeholder="Enter ISBN (10 or 13 digits, optional)"
-              value={isbn}
-              onChange={handleChange}
-              className={errors.isbn ? 'error' : ''}
-              disabled={isSubmitting}
-            />
-            <small>ISBN helps identify the exact edition you want</small>
-            {errors.isbn && <span className="field-error">{errors.isbn}</span>}
-          </div>
+            {errors.search && <p className="field-error">{errors.search}</p>}
 
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
-            <textarea
-              id="notes"
-              name="notes"
-              placeholder="Any specific notes about the edition or condition you prefer (optional)"
-              value={notes}
-              onChange={handleChange}
-              className={errors.notes ? 'error' : ''}
-              disabled={isSubmitting}
-              rows="3"
-            />
-            <small>Add any specific preferences or notes about the book</small>
-            {errors.notes && <span className="field-error">{errors.notes}</span>}
-          </div>
+            <div className="search-results-container">
+              {searchQuery.trim().length > 0 && searchResults.length === 0 && !isSearching && (
+                <div className="no-results">
+                  <BookOpen size={30} />
+                  <p>No books found for "{searchQuery}"</p>
+                </div>
+              )}
 
-          <div className="form-actions">
+              {searchResults.length > 0 && (
+                <ul className="search-results-list">
+                  {searchResults.map((book) => (
+                    <li key={book.id} className="search-result-item" onClick={() => handleSelectBook(book)}>
+                      <div className="result-img">
+                        {book.thumbnail ? (
+                          <img src={book.thumbnail} alt={book.title} />
+                        ) : (
+                          <div className="missing-cover"><BookOpen size={24} /></div>
+                        )}
+                      </div>
+                      <div className="result-info">
+                        <h4>{book.title}</h4>
+                        <p className="result-author">{book.author}</p>
+                        {book.isbn && <span className="result-isbn">ISBN: {book.isbn}</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {onCancel && (
+              <div className="form-actions form-actions-top">
+                <button type="button" className="cancel-btn" onClick={onCancel}>
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          // CONFIRMATION STATE
+          <form onSubmit={handleSubmit} className="wishlist-confirm-section">
+            <div className="selected-book-card">
+              <div className="selected-book-info">
+                <div className="result-img">
+                  {selectedBook.thumbnail ? (
+                    <img src={selectedBook.thumbnail} alt={selectedBook.title} />
+                  ) : (
+                    <div className="missing-cover"><BookOpen size={24} /></div>
+                  )}
+                </div>
+                <div className="details">
+                  <h3>{selectedBook.title}</h3>
+                  <p className="author-name">{selectedBook.author}</p>
+                  {selectedBook.isbn && <p className="isbn">ISBN: {selectedBook.isbn}</p>}
+                </div>
+                <button
+                  type="button"
+                  className="clear-selection-btn"
+                  onClick={handleClearSelection}
+                  aria-label="Remove selection"
+                  disabled={isSubmitting}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="form-group notes-group">
+              <label htmlFor="notes">Notes (Optional)</label>
+              <textarea
+                id="notes"
+                name="notes"
+                placeholder="E.g., Prefer hardcover, specific edition, must be at least Good condition, etc."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isSubmitting}
+                rows="3"
+                maxLength="500"
+              />
+              <small>Add any specific preferences or conditions for acceptable trades.</small>
+            </div>
+
+            <div className="form-actions">
               <button
                 type="button"
                 className="cancel-btn"
-                onClick={onCancel}
+                onClick={handleClearSelection}
                 disabled={isSubmitting}
               >
-                Cancel
+                Back to Search
               </button>
-            )}
-            <button 
-              type="submit" 
-              className="add-btn" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Adding to Wishlist...' : 'Add to Wishlist'}
-            </button>
-          </div>
-        </form>
+              <button
+                type="submit"
+                className="add-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Adding...' : 'Save to Wishlist'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
+const crypto = require('crypto');
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const { authenticateToken } = require('../middleware/auth');
 const { sanitizeInput, sanitizeEmail, sanitizeString } = require('../utils/sanitize');
 const { blacklistToken } = require('../utils/tokenBlacklist');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../config/email');
 
 /**
  * @route   POST /api/auth/register
@@ -96,12 +98,20 @@ router.post('/register', [
 
     await user.save();
 
+    // Generate verification token
+    const verificationToken = user.generateVerificationToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Send verification email
+    await sendVerificationEmail(user.email, user.name, verificationToken);
+
     // Return user data without password
     const userResponse = {
       _id: user._id,
       name: user.name,
       email: user.email,
       city: user.city,
+      emailVerified: user.emailVerified,
       privacySettings: user.privacySettings,
       averageRating: user.averageRating,
       ratingCount: user.ratingCount,
@@ -110,7 +120,7 @@ router.post('/register', [
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check your email to verify your account.',
       data: userResponse
     });
 
@@ -270,9 +280,12 @@ router.get('/me', authenticateToken, async (req, res) => {
       name: req.user.name,
       email: req.user.email,
       city: req.user.city,
+      bio: req.user.bio,
+      emailVerified: req.user.emailVerified,
       privacySettings: req.user.privacySettings,
       averageRating: req.user.averageRating,
       ratingCount: req.user.ratingCount,
+      passwordChangedAt: req.user.passwordChangedAt,
       createdAt: req.user.createdAt
     };
 
@@ -342,13 +355,23 @@ router.put('/profile', [
     .isLength({ min: 1, max: 100 })
     .withMessage('City cannot be empty')
     .customSanitizer(sanitizeString),
+  body('bio')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Bio cannot exceed 500 characters')
+    .customSanitizer(sanitizeString),
   body('privacySettings.showCity')
     .optional()
     .isBoolean()
-    .withMessage('Privacy setting showCity must be a boolean value')
+    .withMessage('Privacy setting showCity must be a boolean value'),
+  body('privacySettings.showEmail')
+    .optional()
+    .isBoolean()
+    .withMessage('Privacy setting showEmail must be a boolean value')
 ], async (req, res) => {
   try {
-    const { name, city, privacySettings } = req.body;
+    const { name, city, bio, privacySettings } = req.body;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -364,11 +387,11 @@ router.put('/profile', [
     }
 
     // Check if at least one field is provided for update
-    if (!name && !city && !privacySettings) {
+    if (!name && !city && !bio && !privacySettings) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Please provide at least one field to update (name, city, or privacySettings)',
+          message: 'Please provide at least one field to update (name, city, bio, or privacySettings)',
           code: 'NO_UPDATE_FIELDS'
         }
       });
@@ -382,10 +405,16 @@ router.put('/profile', [
     if (city !== undefined) {
       updateFields.city = city;
     }
+    if (bio !== undefined) {
+      updateFields.bio = bio;
+    }
     if (privacySettings !== undefined) {
       // Handle nested privacy settings update
       if (privacySettings.showCity !== undefined) {
         updateFields['privacySettings.showCity'] = privacySettings.showCity;
+      }
+      if (privacySettings.showEmail !== undefined) {
+        updateFields['privacySettings.showEmail'] = privacySettings.showEmail;
       }
     }
 
@@ -516,3 +545,385 @@ router.get('/google/callback',
 );
 
 module.exports = router;
+
+/**
+ * @route   POST /api/auth/verify-email
+ * @desc    Verify user email with token
+ * @access  Public
+ */
+router.post('/verify-email', [
+  sanitizeInput,
+  body('token')
+    .notEmpty()
+    .withMessage('Verification token is required')
+], async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with matching token and non-expired token
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid or expired verification token',
+          code: 'INVALID_TOKEN'
+        }
+      });
+    }
+
+    // Mark email as verified and clear token
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. You can now log in.'
+    });
+
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred during email verification',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/resend-verification
+ * @desc    Resend verification email
+ * @access  Public
+ */
+router.post('/resend-verification', [
+  sanitizeInput,
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail()
+    .customSanitizer(sanitizeEmail)
+], async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Don't reveal if user exists or not for security
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a verification link has been sent.'
+      });
+    }
+
+    // Check if already verified
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Email is already verified',
+          code: 'ALREADY_VERIFIED'
+        }
+      });
+    }
+
+    // Generate new verification token
+    const verificationToken = user.generateVerificationToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Send verification email
+    await sendVerificationEmail(user.email, user.name, verificationToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Verification email sent. Please check your inbox.'
+    });
+
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while sending verification email',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Request password reset email
+ * @access  Public
+ */
+router.post('/forgot-password', [
+  sanitizeInput,
+  body('email')
+    .trim()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail()
+    .customSanitizer(sanitizeEmail)
+], async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Don't reveal if user exists or not for security
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If an account exists with this email, a password reset link has been sent.'
+      });
+    }
+
+    // Check if user registered with Google OAuth (no password)
+    if (user.googleId && !user.password) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'This account uses Google sign-in. Please log in with Google.',
+          code: 'OAUTH_ACCOUNT'
+        }
+      });
+    }
+
+    // Generate password reset token
+    const resetToken = user.generatePasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Send password reset email
+    await sendPasswordResetEmail(user.email, user.name, resetToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset email sent. Please check your inbox.'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while processing password reset request',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password with token
+ * @access  Public
+ */
+router.post('/reset-password', [
+  sanitizeInput,
+  body('token')
+    .notEmpty()
+    .withMessage('Reset token is required'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+], async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with matching token and non-expired token
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid or expired reset token',
+          code: 'INVALID_TOKEN'
+        }
+      });
+    }
+
+    // Set new password and clear reset token
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully. You can now log in with your new password.'
+    });
+
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while resetting password',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/auth/change-password
+ * @desc    Change password for authenticated user
+ * @access  Private
+ */
+router.put('/change-password', [
+  authenticateToken,
+  sanitizeInput,
+  body('currentPassword')
+    .notEmpty()
+    .withMessage('Current password is required'),
+  body('newPassword')
+    .notEmpty()
+    .withMessage('New password is required')
+    .isLength({ min: 8 })
+    .withMessage('New password must be at least 8 characters long')
+], async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Get user with password field
+    const user = await User.findById(req.user._id).select('+password');
+
+    // Check if user has a password (not OAuth-only account)
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'This account uses Google sign-in and does not have a password.',
+          code: 'OAUTH_ACCOUNT'
+        }
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Current password is incorrect',
+          code: 'INVALID_PASSWORD'
+        }
+      });
+    }
+
+    // Check if new password is different from current
+    const isSamePassword = await user.comparePassword(newPassword);
+    if (isSamePassword) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'New password must be different from current password',
+          code: 'SAME_PASSWORD'
+        }
+      });
+    }
+
+    // Set new password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while changing password',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
