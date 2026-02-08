@@ -23,6 +23,10 @@ const wishlistSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+  imageUrl: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

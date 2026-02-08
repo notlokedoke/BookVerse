@@ -5,7 +5,8 @@ import axios from 'axios';
 import RatingDisplay from '../components/RatingDisplay';
 import RatingCard from '../components/RatingCard';
 import BookCard from '../components/BookCard';
-import { MapPin, Calendar, Star, MessageCircle, BookOpen, Award } from 'lucide-react';
+import WishlistItem from '../components/WishlistItem';
+import { MapPin, Calendar, Star, MessageCircle, BookOpen, Award, Plus } from 'lucide-react';
 import './UserProfilePage.css';
 
 const UserProfilePage = () => {
@@ -70,9 +71,9 @@ const UserProfilePage = () => {
     );
   }
 
-  const memberSince = new Date(profileUser.createdAt).toLocaleDateString('en-US', { 
-    month: 'short', 
-    year: 'numeric' 
+  const memberSince = new Date(profileUser.createdAt).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric'
   });
 
   return (
@@ -84,10 +85,10 @@ const UserProfilePage = () => {
             <div className="profile-avatar-hero">
               {profileUser.name?.charAt(0).toUpperCase()}
             </div>
-            
+
             <div className="hero-info">
               <h1 className="profile-name">{profileUser.name}</h1>
-              
+
               <div className="profile-meta-row">
                 {profileUser.city && profileUser.privacySettings?.showCity !== false && (
                   <span className="meta-badge">
@@ -102,8 +103,8 @@ const UserProfilePage = () => {
               </div>
 
               <div className="profile-rating-hero">
-                <RatingDisplay 
-                  averageRating={profileUser.averageRating || 0} 
+                <RatingDisplay
+                  averageRating={profileUser.averageRating || 0}
                   ratingCount={profileUser.ratingCount || 0}
                   size="lg"
                 />
@@ -187,20 +188,20 @@ const UserProfilePage = () => {
           <main className="profile-main">
             {/* Tabs */}
             <div className="profile-tabs">
-              <button 
+              <button
                 className={`tab-button ${activeTab === 'books' ? 'active' : ''}`}
                 onClick={() => setActiveTab('books')}
               >
                 Available Books ({userBooks.length})
               </button>
-              <button 
+              <button
                 className={`tab-button ${activeTab === 'reviews' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reviews')}
               >
                 Reviews ({ratings.length})
               </button>
               {isOwnProfile && (
-                <button 
+                <button
                   className={`tab-button ${activeTab === 'wishlist' ? 'active' : ''}`}
                   onClick={() => setActiveTab('wishlist')}
                 >
@@ -255,12 +256,14 @@ const UserProfilePage = () => {
               {activeTab === 'wishlist' && isOwnProfile && (
                 <div className="wishlist-section">
                   {wishlist.length > 0 ? (
-                    <div className="wishlist-grid-modern">
+                    <div className="books-grid-modern">
                       {wishlist.map(item => (
-                        <div key={item._id} className="wishlist-card">
-                          <h4>{item.title}</h4>
-                          {item.author && <p className="wishlist-author">{item.author}</p>}
-                        </div>
+                        <WishlistItem
+                          key={item._id}
+                          item={item}
+                          isOwnProfile={isOwnProfile}
+                          onRemove={(id) => setWishlist(wishlist.filter(w => w._id !== id))}
+                        />
                       ))}
                     </div>
                   ) : (

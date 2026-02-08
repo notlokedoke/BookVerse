@@ -11,7 +11,21 @@ const WishlistMatchesPage = () => {
 
   useEffect(() => {
     fetchMatches();
+    backfillImages();
   }, []);
+
+  const backfillImages = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/wishlist/backfill-images', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Silently succeed - this is a background operation
+    } catch (error) {
+      // Silently fail - this is optional
+      console.log('Image backfill skipped:', error.message);
+    }
+  };
 
   const fetchMatches = async () => {
     try {
