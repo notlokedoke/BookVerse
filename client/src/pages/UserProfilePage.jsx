@@ -6,7 +6,7 @@ import RatingDisplay from '../components/RatingDisplay';
 import RatingCard from '../components/RatingCard';
 import BookCard from '../components/BookCard';
 import WishlistItem from '../components/WishlistItem';
-import { MapPin, Calendar, Star, MessageCircle, BookOpen, Award, Plus } from 'lucide-react';
+import { MapPin, Calendar, Star, MessageCircle, BookOpen, Award, Plus, Heart } from 'lucide-react';
 import './UserProfilePage.css';
 
 const UserProfilePage = () => {
@@ -17,7 +17,6 @@ const UserProfilePage = () => {
   const [wishlist, setWishlist] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('books');
 
   const isOwnProfile = !userId || userId === user?._id;
   const targetUserId = userId || user?._id;
@@ -186,75 +185,78 @@ const UserProfilePage = () => {
 
           {/* Main Content */}
           <main className="profile-main">
-            {/* Tabs */}
-            <div className="profile-tabs">
-              <button
-                className={`tab-button ${activeTab === 'books' ? 'active' : ''}`}
-                onClick={() => setActiveTab('books')}
-              >
-                Available Books ({userBooks.length})
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'reviews' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reviews')}
-              >
-                Reviews ({ratings.length})
-              </button>
-              {isOwnProfile && (
-                <button
-                  className={`tab-button ${activeTab === 'wishlist' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('wishlist')}
-                >
-                  Wishlist ({wishlist.length})
-                </button>
-              )}
-            </div>
+            {/* Books Section */}
+            <section className="profile-section">
+              <div className="section-header-inline">
+                <h2 className="section-title">
+                  <BookOpen size={24} />
+                  Available Books
+                  <span className="count-badge">{userBooks.length}</span>
+                </h2>
+              </div>
+              
+              <div className="section-content">
+                {userBooks.length > 0 ? (
+                  <div className="books-grid-modern">
+                    {userBooks.map(book => (
+                      <BookCard key={book._id} book={book} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state-modern">
+                    <BookOpen size={48} />
+                    <h3>No books listed yet</h3>
+                    <p>{isOwnProfile ? 'Start building your library by adding your first book' : 'This user hasn\'t listed any books yet'}</p>
+                    {isOwnProfile && (
+                      <Link to="/books/create" className="btn-primary-modern">
+                        <Plus size={18} />
+                        Add Your First Book
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+            </section>
 
-            {/* Tab Content */}
-            <div className="tab-content">
-              {activeTab === 'books' && (
-                <div className="books-section">
-                  {userBooks.length > 0 ? (
-                    <div className="books-grid-modern">
-                      {userBooks.map(book => (
-                        <BookCard key={book._id} book={book} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-state-modern">
-                      <BookOpen size={48} />
-                      <h3>No books listed yet</h3>
-                      <p>{isOwnProfile ? 'Start building your library by adding your first book' : 'This user hasn\'t listed any books yet'}</p>
-                      {isOwnProfile && (
-                        <Link to="/books/create" className="btn-primary-modern">
-                          Add Your First Book
-                        </Link>
-                      )}
-                    </div>
-                  )}
+            {/* Reviews Section */}
+            <section className="profile-section">
+              <div className="section-header-inline">
+                <h2 className="section-title">
+                  <Star size={24} />
+                  Reviews
+                  <span className="count-badge">{ratings.length}</span>
+                </h2>
+              </div>
+              
+              <div className="section-content">
+                {ratings.length > 0 ? (
+                  <div className="ratings-list-modern">
+                    {ratings.map(rating => (
+                      <RatingCard key={rating._id} rating={rating} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-state-modern">
+                    <Star size={48} />
+                    <h3>No reviews yet</h3>
+                    <p>Reviews from completed trades will appear here</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Wishlist Section - Only for own profile */}
+            {isOwnProfile && (
+              <section className="profile-section">
+                <div className="section-header-inline">
+                  <h2 className="section-title">
+                    <Heart size={24} />
+                    Wishlist
+                    <span className="count-badge">{wishlist.length}</span>
+                  </h2>
                 </div>
-              )}
-
-              {activeTab === 'reviews' && (
-                <div className="reviews-section">
-                  {ratings.length > 0 ? (
-                    <div className="ratings-list-modern">
-                      {ratings.map(rating => (
-                        <RatingCard key={rating._id} rating={rating} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-state-modern">
-                      <Star size={48} />
-                      <h3>No reviews yet</h3>
-                      <p>Reviews from completed trades will appear here</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'wishlist' && isOwnProfile && (
-                <div className="wishlist-section">
+                
+                <div className="section-content">
                   {wishlist.length > 0 ? (
                     <div className="books-grid-modern">
                       {wishlist.map(item => (
@@ -272,13 +274,14 @@ const UserProfilePage = () => {
                       <h3>Your wishlist is empty</h3>
                       <p>Add books you're looking for to help others find matches</p>
                       <Link to="/wishlist/create" className="btn-primary-modern">
+                        <Plus size={18} />
                         Add to Wishlist
                       </Link>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </section>
+            )}
           </main>
         </div>
       </div>
