@@ -938,4 +938,278 @@ describe('Rating API Endpoints', () => {
       expect(initialUser.ratingCount).toBe(0);
     });
   });
+
+  describe('GET /api/ratings/user/:userId', () => {
+    describe('Success Cases', () => {
+      test('should get all ratings for a user', async () => {
+        // Create multiple ratings for testUser2
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5,
+            comment: 'Excellent trader!'
+          });
+
+        // Create another trade and rating
+        const testBook3 = new Book({
+          owner: testUser1._id,
+          title: 'Test Book 3',
+          author: 'Author 3',
+          genre: 'Fiction',
+          condition: 'Good',
+          imageUrl: 'http://example.com/image3.jpg'
+        });
+        await testBook3.save();
+
+        const testBook4 = new Book({
+          owner: testUser2._id,
+          title: 'Test Book 4',
+          author: 'Author 4',
+          genre: 'Non-Fiction',
+          condition: 'Like New',
+          imageUrl: 'http://example.com/image4.jpg'
+        });
+        await testBook4.save();
+
+        const testTrade2 = new Trade({
+          proposer: testUser1._id,
+          receiver: testUser2._id,
+          requestedBook: testBook4._id,
+          offeredBook: testBook3._id,
+          status: 'completed',
+          completedAt: new Date()
+        });
+        await testTrade2.save();
+
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade2._id.toString(),
+            stars: 4
+          });
+
+        // Fetch all ratings for testUser2
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toBeDefined();
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBe(2);
+      });
+
+      test('should return ratings sorted by creation date descending', async () => {
+        // Create multiple ratings with delays to ensure different timestamps
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        // Wait a bit to ensure different timestamp
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Create another trade and rating
+        const testBook3 = new Book({
+          owner: testUser1._id,
+          title: 'Test Book 3',
+          author: 'Author 3',
+          genre: 'Fiction',
+          condition: 'Good',
+          imageUrl: 'http://example.com/image3.jpg'
+        });
+        await testBook3.save();
+
+        const testBook4 = new Book({
+          owner: testUser2._id,
+          title: 'Test Book 4',
+          author: 'Author 4',
+          genre: 'Non-Fiction',
+          condition: 'Like New',
+          imageUrl: 'http://example.com/image4.jpg'
+        });
+        await testBook4.save();
+
+        const testTrade2 = new Trade({
+          proposer: testUser1._id,
+          receiver: testUser2._id,
+          requestedBook: testBook4._id,
+          offeredBook: testBook3._id,
+          status: 'completed',
+          completedAt: new Date()
+        });
+        await testTrade2.save();
+
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade2._id.toString(),
+            stars: 4
+          });
+
+        // Fetch ratings
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(2);
+        
+        // Most recent rating should be first
+        const firstRating = response.body.data[0];
+        const secondRating = response.body.data[1];
+        
+        expect(new Date(firstRating.createdAt).getTime()).toBeGreaterThanOrEqual(
+          new Date(secondRating.createdAt).getTime()
+        );
+      });
+
+      test('should return populated rater information', async () => {
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data[0].rater).toBeDefined();
+        expect(response.body.data[0].rater.name).toBe('John Doe');
+        expect(response.body.data[0].rater.email).toBe('john@example.com');
+        expect(response.body.data[0].rater.password).toBeUndefined();
+      });
+
+      test('should return populated trade information', async () => {
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data[0].trade).toBeDefined();
+        expect(response.body.data[0].trade._id).toBe(testTrade._id.toString());
+        expect(response.body.data[0].trade.status).toBe('completed');
+      });
+
+      test('should return empty array when user has no ratings', async () => {
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toBeDefined();
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBe(0);
+      });
+
+      test('should be publicly accessible without authentication', async () => {
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        // Request without authentication token
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.length).toBe(1);
+      });
+
+      test('should include all rating details', async () => {
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 3,
+            comment: 'Trade was okay'
+          });
+
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        const rating = response.body.data[0];
+        expect(rating._id).toBeDefined();
+        expect(rating.stars).toBe(3);
+        expect(rating.comment).toBe('Trade was okay');
+        expect(rating.rater).toBeDefined();
+        expect(rating.trade).toBeDefined();
+        expect(rating.createdAt).toBeDefined();
+      });
+    });
+
+    describe('Error Cases', () => {
+      test('should return 400 for invalid user ID format', async () => {
+        const response = await request(app)
+          .get('/api/ratings/user/invalid-id');
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('INVALID_USER_ID');
+      });
+
+      test('should return 404 when user does not exist', async () => {
+        const nonExistentId = new mongoose.Types.ObjectId();
+        const response = await request(app)
+          .get(`/api/ratings/user/${nonExistentId.toString()}`);
+
+        expect(response.status).toBe(404);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('USER_NOT_FOUND');
+      });
+    });
+
+    describe('Multiple Users', () => {
+      test('should only return ratings for the specified user', async () => {
+        // User 1 rates User 2
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        // User 2 rates User 1
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token2}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 4
+          });
+
+        // Fetch ratings for User 2
+        const response = await request(app)
+          .get(`/api/ratings/user/${testUser2._id.toString()}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.length).toBe(1);
+        expect(response.body.data[0].ratedUser).toBe(testUser2._id.toString());
+        expect(response.body.data[0].rater._id).toBe(testUser1._id.toString());
+      });
+    });
+  });
 });

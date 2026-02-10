@@ -6,6 +6,61 @@ const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
 /**
+ * @route   GET /api/ratings/user/:userId
+ * @desc    Get all ratings for a specific user
+ * @access  Public
+ */
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate user ID format
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid user ID format',
+          code: 'INVALID_USER_ID'
+        }
+      });
+    }
+
+    // Verify user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND'
+        }
+      });
+    }
+
+    // Fetch all ratings for the specified user
+    const ratings = await Rating.find({ ratedUser: userId })
+      .populate('rater', '-password')
+      .populate('trade')
+      .sort({ createdAt: -1 }); // Sort by creation date descending
+
+    res.json({
+      success: true,
+      data: ratings
+    });
+
+  } catch (error) {
+    console.error('Get user ratings error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching ratings',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   GET /api/ratings/trade/:tradeId
  * @desc    Get rating for a specific trade by the authenticated user
  * @access  Private (requires authentication)
