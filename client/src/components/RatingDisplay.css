@@ -1,0 +1,91 @@
+/* Import the same font as other components */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Stars Container */
+.stars-container {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #fbbf24;
+}
+
+.star-icon {
+  flex-shrink: 0;
+}
+
+.star-icon.sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+.star-icon.md {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.star-icon.lg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.star-icon.empty {
+  color: #d1d5db;
+}
+
+/* Rating Info */
+.rating-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.rating-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.rating-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* Size Variants */
+.rating-display.sm .rating-value {
+  font-size: 0.875rem;
+}
+
+.rating-display.sm .rating-count {
+  font-size: 0.75rem;
+}
+
+.rating-display.lg .rating-value {
+  font-size: 1.125rem;
+}
+
+.rating-display.lg .rating-count {
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .rating-display {
+    gap: 0.5rem;
+  }
+
+  .stars-container {
+    gap: 0.125rem;
+  }
+
+  .rating-info {
+    gap: 0.25rem;
+  }
+}
