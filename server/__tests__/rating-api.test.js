@@ -583,4 +583,86 @@ describe('Rating API Endpoints', () => {
       });
     });
   });
+
+  describe('GET /api/ratings/trade/:tradeId', () => {
+    describe('Success Cases', () => {
+      test('should get rating for a trade by authenticated user', async () => {
+        // First create a rating
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token1}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 4,
+            comment: 'Good trade'
+          });
+
+        // Then fetch it
+        const response = await request(app)
+          .get(`/api/ratings/trade/${testTrade._id.toString()}`)
+          .set('Authorization', `Bearer ${token1}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.stars).toBe(4);
+        expect(response.body.data.comment).toBe('Good trade');
+        expect(response.body.data.rater._id).toBe(testUser1._id.toString());
+        expect(response.body.data.ratedUser._id).toBe(testUser2._id.toString());
+      });
+
+      test('should return populated rating with user and trade data', async () => {
+        // Create a rating
+        await request(app)
+          .post('/api/ratings')
+          .set('Authorization', `Bearer ${token2}`)
+          .send({
+            trade: testTrade._id.toString(),
+            stars: 5
+          });
+
+        // Fetch it
+        const response = await request(app)
+          .get(`/api/ratings/trade/${testTrade._id.toString()}`)
+          .set('Authorization', `Bearer ${token2}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data.rater).toBeDefined();
+        expect(response.body.data.rater.name).toBe('Jane Smith');
+        expect(response.body.data.rater.password).toBeUndefined();
+        expect(response.body.data.ratedUser).toBeDefined();
+        expect(response.body.data.ratedUser.name).toBe('John Doe');
+        expect(response.body.data.trade).toBeDefined();
+      });
+    });
+
+    describe('Error Cases', () => {
+      test('should return 404 if rating not found', async () => {
+        const response = await request(app)
+          .get(`/api/ratings/trade/${testTrade._id.toString()}`)
+          .set('Authorization', `Bearer ${token1}`);
+
+        expect(response.status).toBe(404);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('RATING_NOT_FOUND');
+      });
+
+      test('should return 400 for invalid trade ID format', async () => {
+        const response = await request(app)
+          .get('/api/ratings/trade/invalid-id')
+          .set('Authorization', `Bearer ${token1}`);
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      });
+
+      test('should return 401 without authentication', async () => {
+        const response = await request(app)
+          .get(`/api/ratings/trade/${testTrade._id.toString()}`);
+
+        expect(response.status).toBe(401);
+      });
+    });
+  });
 });
