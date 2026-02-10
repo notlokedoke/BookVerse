@@ -207,19 +207,19 @@ const BookDetailView = () => {
             <div className="additional-images-gallery">
               {book.googleBooksImageUrl && (
                 <div className="gallery-item">
-                  <img src={book.googleBooksImageUrl} alt="Google Books cover" />
+                  <img src={book.googleBooksImageUrl} alt={`${book.title} - Google Books cover`} />
                   <span className="gallery-label">Cover</span>
                 </div>
               )}
               {book.frontImageUrl && (
                 <div className="gallery-item">
-                  <img src={book.frontImageUrl} alt="Front view" />
+                  <img src={book.frontImageUrl} alt={`${book.title} - Front view`} />
                   <span className="gallery-label">Front</span>
                 </div>
               )}
               {book.backImageUrl && (
                 <div className="gallery-item">
-                  <img src={book.backImageUrl} alt="Back view" />
+                  <img src={book.backImageUrl} alt={`${book.title} - Back view`} />
                   <span className="gallery-label">Back</span>
                 </div>
               )}

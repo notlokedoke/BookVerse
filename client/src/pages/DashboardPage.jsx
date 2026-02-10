@@ -426,7 +426,7 @@ const DashboardPage = () => {
                       <div className="pending-book">
                         <img
                           src={trade.requestedBook?.imageUrl || '/placeholder-book.png'}
-                          alt={trade.requestedBook?.title}
+                          alt={trade.requestedBook?.author ? `${trade.requestedBook.title} by ${trade.requestedBook.author}` : trade.requestedBook?.title}
                         />
                         <div className="pending-book-info">
                           <span className="pending-book-label">Your book</span>
@@ -439,7 +439,7 @@ const DashboardPage = () => {
                       <div className="pending-book">
                         <img
                           src={trade.offeredBook?.imageUrl || '/placeholder-book.png'}
-                          alt={trade.offeredBook?.title}
+                          alt={trade.offeredBook?.author ? `${trade.offeredBook.title} by ${trade.offeredBook.author}` : trade.offeredBook?.title}
                         />
                         <div className="pending-book-info">
                           <span className="pending-book-label">From {trade.proposer?.name}</span>
@@ -496,9 +496,9 @@ const DashboardPage = () => {
                         </div>
                       </div>
                       <div className="trade-books-preview">
-                        <img src={myBook?.imageUrl} alt={myBook?.title} className="trade-book-img" />
+                        <img src={myBook?.imageUrl} alt={myBook?.author ? `${myBook.title} by ${myBook.author}` : myBook?.title} className="trade-book-img" />
                         <span className="trade-swap-icon">⇄</span>
-                        <img src={theirBook?.imageUrl} alt={theirBook?.title} className="trade-book-img" />
+                        <img src={theirBook?.imageUrl} alt={theirBook?.author ? `${theirBook.title} by ${theirBook.author}` : theirBook?.title} className="trade-book-img" />
                       </div>
                       <Link to="/trades" className="trade-view-btn">
                         View Details
@@ -534,7 +534,7 @@ const DashboardPage = () => {
                 <div className="recommendation-image">
                   <img
                     src={book.imageUrl || '/placeholder-book.png'}
-                    alt={book.title}
+                    alt={book.author ? `${book.title} by ${book.author}` : book.title}
                   />
                   <div className="recommendation-overlay">
                     <button className="quick-action">

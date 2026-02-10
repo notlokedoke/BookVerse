@@ -185,7 +185,7 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
                     <li key={book.id} className="search-result-item" onClick={() => handleSelectBook(book)}>
                       <div className="result-img">
                         {book.thumbnail ? (
-                          <img src={book.thumbnail} alt={book.title} />
+                          <img src={book.thumbnail} alt={book.author ? `${book.title} by ${book.author}` : book.title} />
                         ) : (
                           <div className="missing-cover"><BookOpen size={24} /></div>
                         )}
@@ -216,7 +216,7 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
               <div className="selected-book-info">
                 <div className="result-img">
                   {selectedBook.thumbnail ? (
-                    <img src={selectedBook.thumbnail} alt={selectedBook.title} />
+                    <img src={selectedBook.thumbnail} alt={selectedBook.author ? `${selectedBook.title} by ${selectedBook.author}` : selectedBook.title} />
                   ) : (
                     <div className="missing-cover"><BookOpen size={24} /></div>
                   )}

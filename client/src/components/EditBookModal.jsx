@@ -453,7 +453,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-image">Book Photo</label>
+              <label htmlFor="edit-image">Book Photo *</label>
               <input
                 type="file"
                 id="edit-image"
