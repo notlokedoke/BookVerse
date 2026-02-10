@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
 import EditBookModal from '../components/EditBookModal';
+import { BookOpen, Plus, Library, TrendingUp, Calendar, Sparkles } from 'lucide-react';
 import axios from 'axios';
 import './MyBooksPage.css';
 
@@ -16,6 +17,23 @@ const MyBooksPage = () => {
   const [deletingBook, setDeletingBook] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Get today's date formatted
+  const getFormattedDate = () => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   useEffect(() => {
     const fetchUserBooks = async () => {
       if (!user?._id) return;
@@ -23,11 +41,11 @@ const MyBooksPage = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await axios.get(
           `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}`
         );
-        
+
         if (response.data.success) {
           setBooks(response.data.data.books || []);
         } else {
@@ -36,7 +54,7 @@ const MyBooksPage = () => {
       } catch (err) {
         console.error('Error fetching user books:', err);
         setError(
-          err.response?.data?.error?.message || 
+          err.response?.data?.error?.message ||
           'An error occurred while fetching your books'
         );
       } finally {
@@ -81,10 +99,10 @@ const MyBooksPage = () => {
 
       if (response.data.success) {
         // Remove the deleted book from the books list
-        setBooks(prevBooks => 
+        setBooks(prevBooks =>
           prevBooks.filter(book => book._id !== deletingBook._id)
         );
-        
+
         // Close confirmation dialog
         setShowDeleteConfirm(false);
         setDeletingBook(null);
@@ -94,7 +112,7 @@ const MyBooksPage = () => {
     } catch (err) {
       console.error('Error deleting book:', err);
       setError(
-        err.response?.data?.error?.message || 
+        err.response?.data?.error?.message ||
         'An error occurred while deleting the book'
       );
     }
@@ -108,8 +126,8 @@ const MyBooksPage = () => {
 
   // Handle book updated
   const handleBookUpdated = (updatedBook) => {
-    setBooks(prevBooks => 
-      prevBooks.map(book => 
+    setBooks(prevBooks =>
+      prevBooks.map(book =>
         book._id === updatedBook._id ? updatedBook : book
       )
     );
@@ -121,13 +139,23 @@ const MyBooksPage = () => {
     setEditingBook(null);
   };
 
+  // Skeleton loading state
   if (loading) {
     return (
       <div className="my-books-page">
-        <div className="container">
-          <div className="loading-state">
-            <div className="loading-spinner"></div>
-            <p>Loading your books...</p>
+        <div className="my-books-container">
+          <div className="my-books-skeleton">
+            <div className="skeleton-banner"></div>
+            <div className="skeleton-header"></div>
+            <div className="skeleton-stats">
+              <div className="skeleton-stat-card"></div>
+              <div className="skeleton-stat-card"></div>
+            </div>
+            <div className="skeleton-grid">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="skeleton-card"></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -137,12 +165,13 @@ const MyBooksPage = () => {
   if (error) {
     return (
       <div className="my-books-page">
-        <div className="container">
-          <div className="error-state">
+        <div className="my-books-container">
+          <div className="error-state glass-card">
+            <div className="error-icon">⚠️</div>
             <h2>Error Loading Books</h2>
             <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="retry-btn"
             >
               Try Again
@@ -155,56 +184,89 @@ const MyBooksPage = () => {
 
   return (
     <div className="my-books-page">
-      <div className="container">
+      <div className="my-books-container">
+        {/* Welcome Banner */}
+        <section className="welcome-banner">
+          <div className="welcome-content">
+            <div className="welcome-avatar">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="welcome-text">
+              <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
+              <p className="welcome-date">
+                <Calendar size={14} />
+                {getFormattedDate()}
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Page Header */}
-        <div className="page-header">
-          <div className="header-content">
-            <h1>My Books</h1>
+        <section className="page-header">
+          <div className="header-icon-container">
+            <Library size={28} />
+          </div>
+          <div className="header-text">
+            <h1>My Library</h1>
             <p className="header-subtitle">
-              Manage your book listings and track your inventory
+              <TrendingUp size={14} />
+              Manage your book listings and inventory
             </p>
           </div>
-          <Link to="/books/create" className="create-listing-btn">
-            <span className="btn-icon">+</span>
-            Create New Listing
-          </Link>
-        </div>
+        </section>
 
-        {/* Books Count */}
-        <div className="books-summary">
-          <div className="books-count">
-            <span className="count-number">{books.length}</span>
-            <span className="count-label">
-              {books.length === 1 ? 'Book Listed' : 'Books Listed'}
-            </span>
+        {/* Books Stats */}
+        <section className="books-stats">
+          <div className="stat-card gradient-blue">
+            <div className="stat-icon-container">
+              <BookOpen size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{books.length}</p>
+              <p className="stat-label">Books Listed</p>
+            </div>
           </div>
-        </div>
+          <div className="stat-card gradient-green">
+            <div className="stat-icon-container">
+              <TrendingUp size={24} />
+            </div>
+            <div className="stat-content">
+              <p className="stat-value">{books.filter(b => b.isAvailable).length}</p>
+              <p className="stat-label">Available</p>
+            </div>
+          </div>
+        </section>
 
         {/* Books Grid */}
         {books.length > 0 ? (
-          <div className="books-grid">
-            {books.map((book) => (
-              <BookCard 
-                key={book._id} 
-                book={book} 
-                showOwner={false} // Don't show owner info since these are user's own books
-                showEditButton={true} // Show edit button for user's own books
-                onEdit={handleEditBook} // Pass edit handler
-                showDeleteButton={true} // Show delete button for user's own books
-                onDelete={handleDeleteBook} // Pass delete handler
-              />
-            ))}
-          </div>
+          <section className="books-section">
+            <div className="books-grid">
+              {books.map((book) => (
+                <BookCard
+                  key={book._id}
+                  book={book}
+                  showOwner={false}
+                  showEditButton={true}
+                  onEdit={handleEditBook}
+                  showDeleteButton={true}
+                  onDelete={handleDeleteBook}
+                />
+              ))}
+            </div>
+          </section>
         ) : (
-          <div className="empty-state">
-            <div className="empty-icon">📚</div>
-            <h3>No Books Listed Yet</h3>
+          <div className="empty-state glass-card">
+            <div className="empty-illustration">
+              <Library size={64} />
+            </div>
+            <h2>No Books Listed Yet</h2>
             <p>
               Start building your library by creating your first book listing.
               Share your books with the community and discover new reads!
             </p>
-            <Link to="/books/create" className="create-first-listing-btn">
-              Create Your First Listing
+            <Link to="/books/create" className="btn-get-started">
+              <Plus size={18} />
+              Add Your First Book
             </Link>
           </div>
         )}
@@ -220,7 +282,7 @@ const MyBooksPage = () => {
         {/* Delete Confirmation Dialog */}
         {showDeleteConfirm && deletingBook && (
           <div className="modal-overlay">
-            <div className="delete-confirm-modal">
+            <div className="delete-confirm-modal glass-card">
               <div className="modal-header">
                 <h3>Delete Book Listing</h3>
               </div>
@@ -234,13 +296,13 @@ const MyBooksPage = () => {
                 </p>
               </div>
               <div className="modal-actions">
-                <button 
+                <button
                   className="cancel-btn"
                   onClick={cancelDeleteBook}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="confirm-delete-btn"
                   onClick={confirmDeleteBook}
                 >

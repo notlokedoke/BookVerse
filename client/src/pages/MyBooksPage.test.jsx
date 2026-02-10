@@ -41,11 +41,11 @@ vi.mock('../components/EditBookModal', () => ({
       <div data-testid="edit-modal">
         <h2>Edit Book: {book?.title}</h2>
         <button onClick={onClose} data-testid="close-modal">Close</button>
-        <button 
+        <button
           onClick={() => {
             onBookUpdated({ ...book, title: 'Updated Title' });
             onClose();
-          }} 
+          }}
           data-testid="update-book"
         >
           Update
@@ -76,11 +76,12 @@ describe('MyBooksPage', () => {
 
   test('renders loading state initially', () => {
     useAuth.mockReturnValue({ user: mockUser });
-    axios.get.mockImplementation(() => new Promise(() => {})); // Never resolves
+    axios.get.mockImplementation(() => new Promise(() => { })); // Never resolves
 
-    renderWithRouter(<MyBooksPage />);
+    const { container } = renderWithRouter(<MyBooksPage />);
 
-    expect(screen.getByText('Loading your books...')).toBeInTheDocument();
+    // Check for skeleton loading UI
+    expect(container.querySelector('.my-books-skeleton')).toBeInTheDocument();
   });
 
   test('renders empty state when user has no books', async () => {
@@ -98,7 +99,7 @@ describe('MyBooksPage', () => {
       expect(screen.getByText('No Books Listed Yet')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Create Your First Listing')).toBeInTheDocument();
+    expect(screen.getByText('Add Your First Book')).toBeInTheDocument();
   });
 
   test('renders books when user has books', async () => {
@@ -180,10 +181,10 @@ describe('MyBooksPage', () => {
     renderWithRouter(<MyBooksPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Create New Listing')).toBeInTheDocument();
+      expect(screen.getByText('Add Book')).toBeInTheDocument();
     });
 
-    const createButton = screen.getByText('Create New Listing').closest('a');
+    const createButton = screen.getByText('Add Book').closest('a');
     expect(createButton).toHaveAttribute('href', '/books/create');
   });
 

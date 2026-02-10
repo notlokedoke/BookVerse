@@ -469,4 +469,111 @@ router.put('/:id/decline', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/trades/:id/complete
+ * @desc    Mark a trade as complete
+ * @access  Private (requires authentication, proposer or receiver only)
+ */
+router.put('/:id/complete', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate trade ID format
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid trade ID format',
+          code: 'INVALID_TRADE_ID'
+        }
+      });
+    }
+
+    // Fetch trade with populated references
+    const trade = await Trade.findById(id)
+      .populate('proposer', '-password')
+      .populate('receiver', '-password')
+      .populate('requestedBook')
+      .populate('offeredBook');
+
+    // Validate that trade exists
+    if (!trade) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Trade not found',
+          code: 'TRADE_NOT_FOUND'
+        }
+      });
+    }
+
+    // Validate that authenticated user is either proposer or receiver (Req 11.1, 11.3)
+    const isProposer = trade.proposer._id.toString() === req.userId;
+    const isReceiver = trade.receiver._id.toString() === req.userId;
+
+    if (!isProposer && !isReceiver) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'Only the proposer or receiver can mark this trade as complete',
+          code: 'NOT_AUTHORIZED'
+        }
+      });
+    }
+
+    // Validate that trade status is "accepted" (Req 11.5)
+    if (trade.status !== 'accepted') {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: `Cannot complete trade with status "${trade.status}". Only accepted trades can be marked as complete.`,
+          code: 'INVALID_TRADE_STATUS'
+        }
+      });
+    }
+
+    // Update trade status to "completed" and set completedAt timestamp (Req 11.1)
+    trade.status = 'completed';
+    trade.completedAt = new Date();
+    await trade.save();
+
+    // Determine the other party in the trade for notification
+    const otherPartyId = isProposer ? trade.receiver._id : trade.proposer._id;
+    const otherPartyName = isProposer ? trade.receiver.name : trade.proposer.name;
+    const currentUserName = isProposer ? trade.proposer.name : trade.receiver.name;
+
+    // Create notification for the other party (Req 11.4)
+    try {
+      const notification = new Notification({
+        recipient: otherPartyId,
+        type: 'trade_completed',
+        relatedTrade: trade._id,
+        relatedUser: req.userId,
+        message: `${currentUserName} marked the trade for "${trade.requestedBook.title}" as complete. You can now rate your trading partner.`
+      });
+      await notification.save();
+    } catch (notificationError) {
+      // Log notification error but don't fail the trade completion
+      console.error('Failed to create notification:', notificationError);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: trade,
+      message: 'Trade marked as complete successfully. You can now rate your trading partner.'
+    });
+
+  } catch (error) {
+    console.error('Complete trade error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while completing the trade',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

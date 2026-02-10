@@ -16,6 +16,7 @@ const authenticateToken = async (req, res, next) => {
     
     // Check if Authorization header exists and follows Bearer format
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('Auth failed: No token or invalid format');
       return res.status(401).json({
         success: false,
         error: {
@@ -27,9 +28,11 @@ const authenticateToken = async (req, res, next) => {
 
     // Extract token from "Bearer <token>" format
     const token = authHeader.substring(7); // Remove "Bearer " prefix
+    console.log('Authenticating token for request:', req.method, req.path);
 
     // Check if token is blacklisted (logged out)
     if (isTokenBlacklisted(token)) {
+      console.log('Auth failed: Token is blacklisted');
       return res.status(401).json({
         success: false,
         error: {
@@ -41,6 +44,7 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify token signature and expiration
     const decoded = verifyToken(token);
+    console.log('Token verified for user:', decoded.id);
 
     // Attach decoded user ID to request object
     req.userId = decoded.id;
@@ -50,6 +54,7 @@ const authenticateToken = async (req, res, next) => {
     // This can be useful for routes that need user information
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
+      console.log('Auth failed: User not found for ID:', decoded.id);
       return res.status(401).json({
         success: false,
         error: {
@@ -59,6 +64,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    console.log('User authenticated:', user._id, user.email);
     req.user = user;
 
     // Continue to next middleware/route handler
@@ -66,6 +72,7 @@ const authenticateToken = async (req, res, next) => {
 
   } catch (error) {
     // Handle JWT verification errors
+    console.error('Auth middleware error:', error.message);
     if (error.message === 'Invalid or expired token') {
       return res.status(401).json({
         success: false,
