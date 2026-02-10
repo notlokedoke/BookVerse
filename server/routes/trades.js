@@ -533,8 +533,10 @@ router.put('/:id/complete', authenticateToken, async (req, res) => {
     }
 
     // Update trade status to "completed" and set completedAt timestamp (Req 11.1)
+    // Enable rating functionality (Req 11.2)
     trade.status = 'completed';
     trade.completedAt = new Date();
+    trade.ratingEnabled = true;
     await trade.save();
 
     // Determine the other party in the trade for notification
