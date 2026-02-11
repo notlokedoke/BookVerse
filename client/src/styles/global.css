@@ -254,8 +254,8 @@ body {
 }
 
 .btn-icon {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border-radius: var(--radius-full);
     font-size: 0.875rem;

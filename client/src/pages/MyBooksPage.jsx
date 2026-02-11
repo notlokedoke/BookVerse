@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import BookCard from '../components/BookCard';
 import EditBookModal from '../components/EditBookModal';
 import FloatingActionButton from '../components/FloatingActionButton';
@@ -10,6 +11,7 @@ import './MyBooksPage.css';
 
 const MyBooksPage = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -87,6 +89,8 @@ const MyBooksPage = () => {
           prevBooks.filter(book => book._id !== deletingBook._id)
         );
 
+        toast.success('Book listing deleted successfully');
+
         // Close confirmation dialog
         setShowDeleteConfirm(false);
         setDeletingBook(null);
@@ -115,6 +119,7 @@ const MyBooksPage = () => {
         book._id === updatedBook._id ? updatedBook : book
       )
     );
+    toast.success('Book listing updated successfully');
   };
 
   // Handle close edit modal

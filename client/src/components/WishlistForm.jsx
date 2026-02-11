@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { Search, BookOpen, X, Check, Loader2 } from 'lucide-react';
 import './WishlistForm.css';
 
 const WishlistForm = ({ onSuccess, onCancel }) => {
   const { user } = useAuth();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -14,7 +16,6 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const searchTimeoutRef = useRef(null);
 
   // Handle Search Input
@@ -73,7 +74,6 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
     setErrors({});
 
     if (!selectedBook) {
@@ -106,12 +106,13 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       const response = await axios.post(`${apiUrl}/api/wishlist`, dataToSend);
 
       if (response.data.success) {
-        setSuccessMessage('Book added to wishlist successfully!');
+        // Show green toast notification for 3 seconds
+        toast.success('Book added to wishlist successfully!');
 
-        // Call success callback immediately
+        // Call success callback after brief delay
         setTimeout(() => {
           if (onSuccess) onSuccess(response.data.data);
-        }, 1500);
+        }, 500);
       }
     } catch (error) {
       if (error.response) {
@@ -141,12 +142,6 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       </div>
 
       <div className="wishlist-form-content">
-        {successMessage && (
-          <div className="success-message">
-            <Check size={18} /> {successMessage}
-          </div>
-        )}
-
         {errors.general && (
           <div className="error-message">
             {errors.general}
