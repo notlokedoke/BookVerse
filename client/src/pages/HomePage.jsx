@@ -246,7 +246,7 @@ const HomePage = () => {
                 <h4>Legal</h4>
                 <a href="#privacy">Privacy Policy</a>
                 <a href="#terms">Terms of Service</a>
-                <a href="#safety">Safety Guidelines</a>
+                <Link to="/safety">Safety Guidelines</Link>
               </div>
             </div>
           </div>
