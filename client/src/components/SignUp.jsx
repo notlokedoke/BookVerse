@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { BookOpen } from 'lucide-react';
 import CitySelector from './common/CitySelector';
 import './SignUp.css';
 
@@ -121,7 +122,7 @@ const SignUp = () => {
   const handleBlur = (e) => {
     const { name, value } = e.target;
     const error = validateField(name, value);
-    
+
     if (error) {
       setErrors(prev => ({ ...prev, [name]: error }));
     } else {
@@ -218,7 +219,9 @@ const SignUp = () => {
       {/* Header */}
       <div className="signup-header">
         <Link to="/" className="logo-container">
-          <div className="logo-icon">📚</div>
+          <div className="logo-icon">
+            <BookOpen size={24} strokeWidth={2.5} />
+          </div>
           <span className="logo-text">BookVerse</span>
         </Link>
       </div>
@@ -298,7 +301,7 @@ const SignUp = () => {
                     error={errors.city}
                     disabled={isSubmitting}
                     required
-                    placeholder="e.g., New York, NY or Greater Boston Area"
+                    placeholder="Kathmandu or Chitwan"
                   />
                 </div>
 

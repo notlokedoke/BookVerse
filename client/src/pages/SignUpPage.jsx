@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import SignUp from '../components/SignUp'
 
-const RegisterPage = () => {
+const SignUpPage = () => {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
@@ -16,4 +16,4 @@ const RegisterPage = () => {
   return <SignUp />
 }
 
-export default RegisterPage
+export default SignUpPage

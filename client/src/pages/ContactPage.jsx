@@ -263,9 +263,9 @@ const ContactPage = () => {
                   Before reaching out, you might find answers in our resources:
                 </p>
                 <ul>
+                  <li><Link to="/help">Help Center</Link></li>
                   <li><Link to="/about">About BookVerse</Link></li>
                   <li><Link to="/safety">Safety Guidelines</Link></li>
-                  <li><a href="#help">Help Center</a></li>
                 </ul>
               </div>
             </div>

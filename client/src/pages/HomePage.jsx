@@ -239,7 +239,7 @@ const HomePage = () => {
                 <h4>Company</h4>
                 <Link to="/about">About Us</Link>
                 <Link to="/contact">Contact</Link>
-                <a href="#help">Help Center</a>
+                <Link to="/help">Help Center</Link>
               </div>
 
               <div className="footer-column">

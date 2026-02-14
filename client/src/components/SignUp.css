@@ -37,6 +37,10 @@
 
 .logo-icon {
   font-size: 1.5rem;
+  color: #2ECC71;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-text {
@@ -526,49 +530,80 @@
 }
 
 .checkbox-label {
-  display: flex;
+  display: flex !important;
   align-items: flex-start;
   gap: 0.75rem;
   cursor: pointer;
   font-size: 0.875rem;
   color: #374151;
   line-height: 1.5;
+  position: relative;
+  padding-left: 1.75rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-right: 0 !important;
+  min-height: auto !important;
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: auto;
-  margin: 0;
-  position: relative;
-  appearance: none;
-  width: 18px;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.checkmark {
+  position: absolute;
+  left: 0;
+  top: 2px;
   height: 18px;
+  width: 18px;
   border: 2px solid #d1d5db;
   border-radius: 4px;
   background: #ffffff;
-  cursor: pointer;
+  transition: all 0.2s ease;
   flex-shrink: 0;
-  margin-top: 2px;
 }
 
-.checkbox-label input[type="checkbox"]:checked {
+.checkbox-label:hover input ~ .checkmark {
+  border-color: #9ca3af;
+}
+
+.checkbox-label input:checked ~ .checkmark {
   background: #2ECC71;
   border-color: #2ECC71;
 }
 
-.checkbox-label input[type="checkbox"]:checked::after {
-  content: '✓';
+.checkmark::after {
+  content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
+  display: none;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
-.checkbox-label input[type="checkbox"]:focus {
+.checkbox-label input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.checkbox-label input:focus ~ .checkmark {
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.checkbox-label input:disabled ~ .checkmark {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Create Button */
@@ -611,16 +646,6 @@
   position: relative;
   text-align: center;
   margin-bottom: 1.5rem;
-}
-
-.divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e5e7eb;
 }
 
 .divider span {
