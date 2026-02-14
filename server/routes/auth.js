@@ -172,6 +172,8 @@ router.post('/login', [
   // Validation middleware
   body('email')
     .trim()
+    .notEmpty()
+    .withMessage('Email is required')
     .isEmail()
     .withMessage('Please provide a valid email address')
     .normalizeEmail()
@@ -179,6 +181,8 @@ router.post('/login', [
   body('password')
     .notEmpty()
     .withMessage('Password is required')
+    .isLength({ min: 1 })
+    .withMessage('Password cannot be empty')
 ], async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -192,17 +196,6 @@ router.post('/login', [
           message: errors.array()[0].msg,
           code: 'VALIDATION_ERROR',
           details: errors.array()
-        }
-      });
-    }
-
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide both email and password',
-          code: 'MISSING_FIELDS'
         }
       });
     }
