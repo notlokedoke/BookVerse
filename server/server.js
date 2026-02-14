@@ -131,6 +131,7 @@ const tradeRoutes = require('./routes/trades');
 const messageRoutes = require('./routes/messages');
 const ratingRoutes = require('./routes/ratings');
 const notificationRoutes = require('./routes/notifications');
+const contactRoutes = require('./routes/contact');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -161,6 +162,7 @@ app.use('/api/trades', tradeRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Multer error handling middleware (after routes)
 app.use((error, req, res, next) => {
@@ -188,6 +190,41 @@ app.use((error, req, res, next) => {
 
   // Pass other errors to the default error handler
   next(error);
+});
+
+// Global error handler - MUST be last middleware
+app.use((err, req, res, next) => {
+  // Log error details for developers (not exposed to users)
+  console.error('Error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    timestamp: new Date().toISOString()
+  });
+
+  // Determine status code
+  const statusCode = err.statusCode || err.status || 500;
+
+  // Prepare user-friendly error response (no technical details)
+  const errorResponse = {
+    success: false,
+    error: {
+      message: statusCode === 500 
+        ? 'An unexpected error occurred. Please try again later.'
+        : err.message || 'An error occurred',
+      code: err.code || 'INTERNAL_ERROR'
+    }
+  };
+
+  // In development, optionally include stack trace (never in production)
+  if (process.env.NODE_ENV === 'development' && statusCode === 500) {
+    errorResponse.error.stack = err.stack;
+  }
+
+  // Send error response
+  res.status(statusCode).json(errorResponse);
 });
 
 const PORT = process.env.PORT || 5000;

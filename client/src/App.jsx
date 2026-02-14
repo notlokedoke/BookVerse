@@ -24,10 +24,12 @@ import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
 import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
-// Component to conditionally render navbar
+// Component to conditionally render navbar and footer
 const AppContent = () => {
   const location = useLocation()
   const isAuthPage = location.pathname === '/login' || 
@@ -55,6 +57,8 @@ const AppContent = () => {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/browse" element={<BrowsePage />} />
             <Route path="/safety" element={<SafetyGuidelinesPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             
             {/* Protected routes */}
             <Route 
@@ -135,7 +139,6 @@ const AppContent = () => {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </div>
-      {!isAuthPage && !isLandingPage && <Footer />}
     </div>
   )
 }

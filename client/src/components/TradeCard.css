@@ -9,8 +9,8 @@
 
 .trade-card {
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: all 0.3s ease;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -18,8 +18,8 @@
 }
 
 .trade-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   border-color: #e0e0e0;
 }
 
@@ -28,7 +28,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: 0.625rem 0.875rem;
   background: #fafafa;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -36,29 +36,29 @@
 .trade-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .trade-type {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #1a1a1a;
 }
 
 .trade-date {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   color: #9ca3af;
   font-weight: 400;
 }
 
 /* Status Badge */
 .status-badge {
-  padding: 0.375rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .status-proposed {
@@ -88,37 +88,37 @@
 
 /* Trade Content */
 .trade-content {
-  padding: 1.25rem;
+  padding: 0.75rem 0.875rem;
 }
 
 /* Trade User */
 .trade-user {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .user-label {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.25rem;
 }
 
 .user-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .user-name {
-  font-size: 1rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1a1a;
 }
 
 .user-location {
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   color: #6b7280;
   font-weight: 400;
 }
@@ -127,23 +127,23 @@
 .books-exchange {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 1rem;
+  gap: 0.625rem;
   align-items: center;
 }
 
 .book-section {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.375rem;
   min-width: 0;
 }
 
 .book-label {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .book-preview {
@@ -152,7 +152,7 @@
   gap: 0;
   padding: 0;
   background: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid #e5e7eb;
   min-width: 0;
   overflow: hidden;
@@ -162,7 +162,7 @@
 .book-thumbnail {
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 140px;
   object-fit: cover;
   border-radius: 0;
   box-shadow: none;
@@ -175,21 +175,21 @@
   left: 0;
   right: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 70%, transparent 100%);
-  padding: 3rem 0.75rem 0.75rem;
+  padding: 2rem 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 0.25rem;
   min-width: 0;
   overflow: hidden;
   align-items: flex-start;
 }
 
 .trade-card .book-title {
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -201,9 +201,9 @@
 }
 
 .trade-card .book-author {
-  font-size: 0.6875rem;
+  font-size: 0.5625rem;
   color: #ffffff;
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.125rem 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -213,14 +213,14 @@
 
 .book-condition {
   display: inline-block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.125rem 0.375rem;
   background: #ffffff;
   color: #1a1a1a;
-  border-radius: 4px;
-  font-size: 0.625rem;
+  border-radius: 3px;
+  font-size: 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -230,14 +230,14 @@
   align-items: center;
   justify-content: center;
   color: #9ca3af;
-  font-size: 1.5rem;
-  padding: 0 0.5rem;
+  font-size: 1.125rem;
+  padding: 0 0.25rem;
   flex-shrink: 0;
 }
 
 /* Trade Footer */
 .trade-footer {
-  padding: 1rem 1.25rem;
+  padding: 0.625rem 0.875rem;
   background: #fafafa;
   border-top: 1px solid #f0f0f0;
   display: flex;
@@ -245,7 +245,7 @@
 }
 
 .view-details {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #1a1a1a;
   transition: color 0.2s ease;
@@ -259,33 +259,32 @@
 @media (max-width: 768px) {
   .books-exchange {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .exchange-arrow {
     transform: rotate(90deg);
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
   }
 
   .book-preview {
-    padding: 0.625rem;
+    padding: 0;
   }
 
   .book-thumbnail {
-    width: 50px;
-    height: 75px;
+    min-height: 120px;
   }
 
   .trade-header {
-    padding: 0.875rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .trade-content {
-    padding: 1rem;
+    padding: 0.625rem 0.75rem;
   }
 
   .trade-footer {
-    padding: 0.875rem 1rem;
+    padding: 0.5rem 0.75rem;
   }
 }
 
@@ -293,7 +292,7 @@
   .trade-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .status-badge {
@@ -301,15 +300,15 @@
   }
 
   .book-title {
-    font-size: 0.8125rem;
+    font-size: 0.625rem;
   }
 
   .book-author {
-    font-size: 0.6875rem;
+    font-size: 0.5625rem;
   }
 
   .book-condition {
-    font-size: 0.5625rem;
-    padding: 0.125rem 0.375rem;
+    font-size: 0.5rem;
+    padding: 0.125rem 0.25rem;
   }
 }

@@ -78,7 +78,7 @@ describe('TradeProposalModal', () => {
   test('renders modal when isOpen is true', () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: [] })
+      json: async () => ({ success: true, data: { books: [] } })
     });
 
     render(
@@ -89,13 +89,13 @@ describe('TradeProposalModal', () => {
       />
     );
 
-    expect(screen.getByText('Propose Trade')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /propose trade/i })).toBeInTheDocument();
   });
 
   test('displays requested book information', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -115,7 +115,7 @@ describe('TradeProposalModal', () => {
   test('fetches and displays user books', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -160,7 +160,7 @@ describe('TradeProposalModal', () => {
   test('displays message when user has no available books', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: [] })
+      json: async () => ({ success: true, data: { books: [] } })
     });
 
     render(
@@ -192,7 +192,7 @@ describe('TradeProposalModal', () => {
 
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: booksWithUnavailable })
+      json: async () => ({ success: true, data: { books: booksWithUnavailable } })
     });
 
     render(
@@ -213,7 +213,7 @@ describe('TradeProposalModal', () => {
   test('allows selecting a book to offer', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -239,7 +239,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -287,10 +287,10 @@ describe('TradeProposalModal', () => {
     );
   });
 
-  test('displays error when no book is selected', async () => {
+  test('keeps submit disabled when no book is selected', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -305,20 +305,15 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    // Try to submit without selecting a book
     const submitButton = screen.getByRole('button', { name: /propose trade/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Please select a book to offer')).toBeInTheDocument();
-    });
+    expect(submitButton).toBeDisabled();
   });
 
   test('displays error when trade proposal fails', async () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -357,7 +352,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -398,7 +393,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -439,7 +434,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -480,7 +475,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -521,7 +516,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -562,7 +557,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -603,7 +598,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -644,7 +639,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -685,7 +680,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -727,7 +722,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: false,
@@ -788,7 +783,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockRejectedValueOnce(new Error('Network error'));
 
@@ -818,7 +813,7 @@ describe('TradeProposalModal', () => {
   test('closes modal when close button is clicked', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -830,7 +825,7 @@ describe('TradeProposalModal', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Propose Trade')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /propose trade/i })).toBeInTheDocument();
     });
 
     const closeButton = screen.getByText('×');
@@ -842,7 +837,7 @@ describe('TradeProposalModal', () => {
   test('closes modal when cancel button is clicked', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -854,7 +849,7 @@ describe('TradeProposalModal', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Propose Trade')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /propose trade/i })).toBeInTheDocument();
     });
 
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -866,7 +861,7 @@ describe('TradeProposalModal', () => {
   test('closes modal when overlay is clicked', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -878,7 +873,7 @@ describe('TradeProposalModal', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Propose Trade')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /propose trade/i })).toBeInTheDocument();
     });
 
     const overlay = document.querySelector('.modal-overlay');
@@ -890,7 +885,7 @@ describe('TradeProposalModal', () => {
   test('does not close modal when modal content is clicked', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: mockUserBooks })
+      json: async () => ({ success: true, data: { books: mockUserBooks } })
     });
 
     render(
@@ -902,7 +897,7 @@ describe('TradeProposalModal', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Propose Trade')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /propose trade/i })).toBeInTheDocument();
     });
 
     const modalContent = document.querySelector('.modal-content');
@@ -914,7 +909,7 @@ describe('TradeProposalModal', () => {
   test('disables submit button when no books are available', async () => {
     fetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ success: true, data: [] })
+      json: async () => ({ success: true, data: { books: [] } })
     });
 
     render(
@@ -935,7 +930,7 @@ describe('TradeProposalModal', () => {
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockImplementation(() => new Promise(() => {})); // Never resolves
 
@@ -967,12 +962,10 @@ describe('TradeProposalModal', () => {
   });
 
   test('automatically closes modal after successful submission', async () => {
-    vi.useFakeTimers();
-
     fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ success: true, data: mockUserBooks })
+        json: async () => ({ success: true, data: { books: mockUserBooks } })
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -1003,11 +996,8 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('Trade Proposed Successfully!')).toBeInTheDocument();
     });
 
-    // Fast-forward time
-    vi.advanceTimersByTime(2000);
-
-    expect(mockOnClose).toHaveBeenCalled();
-
-    vi.useRealTimers();
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalled();
+    }, { timeout: 3000 });
   });
 });

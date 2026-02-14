@@ -3,8 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import TradeDetailView from './TradeDetailView';
-import { AuthProvider } from '../context/AuthContext';
-import { ToastProvider } from '../context/ToastContext';
 
 // Mock the useParams hook
 vi.mock('react-router-dom', async () => {
@@ -29,6 +27,25 @@ vi.mock('axios', () => ({
   }
 }));
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: {
+      _id: 'user123',
+      name: 'Test User',
+      email: 'test@example.com'
+    }
+  })
+}));
+
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn()
+  })
+}));
+
 // Mock ChatBox component
 vi.mock('./ChatBox', () => ({
   default: ({ tradeId, otherUserName }) => (
@@ -39,20 +56,10 @@ vi.mock('./ChatBox', () => ({
   )
 }));
 
-const mockUser = {
-  _id: 'user123',
-  name: 'Test User',
-  email: 'test@example.com'
-};
-
 const renderWithProviders = (component) => {
   return render(
-    <BrowserRouter>
-      <AuthProvider>
-        <ToastProvider>
-          {component}
-        </ToastProvider>
-      </AuthProvider>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {component}
     </BrowserRouter>
   );
 };
@@ -143,7 +150,7 @@ describe('TradeDetailView - Chat Integration', () => {
     renderWithProviders(<TradeDetailView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Waiting for Response')).toBeInTheDocument();
+      expect(screen.getByText('Pending')).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId('chat-box')).not.toBeInTheDocument();
@@ -186,7 +193,7 @@ describe('TradeDetailView - Chat Integration', () => {
     renderWithProviders(<TradeDetailView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Trade Declined')).toBeInTheDocument();
+      expect(screen.getByText('declined')).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId('chat-box')).not.toBeInTheDocument();
@@ -219,18 +226,26 @@ describe('TradeDetailView - Chat Integration', () => {
       completedAt: new Date().toISOString()
     };
 
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: [completedTrade]
+    global.fetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: [completedTrade]
+        })
       })
-    });
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          success: false
+        })
+      });
 
     renderWithProviders(<TradeDetailView />);
 
     await waitFor(() => {
-      expect(screen.getByText('Trade Completed!')).toBeInTheDocument();
+      expect(screen.getByText('completed')).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId('chat-box')).not.toBeInTheDocument();

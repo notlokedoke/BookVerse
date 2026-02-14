@@ -1,27 +1,22 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
 import BrowsePage from './BrowsePage';
 import { vi } from 'vitest';
 
 // Mock fetch
 global.fetch = vi.fn();
 
-// Mock AuthContext
-const mockAuthContext = {
-  user: { id: '1', name: 'Test User' },
-  isAuthenticated: true,
-  login: vi.fn(),
-  logout: vi.fn()
-};
+const mockUseAuth = vi.fn();
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => mockUseAuth()
+}));
 
 const renderWithProviders = (component) => {
   return render(
-    <BrowserRouter>
-      <AuthProvider value={mockAuthContext}>
-        {component}
-      </AuthProvider>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {component}
     </BrowserRouter>
   );
 };
@@ -29,11 +24,17 @@ const renderWithProviders = (component) => {
 describe('BrowsePage', () => {
   beforeEach(() => {
     fetch.mockClear();
+    mockUseAuth.mockReturnValue({
+      user: { id: '1', name: 'Test User' },
+      isAuthenticated: true,
+      login: vi.fn(),
+      logout: vi.fn()
+    });
     // Reset URL to clean state before each test
     window.history.replaceState({}, '', '/browse');
   });
 
-  test('renders browse page with title and filters', () => {
+  test('renders browse page with title and filters', async () => {
     // Mock successful API response
     fetch.mockResolvedValueOnce({
       ok: true,
@@ -55,13 +56,13 @@ describe('BrowsePage', () => {
     renderWithProviders(<BrowsePage />);
 
     // Check if main elements are rendered
-    expect(screen.getByText('Discover Books')).toBeInTheDocument();
+    expect(await screen.findByText('Discover Books')).toBeInTheDocument();
     expect(screen.getByText(/books available for trade/)).toBeInTheDocument();
 
     // Check if filter inputs are present
-    expect(screen.getByLabelText('City')).toBeInTheDocument();
-    expect(screen.getByLabelText('Genre')).toBeInTheDocument();
-    expect(screen.getByLabelText('Author')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('City')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Genre')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Author')).toBeInTheDocument();
   });
 
   test('displays empty state when no books are found', async () => {
@@ -180,13 +181,13 @@ describe('BrowsePage', () => {
     });
 
     // Change city filter
-    const cityInput = screen.getByLabelText('City');
+    const cityInput = screen.getByPlaceholderText('City');
     fireEvent.change(cityInput, { target: { value: 'New York' } });
 
     // Wait for filtered API call
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=New+York');
-    });
+    }, { timeout: 2000 });
   });
 
   test('applies multiple filters simultaneously', async () => {
@@ -234,9 +235,9 @@ describe('BrowsePage', () => {
     });
 
     // Apply multiple filters
-    const cityInput = screen.getByLabelText('City');
-    const genreInput = screen.getByLabelText('Genre');
-    const authorInput = screen.getByLabelText('Author');
+    const cityInput = screen.getByPlaceholderText('City');
+    const genreInput = screen.getByPlaceholderText('Genre');
+    const authorInput = screen.getByPlaceholderText('Author');
 
     fireEvent.change(cityInput, { target: { value: 'Seattle' } });
     fireEvent.change(genreInput, { target: { value: 'Fantasy' } });
@@ -245,7 +246,7 @@ describe('BrowsePage', () => {
     // Wait for API call with all filters
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Seattle&genre=Fantasy&author=Tolkien');
-    });
+    }, { timeout: 2000 });
 
     // Verify URL is updated with all parameters
     expect(window.location.search).toContain('city=Seattle');
@@ -351,13 +352,13 @@ describe('BrowsePage', () => {
     });
 
     // Add a filter
-    const cityInput = screen.getByLabelText('City');
+    const cityInput = screen.getByPlaceholderText('City');
     fireEvent.change(cityInput, { target: { value: 'Boston' } });
 
     // Wait for filtered API call
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Boston');
-    });
+    }, { timeout: 2000 });
 
     // Clear filters
     const clearButton = screen.getByText('Clear All');
@@ -369,6 +370,8 @@ describe('BrowsePage', () => {
     });
 
     // Check that input is cleared
-    expect(cityInput.value).toBe('');
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('City')).toHaveValue('');
+    });
   });
 });

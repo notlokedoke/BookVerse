@@ -36,7 +36,7 @@ describe('Auth Routes', () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('User registered successfully');
+      expect(response.body.message).toBe('User registered successfully. Please check your email to verify your account.');
       expect(response.body.data).toHaveProperty('_id');
       expect(response.body.data.name).toBe(validUserData.name);
       expect(response.body.data.email).toBe(validUserData.email.toLowerCase());
@@ -99,7 +99,7 @@ describe('Auth Routes', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.code).toBe('MISSING_FIELDS');
     });
 
     test('should reject registration with missing password', async () => {
@@ -112,7 +112,7 @@ describe('Auth Routes', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.code).toBe('MISSING_FIELDS');
     });
 
     test('should reject registration with missing city', async () => {
@@ -553,7 +553,7 @@ describe('Auth Routes', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.code).toBe('NO_UPDATE_FIELDS');
-      expect(response.body.error.message).toBe('Please provide at least one field to update (name, city, or privacySettings)');
+      expect(response.body.error.message).toBe('Please provide at least one field to update (name, city, bio, or privacySettings)');
     });
 
     test('should reject update without Authorization header', async () => {

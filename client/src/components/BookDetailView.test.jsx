@@ -22,6 +22,16 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: () => mockUseAuth()
 }));
 
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn()
+  })
+}));
+
 // Mock fetch
 global.fetch = vi.fn();
 
@@ -65,7 +75,7 @@ const renderWithProviders = (user = mockUser) => {
   mockUseAuth.mockReturnValue({ user, isAuthenticated: true });
   
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <BookDetailView />
     </BrowserRouter>
   );

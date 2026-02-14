@@ -1,76 +1,101 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
+import axios from 'axios';
 import DashboardPage from './DashboardPage';
 
-// Mock the useAuth hook
+const mockUseAuth = vi.fn();
+const mockToast = {
+  success: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn(),
+  info: vi.fn(),
+  showToast: vi.fn()
+};
+
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({
-    user: {
-      name: 'John Doe',
-      email: 'john@example.com'
-    },
-    isAuthenticated: true,
-    login: vi.fn(),
-    logout: vi.fn(),
-    register: vi.fn()
-  })
+  useAuth: () => mockUseAuth()
+}));
+
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => mockToast
+}));
+
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(),
+    put: vi.fn()
+  }
 }));
 
 const renderDashboard = () => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <DashboardPage />
     </BrowserRouter>
   );
 };
 
+const mockSuccessfulDashboardRequests = () => {
+  axios.get
+    .mockResolvedValueOnce({ data: { data: [] } })
+    .mockResolvedValueOnce({ data: { data: { books: [] } } })
+    .mockResolvedValueOnce({ data: { data: { books: [] } } });
+};
+
 describe('DashboardPage', () => {
-  test('renders welcome message with user name', () => {
-    renderDashboard();
-    expect(screen.getByText('Welcome back, John Doe')).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem('token', 'test-token');
+    mockUseAuth.mockReturnValue({
+      user: {
+        _id: 'user-1',
+        userId: 'user-1',
+        name: 'John Doe',
+        email: 'john@example.com'
+      },
+      isAuthenticated: true
+    });
   });
 
-  test('renders main navigation links', () => {
+  test('renders greeting and browse action after dashboard data loads', async () => {
+    mockSuccessfulDashboardRequests();
+
     renderDashboard();
-    const nav = screen.getByRole('navigation');
-    expect(nav).toBeInTheDocument();
-    expect(screen.getByText('Browse')).toBeInTheDocument();
-    expect(screen.getByText('Profile')).toBeInTheDocument();
+
+    expect(await screen.findByRole('heading', { name: /john!/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /browse books/i })).toHaveAttribute('href', '/browse');
   });
 
-  test('renders BookVerse logo that links to home', () => {
-    renderDashboard();
-    const logoLink = screen.getByRole('link', { name: /bookverse/i });
-    expect(logoLink).toHaveAttribute('href', '/');
-  });
+  test('renders stats cards and analytics labels', async () => {
+    mockSuccessfulDashboardRequests();
 
-  test('renders quick action cards', () => {
     renderDashboard();
-    // Check for the quick actions section specifically
-    expect(screen.getByText('Discover books in your area')).toBeInTheDocument();
-    expect(screen.getByText('Manage your collection')).toBeInTheDocument();
-    expect(screen.getByText('Active Trades')).toBeInTheDocument();
-  });
 
-  test('renders stats section', () => {
-    renderDashboard();
-    expect(screen.getByText('Your BookVerse')).toBeInTheDocument();
+    expect(await screen.findByText('Trading Analytics')).toBeInTheDocument();
     expect(screen.getByText('Books Listed')).toBeInTheDocument();
-    expect(screen.getByText('Completed Trades')).toBeInTheDocument();
-    expect(screen.getByText('Pending Requests')).toBeInTheDocument();
+    expect(screen.getByText('Active Trades')).toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.getByText('Pending')).toBeInTheDocument();
   });
 
-  test('renders recent activity section', () => {
+  test('renders new user empty state when there are no books or trades', async () => {
+    mockSuccessfulDashboardRequests();
+
     renderDashboard();
-    expect(screen.getByText('Recent Activity')).toBeInTheDocument();
-    expect(screen.getByText(/New trade request for 'Harry Potter'/)).toBeInTheDocument();
+
+    expect(await screen.findByRole('heading', { name: 'Welcome to BookVerse!' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /add your first book/i })).toHaveAttribute('href', '/books/create');
   });
 
-  test('renders call to action section', () => {
+  test('shows toast error when dashboard data request fails', async () => {
+    axios.get.mockRejectedValueOnce(new Error('Network error'));
+
     renderDashboard();
-    expect(screen.getByText('Ready to trade?')).toBeInTheDocument();
-    expect(screen.getByText('Find your next favorite book or share one with the community')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockToast.error).toHaveBeenCalledWith('Failed to load dashboard data');
+    });
   });
 });

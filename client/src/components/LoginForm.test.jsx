@@ -3,7 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
 import LoginForm from './LoginForm';
-import { AuthProvider } from '../context/AuthContext';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -31,28 +30,29 @@ vi.mock('../context/AuthContext', async () => {
 });
 
 describe('LoginForm', () => {
+  const renderLoginForm = () =>
+    render(
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <LoginForm />
+      </BrowserRouter>
+    );
+
+  const getPasswordInput = () => screen.getByLabelText(/^password$/i, { selector: 'input' });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders email and password fields', () => {
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(getPasswordInput()).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('displays validation errors for empty fields', async () => {
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -64,11 +64,7 @@ describe('LoginForm', () => {
   });
 
   it('displays validation error for invalid email', async () => {
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     const emailInput = screen.getByLabelText(/email/i);
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -84,14 +80,10 @@ describe('LoginForm', () => {
   it('calls login function with email and password', async () => {
     mockLogin.mockResolvedValueOnce({ success: true });
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -104,14 +96,10 @@ describe('LoginForm', () => {
   it('redirects to home page on successful login', async () => {
     mockLogin.mockResolvedValueOnce({ success: true });
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'validpassword' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'validpassword' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -127,14 +115,10 @@ describe('LoginForm', () => {
       error: 'Invalid email or password' 
     });
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'wrong@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrongpassword' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'wrongpassword' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -145,11 +129,7 @@ describe('LoginForm', () => {
   });
 
   it('clears field error when user starts typing', async () => {
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -169,14 +149,10 @@ describe('LoginForm', () => {
   it('disables submit button while submitting', async () => {
     mockLogin.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100)));
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -191,14 +167,10 @@ describe('LoginForm', () => {
   it('stores JWT token in localStorage on successful login', async () => {
     mockLogin.mockResolvedValueOnce({ success: true });
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -216,14 +188,10 @@ describe('LoginForm', () => {
       error: 'Network error. Please check your connection and try again.' 
     });
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
@@ -236,14 +204,10 @@ describe('LoginForm', () => {
   it('handles unexpected errors gracefully', async () => {
     mockLogin.mockRejectedValueOnce(new Error('Unexpected error'));
 
-    render(
-      <BrowserRouter>
-        <LoginForm />
-      </BrowserRouter>
-    );
+    renderLoginForm();
     
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'user@example.com' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
+    fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
     
     const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);

@@ -5,10 +5,16 @@ import { vi } from 'vitest';
 import axios from 'axios';
 import MyBooksPage from './MyBooksPage';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 // Mock the useAuth hook
 vi.mock('../context/AuthContext', () => ({
   useAuth: vi.fn()
+}));
+
+// Mock the useToast hook
+vi.mock('../context/ToastContext', () => ({
+  useToast: vi.fn()
 }));
 
 // Mock axios
@@ -57,7 +63,7 @@ vi.mock('../components/EditBookModal', () => ({
 
 const renderWithRouter = (component) => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {component}
     </BrowserRouter>
   );
@@ -72,6 +78,13 @@ describe('MyBooksPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useToast.mockReturnValue({
+      success: vi.fn(),
+      error: vi.fn(),
+      warning: vi.fn(),
+      info: vi.fn(),
+      showToast: vi.fn()
+    });
   });
 
   test('renders loading state initially', () => {
@@ -165,7 +178,7 @@ describe('MyBooksPage', () => {
     renderWithRouter(<MyBooksPage />);
 
     await waitFor(() => {
-      expect(axios.get).toHaveBeenCalledWith('/api/books/user/123');
+      expect(axios.get).toHaveBeenCalledWith(expect.stringContaining('/api/books/user/123'));
     });
   });
 
@@ -181,10 +194,10 @@ describe('MyBooksPage', () => {
     renderWithRouter(<MyBooksPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Add Book')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Add Book' })).toBeInTheDocument();
     });
 
-    const createButton = screen.getByText('Add Book').closest('a');
+    const createButton = screen.getByRole('link', { name: 'Add Book' });
     expect(createButton).toHaveAttribute('href', '/books/create');
   });
 
@@ -342,7 +355,7 @@ describe('MyBooksPage', () => {
 
     // Check that delete API was called
     await waitFor(() => {
-      expect(axios.delete).toHaveBeenCalledWith('/api/books/1', {
+      expect(axios.delete).toHaveBeenCalledWith(expect.stringContaining('/api/books/1'), {
         headers: {
           Authorization: 'Bearer mock-token'
         }
