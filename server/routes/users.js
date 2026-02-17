@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { param, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { applyUserPrivacySettings } = require('../utils/privacy');
 
@@ -8,20 +9,26 @@ const { applyUserPrivacySettings } = require('../utils/privacy');
  * @desc    Get public user profile by ID
  * @access  Public
  */
-router.get('/:userId', async (req, res) => {
+router.get('/:userId', [
+  param('userId')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid user ID format')
+], async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    // Validate userId format
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid user ID format',
-          code: 'INVALID_USER_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { userId } = req.params;
 
     // Find user by ID
     const user = await User.findById(userId).select('-password');

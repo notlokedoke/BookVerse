@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { query, validationResult } = require('express-validator');
 const { trackAPIUsage, getUsageStats, checkUsageLimits } = require('../middleware/api-usage-tracker');
+const { sanitizeString } = require('../utils/sanitize');
 
 // Apply usage tracking middleware to all routes
 router.use(checkUsageLimits);
@@ -12,8 +14,28 @@ router.use(checkUsageLimits);
  * Search cities globally using Google Places API
  * GET /api/cities/search?q=searchTerm
  */
-router.get('/search', async (req, res) => {
+router.get('/search', [
+  query('q')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Search query must be between 2 and 100 characters')
+    .customSanitizer(sanitizeString)
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { q } = req.query;
     
     if (!q || q.length < 2) {
@@ -90,8 +112,28 @@ router.get('/search', async (req, res) => {
  * Alternative: Search cities using a free service (OpenStreetMap Nominatim)
  * This is a backup option if Google Places API is not available
  */
-router.get('/search-free', async (req, res) => {
+router.get('/search-free', [
+  query('q')
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Search query must be between 2 and 100 characters')
+    .customSanitizer(sanitizeString)
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { q } = req.query;
     
     if (!q || q.length < 2) {
@@ -157,7 +199,26 @@ router.get('/search-free', async (req, res) => {
  * Get popular cities by region
  * GET /api/cities/popular?region=europe
  */
-router.get('/popular', (req, res) => {
+router.get('/popular', [
+  query('region')
+    .optional()
+    .trim()
+    .isIn(['north-america', 'europe', 'asia', 'oceania', 'south-america', 'africa'])
+    .withMessage('Invalid region. Must be one of: north-america, europe, asia, oceania, south-america, africa')
+], (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      error: {
+        message: errors.array()[0].msg,
+        code: 'VALIDATION_ERROR',
+        details: errors.array()
+      }
+    });
+  }
+
   const { region } = req.query;
   
   const popularCitiesByRegion = {

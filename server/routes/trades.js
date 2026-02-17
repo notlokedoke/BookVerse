@@ -1,17 +1,38 @@
 const express = require('express');
 const router = express.Router();
+const { body, param, query, validationResult } = require('express-validator');
 const Trade = require('../models/Trade');
 const Book = require('../models/Book');
 const Notification = require('../models/Notification');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
 
 /**
  * @route   GET /api/trades
  * @desc    Get user's trades (where user is either proposer or receiver)
  * @access  Private (requires authentication)
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', [
+  authenticateToken,
+  query('status')
+    .optional()
+    .isIn(['proposed', 'accepted', 'declined', 'completed'])
+    .withMessage('Status must be one of: proposed, accepted, declined, completed')
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { status } = req.query;
 
     // Build query to find trades where user is either proposer or receiver
@@ -24,17 +45,6 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Add optional status filter if provided
     if (status) {
-      // Validate status value
-      const validStatuses = ['proposed', 'accepted', 'declined', 'completed'];
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'Invalid status value. Must be one of: proposed, accepted, declined, completed',
-            code: 'INVALID_STATUS'
-          }
-        });
-      }
       query.status = status;
     }
 
@@ -88,41 +98,37 @@ router.get('/', authenticateToken, async (req, res) => {
  * @desc    Propose a new trade
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', [
+  authenticateToken,
+  sanitizeInput,
+  body('requestedBook')
+    .trim()
+    .notEmpty()
+    .withMessage('Requested book ID is required')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid requested book ID format'),
+  body('offeredBook')
+    .trim()
+    .notEmpty()
+    .withMessage('Offered book ID is required')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid offered book ID format')
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { requestedBook, offeredBook } = req.body;
-
-    // Validate required fields
-    if (!requestedBook || !offeredBook) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Both requestedBook and offeredBook are required',
-          code: 'MISSING_REQUIRED_FIELDS'
-        }
-      });
-    }
-
-    // Validate book ID formats
-    if (!requestedBook.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid requestedBook ID format',
-          code: 'INVALID_BOOK_ID'
-        }
-      });
-    }
-
-    if (!offeredBook.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid offeredBook ID format',
-          code: 'INVALID_BOOK_ID'
-        }
-      });
-    }
 
     // Fetch both books to validate they exist
     const [requestedBookDoc, offeredBookDoc] = await Promise.all([
@@ -276,20 +282,27 @@ router.post('/', authenticateToken, async (req, res) => {
  * @desc    Accept a trade proposal
  * @access  Private (requires authentication, receiver only)
  */
-router.put('/:id/accept', authenticateToken, async (req, res) => {
+router.put('/:id/accept', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Validate trade ID format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { id } = req.params;
 
     // Fetch trade with populated references
     const trade = await Trade.findById(id)
@@ -375,20 +388,27 @@ router.put('/:id/accept', authenticateToken, async (req, res) => {
  * @desc    Decline a trade proposal
  * @access  Private (requires authentication, receiver only)
  */
-router.put('/:id/decline', authenticateToken, async (req, res) => {
+router.put('/:id/decline', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Validate trade ID format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { id } = req.params;
 
     // Fetch trade with populated references
     const trade = await Trade.findById(id)
@@ -474,20 +494,27 @@ router.put('/:id/decline', authenticateToken, async (req, res) => {
  * @desc    Mark a trade as complete
  * @access  Private (requires authentication, proposer or receiver only)
  */
-router.put('/:id/complete', authenticateToken, async (req, res) => {
+router.put('/:id/complete', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Validate trade ID format
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { id } = req.params;
 
     // Fetch trade with populated references
     const trade = await Trade.findById(id)

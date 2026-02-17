@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { param, validationResult } = require('express-validator');
 const Notification = require('../models/Notification');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -43,21 +44,27 @@ router.get('/', authenticateToken, async (req, res) => {
  * @desc    Mark a notification as read
  * @access  Private (requires authentication)
  */
-router.put('/:id/read', authenticateToken, async (req, res) => {
+router.put('/:id/read', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid notification ID format')
+], async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Validate ObjectId format
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid notification ID format',
-          code: 'INVALID_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { id } = req.params;
 
     // Find the notification
     const notification = await Notification.findById(id);
