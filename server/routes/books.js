@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const { body, validationResult } = require('express-validator');
 const Book = require('../models/Book');
 const Trade = require('../models/Trade');
 const { authenticateToken } = require('../middleware/auth');
@@ -260,21 +261,91 @@ router.get('/search-external', async (req, res) => {
  * @desc    Create new book listing with image upload
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), (req, res, next) => {
-  // Validate required fields after upload middleware
-  const { title, author, condition, genre, googleBooksImageUrl } = req.body;
-
-  if (!title || !author || !condition || !genre) {
+router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
+  // Validation middleware
+  body('title')
+    .trim()
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Title must be between 1 and 500 characters')
+    .customSanitizer(sanitizeString),
+  body('author')
+    .trim()
+    .notEmpty()
+    .withMessage('Author is required')
+    .isLength({ min: 1, max: 200 })
+    .withMessage('Author must be between 1 and 200 characters')
+    .customSanitizer(sanitizeString),
+  body('condition')
+    .notEmpty()
+    .withMessage('Condition is required')
+    .isIn(['New', 'Like New', 'Good', 'Fair', 'Poor'])
+    .withMessage('Condition must be one of: New, Like New, Good, Fair, Poor'),
+  body('genre')
+    .trim()
+    .notEmpty()
+    .withMessage('Genre is required')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Genre must be between 1 and 100 characters')
+    .customSanitizer(sanitizeString),
+  body('isbn')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 20 })
+    .withMessage('ISBN must not exceed 20 characters')
+    .customSanitizer(sanitizeString),
+  body('description')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 2000 })
+    .withMessage('Description must not exceed 2000 characters')
+    .customSanitizer(sanitizeString),
+  body('publicationYear')
+    .optional({ checkFalsy: true })
+    .isInt({ min: 1000, max: new Date().getFullYear() + 1 })
+    .withMessage(`Publication year must be between 1000 and ${new Date().getFullYear() + 1}`),
+  body('publisher')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Publisher must not exceed 200 characters')
+    .customSanitizer(sanitizeString),
+  body('googleBooksImageUrl')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL()
+    .withMessage('Google Books image URL must be a valid URL')
+], (req, res, next) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const firstError = errors.array()[0];
+    
+    // Check if it's a missing field error
+    if (firstError.msg.includes('required')) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Please provide all required fields: title, author, condition, and genre',
+          code: 'MISSING_REQUIRED_FIELDS',
+          details: errors.array()
+        }
+      });
+    }
+    
     return res.status(400).json({
       success: false,
       error: {
-        message: 'Missing required fields: title, author, condition, and genre are required',
-        code: 'MISSING_REQUIRED_FIELDS'
+        message: firstError.msg,
+        code: 'VALIDATION_ERROR',
+        details: errors.array()
       }
     });
   }
 
   // Check if at least one image source is provided
+  const { googleBooksImageUrl } = req.body;
   if (!req.frontImageUrl && !req.backImageUrl && !googleBooksImageUrl) {
     return res.status(400).json({
       success: false,
