@@ -43,8 +43,8 @@ app.use(helmet({
 
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute per IP
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per 15 minutes per IP
   message: {
     success: false,
     error: {
