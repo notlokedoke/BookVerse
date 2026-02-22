@@ -95,7 +95,7 @@ describe('Rate Limiting Configuration Tests', () => {
       // Check that generalLimiter is configured
       expect(serverCode).toContain('generalLimiter');
       expect(serverCode).toContain('windowMs: 15 * 60 * 1000'); // 15 minutes
-      expect(serverCode).toContain('max: 1000'); // 1000 requests
+      expect(serverCode).toContain('max: 100'); // 100 requests per 15 minutes
     });
 
     it('should allow non-auth endpoints to work normally', async () => {
@@ -138,7 +138,7 @@ describe('Rate Limiting Production Behavior Documentation', () => {
       },
       generalEndpoints: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        maxRequests: 1000,
+        maxRequests: 100,
         errorStatus: 429,
         errorCode: 'RATE_LIMIT_EXCEEDED',
         errorMessage: 'Too many requests. Please try again later.'
