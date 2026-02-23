@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import axios from 'axios';
 import {
   BookOpen,
   Search,
@@ -15,6 +16,7 @@ import {
   X,
   LayoutDashboard
 } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -24,6 +26,49 @@ const Navbar = () => {
   const toast = useToast();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch notifications function
+  const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('/api/notifications', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setNotifications(response.data.data);
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  // Fetch notifications on mount when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications();
+    } else {
+      // Clear notifications when user logs out
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated]);
+
+  // Set up periodic polling every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const intervalId = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -45,6 +90,24 @@ const Navbar = () => {
     logout();
     toast.success('Logged out successfully');
     navigate('/');
+  };
+
+  // Handle mark as read (optimistic update for now)
+  const handleMarkAsRead = (notificationId) => {
+    // TODO: Call API endpoint when available (task 116)
+    // For now, update local state optimistically
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notif =>
+        notif._id === notificationId ? { ...notif, isRead: true } : notif
+      )
+    );
+    setUnreadCount(prevCount => Math.max(0, prevCount - 1));
+  };
+
+  // Handle notification dropdown open
+  const handleNotificationOpen = () => {
+    // Refresh notifications when dropdown opens
+    fetchNotifications();
   };
 
   const isActive = (path) => location.pathname === path;
@@ -113,6 +176,12 @@ const Navbar = () => {
                 <Plus size={18} />
                 <span>Add Book</span>
               </Link>
+              <NotificationBell
+                unreadCount={unreadCount}
+                notifications={notifications}
+                onMarkAsRead={handleMarkAsRead}
+                onOpen={handleNotificationOpen}
+              />
               <div className="user-menu">
                 <button
                   className="user-trigger"
