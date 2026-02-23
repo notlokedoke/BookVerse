@@ -92,16 +92,33 @@ const Navbar = () => {
     navigate('/');
   };
 
-  // Handle mark as read (optimistic update for now)
-  const handleMarkAsRead = (notificationId) => {
-    // TODO: Call API endpoint when available (task 116)
-    // For now, update local state optimistically
+  // Handle mark as read
+  const handleMarkAsRead = async (notificationId) => {
+    // Optimistic update for immediate UI feedback
     setNotifications(prevNotifications =>
       prevNotifications.map(notif =>
         notif._id === notificationId ? { ...notif, isRead: true } : notif
       )
     );
     setUnreadCount(prevCount => Math.max(0, prevCount - 1));
+
+    // Call API to persist the change
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`/api/notifications/${notificationId}/read`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      // Revert optimistic update on error
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notif =>
+          notif._id === notificationId ? { ...notif, isRead: false } : notif
+        )
+      );
+      setUnreadCount(prevCount => prevCount + 1);
+      toast.error('Failed to mark notification as read');
+    }
   };
 
   // Handle notification dropdown open
