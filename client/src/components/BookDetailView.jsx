@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import axios from 'axios';
 import TradeProposalModal from './TradeProposalModal';
+import EditBookModal from './EditBookModal';
 import './BookDetailView.css';
 
 const BookDetailView = () => {
   const { bookId } = useParams();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -73,6 +80,50 @@ const BookDetailView = () => {
       default:
         return 'condition-default';
     }
+  };
+
+  // Handle edit button click
+  const handleEdit = () => {
+    setIsEditModalOpen(true);
+  };
+
+  // Handle book updated
+  const handleBookUpdated = (updatedBook) => {
+    setBook(updatedBook);
+    showToast('Book listing updated successfully', 'success');
+  };
+
+  // Handle delete button click
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await axios.delete(`${apiUrl}/api/books/${bookId}`);
+
+      if (response.data.success) {
+        showToast('Book listing deleted successfully', 'success');
+        navigate('/my-books');
+      }
+    } catch (error) {
+      console.error('Delete book error:', error);
+      showToast(
+        error.response?.data?.error?.message || 'Failed to delete book listing',
+        'error'
+      );
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   if (loading) {
@@ -150,6 +201,30 @@ const BookDetailView = () => {
               {book.condition}
             </div>
           </div>
+
+          {/* Additional Images Gallery */}
+          {(book.frontImageUrl || book.backImageUrl || book.googleBooksImageUrl) && (
+            <div className="additional-images-gallery">
+              {book.googleBooksImageUrl && (
+                <div className="gallery-item">
+                  <img src={book.googleBooksImageUrl} alt="Google Books cover" />
+                  <span className="gallery-label">Cover</span>
+                </div>
+              )}
+              {book.frontImageUrl && (
+                <div className="gallery-item">
+                  <img src={book.frontImageUrl} alt="Front view" />
+                  <span className="gallery-label">Front</span>
+                </div>
+              )}
+              {book.backImageUrl && (
+                <div className="gallery-item">
+                  <img src={book.backImageUrl} alt="Back view" />
+                  <span className="gallery-label">Back</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Book Information Section */}
@@ -284,10 +359,10 @@ const BookDetailView = () => {
               </div>
             ) : isOwner ? (
               <div className="owner-actions">
-                <button className="edit-button">
+                <button className="edit-button" onClick={handleEdit}>
                   Edit Listing
                 </button>
-                <button className="delete-button">
+                <button className="delete-button" onClick={handleDelete}>
                   Delete Listing
                 </button>
               </div>
@@ -321,6 +396,52 @@ const BookDetailView = () => {
           onClose={() => setIsModalOpen(false)}
           requestedBook={book}
         />
+      )}
+
+      {/* Edit Book Modal */}
+      {book && (
+        <EditBookModal
+          book={book}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onBookUpdated={handleBookUpdated}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="delete-confirm-modal glass-card">
+            <div className="modal-header">
+              <h3>Delete Book Listing</h3>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this book listing?</p>
+              <div className="book-preview">
+                <strong>"{book.title}"</strong> by {book.author}
+              </div>
+              <p className="warning-text">
+                This action cannot be undone. The book will be permanently removed from your listings.
+              </p>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={cancelDelete}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirm-delete-btn"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Book'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

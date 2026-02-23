@@ -51,6 +51,18 @@ const bookSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Image URL is required']
   },
+  googleBooksImageUrl: {
+    type: String,
+    default: null
+  },
+  frontImageUrl: {
+    type: String,
+    default: null
+  },
+  backImageUrl: {
+    type: String,
+    default: null
+  },
   isAvailable: {
     type: Boolean,
     default: true

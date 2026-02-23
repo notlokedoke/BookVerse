@@ -99,11 +99,11 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
         return;
       }
 
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size (3MB max)
+      if (file.size > 3 * 1024 * 1024) {
         setErrors({
           ...errors,
-          image: 'Image file must be less than 5MB'
+          image: 'Image file must be less than 3MB'
         });
         return;
       }
@@ -463,7 +463,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
                 className={errors.image ? 'error' : ''}
                 disabled={isSubmitting}
               />
-              <small>Upload a new photo to replace the current one (max 5MB)</small>
+              <small>Upload a new photo to replace the current one (max 3MB)</small>
               {errors.image && <span className="field-error">{errors.image}</span>}
               
               {imagePreview && (

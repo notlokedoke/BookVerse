@@ -338,25 +338,21 @@
    Filters Section
    =================================== */
 .filters-section {
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border-radius: 1rem;
+  /* padding: 1.5rem; Removed for Omni-Bar Layout */
+  margin-bottom: 2rem;
+  /* border-radius: 1rem; Removed */
+  /* background: var(--glass-bg); Removed */
+  /* border: 1px solid var(--glass-border); Removed */
+  /* box-shadow: var(--shadow-soft); Removed */
 }
 
 .filters-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
+  display: none;
+  /* Hidden for Omni-Bar Layout */
 }
 
 .filters-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  display: none;
 }
 
 .clear-filters-btn {

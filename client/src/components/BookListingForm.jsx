@@ -15,10 +15,13 @@ const BookListingForm = () => {
     isbn: '',
     description: '',
     publicationYear: '',
-    publisher: ''
+    publisher: '',
+    googleBooksImage: null
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [frontImageFile, setFrontImageFile] = useState(null);
+  const [backImageFile, setBackImageFile] = useState(null);
+  const [frontImagePreview, setFrontImagePreview] = useState(null);
+  const [backImagePreview, setBackImagePreview] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -70,42 +73,83 @@ const BookListingForm = () => {
     }
   };
 
-  // Handle image file selection
-  const handleImageChange = (e) => {
+  // Handle front image file selection
+  const handleFrontImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         setErrors({
           ...errors,
-          image: 'Please select a valid image file'
+          frontImage: 'Please select a valid image file'
         });
         return;
       }
 
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
+      // Validate file size (3MB max)
+      if (file.size > 3 * 1024 * 1024) {
         setErrors({
           ...errors,
-          image: 'Image file must be less than 5MB'
+          frontImage: 'Image file must be less than 3MB'
         });
         return;
       }
 
-      setImageFile(file);
+      setFrontImageFile(file);
       
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target.result);
+        setFrontImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
 
       // Clear image error
-      if (errors.image) {
+      if (errors.frontImage) {
         setErrors({
           ...errors,
-          image: ''
+          frontImage: ''
+        });
+      }
+    }
+  };
+
+  // Handle back image file selection
+  const handleBackImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors({
+          ...errors,
+          backImage: 'Please select a valid image file'
+        });
+        return;
+      }
+
+      // Validate file size (3MB max)
+      if (file.size > 3 * 1024 * 1024) {
+        setErrors({
+          ...errors,
+          backImage: 'Image file must be less than 3MB'
+        });
+        return;
+      }
+
+      setBackImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBackImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Clear image error
+      if (errors.backImage) {
+        setErrors({
+          ...errors,
+          backImage: ''
         });
       }
     }
@@ -141,10 +185,18 @@ const BookListingForm = () => {
           author: bookData.author || formData.author,
           publisher: bookData.publisher || formData.publisher,
           publicationYear: bookData.publicationYear ? bookData.publicationYear.toString() : formData.publicationYear,
-          description: bookData.description || formData.description
+          description: bookData.description || formData.description,
+          // Store the Google Books thumbnail URL
+          googleBooksImage: bookData.thumbnail || null
         });
 
-        setSuccessMessage('Book information retrieved successfully!');
+        // If there's a thumbnail and no image has been uploaded yet, show preview
+        if (bookData.thumbnail && !imageFile) {
+          setImagePreview(bookData.thumbnail);
+        }
+
+        setSuccessMessage('Book information retrieved successfully!' + 
+          (bookData.thumbnail ? ' Cover image loaded from Google Books.' : ''));
         
         // Clear success message after 3 seconds
         setTimeout(() => {
@@ -197,8 +249,9 @@ const BookListingForm = () => {
       newErrors.genre = 'Genre is required';
     }
 
-    if (!imageFile) {
-      newErrors.image = 'Book photo is required';
+    // Image validation: require at least one image source
+    if (!frontImageFile && !backImageFile && !formData.googleBooksImage) {
+      newErrors.image = 'At least one image is required. Upload front/back photos or use ISBN lookup.';
     }
 
     // Optional field validations
@@ -256,7 +309,17 @@ const BookListingForm = () => {
         formDataToSend.append('publisher', publisher.trim());
       }
       
-      formDataToSend.append('coverImage', imageFile);
+      // Append images if provided
+      if (frontImageFile) {
+        formDataToSend.append('frontImage', frontImageFile);
+      }
+      if (backImageFile) {
+        formDataToSend.append('backImage', backImageFile);
+      }
+      // If we have a Google Books image URL, send that
+      if (formData.googleBooksImage) {
+        formDataToSend.append('googleBooksImageUrl', formData.googleBooksImage);
+      }
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await axios.post(`${apiUrl}/api/books`, formDataToSend, {
@@ -277,10 +340,13 @@ const BookListingForm = () => {
           isbn: '',
           description: '',
           publicationYear: '',
-          publisher: ''
+          publisher: '',
+          googleBooksImage: null
         });
-        setImageFile(null);
-        setImagePreview(null);
+        setFrontImageFile(null);
+        setBackImageFile(null);
+        setFrontImagePreview(null);
+        setBackImagePreview(null);
         setErrors({});
         
         // Redirect to user profile after 2 seconds
@@ -434,25 +500,74 @@ const BookListingForm = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="image">Book Photo *</label>
-                <input
-                  type="file"
-                  id="image"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className={errors.image ? 'error' : ''}
-                  disabled={isSubmitting}
-                  required
-                />
-                <small>Upload a clear photo of your book (max 5MB)</small>
+                <label>Book Photos *</label>
+                <small className="form-help-text">
+                  {formData.googleBooksImage 
+                    ? '✓ Cover image from Google Books will be used. You can also upload front/back photos.' 
+                    : 'Upload photos of your book or use ISBN lookup to get cover image'}
+                </small>
                 {errors.image && <span className="field-error">{errors.image}</span>}
                 
-                {imagePreview && (
-                  <div className="image-preview">
-                    <img src={imagePreview} alt="Book preview" />
+                <div className="image-uploads-grid">
+                  {/* Front Image Upload */}
+                  <div className="image-upload-item">
+                    <label htmlFor="frontImage" className="image-upload-label">
+                      Front Photo
+                    </label>
+                    <input
+                      type="file"
+                      id="frontImage"
+                      name="frontImage"
+                      accept="image/*"
+                      onChange={handleFrontImageChange}
+                      className={errors.frontImage ? 'error' : ''}
+                      disabled={isSubmitting}
+                    />
+                    {errors.frontImage && <span className="field-error">{errors.frontImage}</span>}
+                    
+                    {frontImagePreview && (
+                      <div className="image-preview">
+                        <img src={frontImagePreview} alt="Front preview" />
+                      </div>
+                    )}
                   </div>
-                )}
+
+                  {/* Back Image Upload */}
+                  <div className="image-upload-item">
+                    <label htmlFor="backImage" className="image-upload-label">
+                      Back Photo
+                    </label>
+                    <input
+                      type="file"
+                      id="backImage"
+                      name="backImage"
+                      accept="image/*"
+                      onChange={handleBackImageChange}
+                      className={errors.backImage ? 'error' : ''}
+                      disabled={isSubmitting}
+                    />
+                    {errors.backImage && <span className="field-error">{errors.backImage}</span>}
+                    
+                    {backImagePreview && (
+                      <div className="image-preview">
+                        <img src={backImagePreview} alt="Back preview" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Google Books Image Preview */}
+                  {formData.googleBooksImage && (
+                    <div className="image-upload-item">
+                      <label className="image-upload-label">
+                        Google Books Cover
+                      </label>
+                      <div className="image-preview google-books-preview">
+                        <img src={formData.googleBooksImage} alt="Google Books cover" />
+                        <span className="preview-badge">From ISBN</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Optional Fields */}

@@ -375,3 +375,53 @@
     gap: 0.75rem;
   }
 }
+
+/* Image Uploads Grid */
+.image-uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.image-upload-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.image-upload-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.form-help-text {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.google-books-preview {
+  position: relative;
+}
+
+.preview-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #059669;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .image-uploads-grid {
+    grid-template-columns: 1fr;
+  }
+}

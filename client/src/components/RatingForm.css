@@ -1,11 +1,13 @@
 .rating-form {
   width: 100%;
+  min-height: 400px;
 }
 
 .rating-form-content {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding: 0.5rem 0;
 }
 
 /* Star Rating Section */
@@ -127,6 +129,74 @@
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 0.5rem;
+  align-items: center;
+}
+
+.form-actions button {
+  min-width: 120px;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Submit button */
+.submit-button {
+  background-color: #2ECC71;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #27ae60;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submit-button:disabled {
+  background-color: #95a5a6;
+  color: #ffffff;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Cancel button */
+.cancel-button {
+  background-color: #ffffff;
+  color: #2ECC71;
+  border: 2px solid #2ECC71;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background-color: #f0fdf4;
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loading spinner */
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */

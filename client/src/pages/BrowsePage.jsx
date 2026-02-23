@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookGrid from '../components/BookGrid';
 import SearchFilters from '../components/SearchFilters';
-import { Search, Sparkles, TrendingUp, Filter, BookOpen, Calendar } from 'lucide-react';
+import { Search, Sparkles, TrendingUp, Filter } from 'lucide-react';
 import './BrowsePage.css';
 
 const BrowsePage = () => {
@@ -20,6 +20,8 @@ const BrowsePage = () => {
     hasPrevPage: false
   });
 
+  const debounceRef = useRef(null);
+
   // Initialize filters from URL parameters
   const [filters, setFilters] = useState({
     city: searchParams.get('city') || '',
@@ -27,23 +29,6 @@ const BrowsePage = () => {
     author: searchParams.get('author') || '',
     title: searchParams.get('title') || ''
   });
-
-  // Get time-based greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  // Get today's date formatted
-  const getFormattedDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   // Update URL parameters when filters change
   const updateURLParams = (newFilters, page = 1) => {
@@ -157,6 +142,15 @@ const BrowsePage = () => {
     }
   }, [searchParams]);
 
+  // Clear debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   // Handle filter changes
   const handleFilterChange = (filterName, value) => {
     const newFilters = {
@@ -165,9 +159,17 @@ const BrowsePage = () => {
     };
     setFilters(newFilters);
 
-    // Update URL parameters and reset to page 1 when filters change
-    updateURLParams(newFilters, 1);
-    fetchBooks(1, newFilters);
+    // Clear existing debounce timer
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Debounce API call and URL update
+    debounceRef.current = setTimeout(() => {
+      // Update URL parameters and reset to page 1 when filters change
+      updateURLParams(newFilters, 1);
+      fetchBooks(1, newFilters);
+    }, 500);
   };
 
   // Handle page changes
@@ -219,33 +221,6 @@ const BrowsePage = () => {
   return (
     <div className="browse-page">
       <div className="browse-container">
-        {/* Welcome Banner for Authenticated Users */}
-        {isAuthenticated && (
-          <section className="welcome-banner">
-            <div className="welcome-content">
-              <div className="welcome-avatar">
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="welcome-text">
-                <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
-                <p className="welcome-date">
-                  <Calendar size={14} />
-                  {getFormattedDate()}
-                </p>
-              </div>
-            </div>
-            <div className="welcome-stats">
-              <div className="welcome-stat">
-                <BookOpen size={20} />
-                <div>
-                  <span className="stat-number">{pagination.totalBooks}</span>
-                  <span className="stat-text">Books Available</span>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Guest Banner */}
         {!isAuthenticated && (
           <div className="guest-banner glass-card">

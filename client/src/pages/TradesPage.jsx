@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import TradeCard from '../components/TradeCard';
-import { RefreshCw, Clock, CheckCircle, XCircle, TrendingUp, Search, Calendar, ArrowRight } from 'lucide-react';
+import { RefreshCw, Clock, CheckCircle, XCircle, TrendingUp, Search } from 'lucide-react';
 import './TradesPage.css';
 
 const TradesPage = () => {
@@ -11,23 +11,6 @@ const TradesPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all'); // all, incoming, outgoing
-
-  // Get time-based greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  // Get today's date formatted
-  const getFormattedDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   useEffect(() => {
     fetchTrades();
@@ -135,40 +118,6 @@ const TradesPage = () => {
   return (
     <div className="trades-page">
       <div className="trades-container">
-        {/* Welcome Banner */}
-        <section className="welcome-banner">
-          <div className="welcome-content">
-            <div className="welcome-avatar">
-              {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div className="welcome-text">
-              <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
-              <p className="welcome-date">
-                <Calendar size={14} />
-                {getFormattedDate()}
-              </p>
-            </div>
-          </div>
-          <div className="welcome-stats">
-            {pendingCount > 0 && (
-              <div className="welcome-stat highlight">
-                <Clock size={20} />
-                <div>
-                  <span className="stat-number">{pendingCount}</span>
-                  <span className="stat-text">Pending Actions</span>
-                </div>
-              </div>
-            )}
-            <div className="welcome-stat">
-              <CheckCircle size={20} />
-              <div>
-                <span className="stat-number">{completedCount}</span>
-                <span className="stat-text">Completed</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Page Header */}
         <section className="page-header">
           <div className="header-icon-container">

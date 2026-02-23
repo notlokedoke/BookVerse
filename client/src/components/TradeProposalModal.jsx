@@ -35,8 +35,8 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // Filter only available books
-          const availableBooks = data.data.filter(book => book.isAvailable);
+          // Filter only available books (API already filters but double-check)
+          const availableBooks = (data.data.books || []).filter(book => book.isAvailable);
           setUserBooks(availableBooks);
         } else {
           setError('Failed to load your books. Please try again.');
