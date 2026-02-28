@@ -311,6 +311,10 @@
   background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
 }
 
+.stat-card.gradient-purple {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
 .stat-icon-container {
   width: 48px;
   height: 48px;

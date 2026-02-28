@@ -111,7 +111,7 @@ const SignUp = () => {
       });
 
       if (response.data.success) {
-        setSuccessMessage('Registration successful! Redirecting to login...');
+        setSuccessMessage('Registration successful! Please check your email to verify your account.');
         // Clear form
         setFormData({
           name: '',
@@ -123,10 +123,10 @@ const SignUp = () => {
         setErrors({});
         setAgreed(false);
 
-        // Redirect to login page after 2 seconds
+        // Redirect to login page after 4 seconds
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, 4000);
       }
     } catch (error) {
       if (error.response) {

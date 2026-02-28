@@ -1,8 +1,8 @@
 import React from 'react';
-import BookListingForm from '../components/BookListingForm';
+import BookListingFormImproved from '../components/BookListingFormImproved';
 
 const CreateBookPage = () => {
-  return <BookListingForm />;
+  return <BookListingFormImproved />;
 };
 
 export default CreateBookPage;

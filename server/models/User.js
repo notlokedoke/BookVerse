@@ -46,10 +46,39 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  emailVerificationToken: {
+    type: String,
+    default: null
+  },
+  emailVerificationExpires: {
+    type: Date,
+    default: null
+  },
+  passwordResetToken: {
+    type: String,
+    default: null
+  },
+  passwordResetExpires: {
+    type: Date,
+    default: null
+  },
+  passwordChangedAt: {
+    type: Date,
+    default: null
+  },
+  bio: {
+    type: String,
+    maxlength: 500,
+    default: ''
+  },
   privacySettings: {
     showCity: {
       type: Boolean,
       default: true
+    },
+    showEmail: {
+      type: Boolean,
+      default: false
     }
   },
   averageRating: {
@@ -97,6 +126,12 @@ userSchema.pre('save', async function(next) {
     const salt = await bcrypt.genSalt(10);
     // Hash the password with the salt
     this.password = await bcrypt.hash(this.password, salt);
+    
+    // Update passwordChangedAt timestamp (except for new users)
+    if (!this.isNew) {
+      this.passwordChangedAt = Date.now() - 1000; // Subtract 1 second to ensure token is created after password change
+    }
+    
     next();
   } catch (error) {
     next(error);
@@ -106,6 +141,28 @@ userSchema.pre('save', async function(next) {
 // Method to compare password for login
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Method to generate email verification token
+userSchema.methods.generateVerificationToken = function() {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  this.emailVerificationToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+  
+  return token; // Return unhashed token to send via email
+};
+
+// Method to generate password reset token
+userSchema.methods.generatePasswordResetToken = function() {
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  this.passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+  
+  return token; // Return unhashed token to send via email
 };
 
 const User = mongoose.model('User', userSchema);

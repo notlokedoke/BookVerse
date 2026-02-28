@@ -337,46 +337,7 @@ const DashboardPage = () => {
           {/* Quick Stats */}
           <section className="stats-section">
             <div className="stats-grid">
-              <div className="stat-card gradient-blue">
-                <div className="stat-icon-container">
-                  <BookOpen size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.booksListed}</p>
-                  <p className="stat-label">Books Listed</p>
-                </div>
-                <Link to="/my-books" className="stat-link">
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-
-              <div className="stat-card gradient-amber">
-                <div className="stat-icon-container">
-                  <RefreshCw size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.activeTrades}</p>
-                  <p className="stat-label">Active Trades</p>
-                </div>
-                <Link to="/trades" className="stat-link">
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-
-              <div className="stat-card gradient-green">
-                <div className="stat-icon-container">
-                  <CheckCircle size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.completedTrades}</p>
-                  <p className="stat-label">Completed</p>
-                </div>
-                <Link to="/trades" className="stat-link">
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-
-              <div className="stat-card gradient-pink">
+              <Link to="/trades?status=pending" className="stat-card gradient-pink">
                 <div className="stat-icon-container">
                   <Clock size={24} />
                 </div>
@@ -387,7 +348,37 @@ const DashboardPage = () => {
                 {stats.pendingRequests > 0 && (
                   <span className="stat-badge pulse">!</span>
                 )}
-              </div>
+              </Link>
+
+              <Link to="/trades?status=active" className="stat-card gradient-amber">
+                <div className="stat-icon-container">
+                  <RefreshCw size={24} />
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.activeTrades}</p>
+                  <p className="stat-label">Active Trades</p>
+                </div>
+              </Link>
+
+              <Link to="/trades?status=completed" className="stat-card gradient-blue">
+                <div className="stat-icon-container">
+                  <CheckCircle size={24} />
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.completedTrades}</p>
+                  <p className="stat-label">Completed</p>
+                </div>
+              </Link>
+
+              <Link to="/my-books" className="stat-card gradient-purple">
+                <div className="stat-icon-container">
+                  <BookOpen size={24} />
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{stats.booksListed}</p>
+                  <p className="stat-label">Books Listed</p>
+                </div>
+              </Link>
             </div>
           </section>
 

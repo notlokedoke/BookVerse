@@ -120,10 +120,10 @@ const UserProfilePage = () => {
           {/* Quick Stats */}
           <div className="quick-stats">
             <div className="stat-card">
-              <BookOpen size={24} />
+              <Star size={24} />
               <div className="stat-content">
-                <span className="stat-value">{userBooks.length}</span>
-                <span className="stat-label">Books Listed</span>
+                <span className="stat-value">{profileUser.ratingCount || 0}</span>
+                <span className="stat-label">Reviews</span>
               </div>
             </div>
             <div className="stat-card">
@@ -134,10 +134,10 @@ const UserProfilePage = () => {
               </div>
             </div>
             <div className="stat-card">
-              <Star size={24} />
+              <BookOpen size={24} />
               <div className="stat-content">
-                <span className="stat-value">{profileUser.ratingCount || 0}</span>
-                <span className="stat-label">Reviews</span>
+                <span className="stat-value">{userBooks.length}</span>
+                <span className="stat-label">Books Listed</span>
               </div>
             </div>
             <div className="stat-card">

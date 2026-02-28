@@ -448,6 +448,12 @@
   color: white;
   overflow: hidden;
   transition: all 0.3s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stat-card:active {
+  transform: translateY(-2px);
 }
 
 .stat-card::before {
@@ -480,7 +486,10 @@
 
 .stat-card.gradient-pink {
   background: linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%);
-  color: var(--text-primary);
+}
+
+.stat-card.gradient-purple {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
 }
 
 .stat-icon-container {
