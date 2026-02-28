@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const AuthCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { setUser, setIsAuthenticated } = useAuth();
+  const { setUser, setToken } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -36,7 +36,7 @@ const AuthCallbackPage = () => {
             const data = await response.json();
             if (data.success) {
               setUser(data.data);
-              setIsAuthenticated(true);
+              setToken(token);
               navigate('/dashboard');
             } else {
               throw new Error('Failed to fetch user data');
@@ -55,7 +55,7 @@ const AuthCallbackPage = () => {
     };
 
     handleCallback();
-  }, [searchParams, navigate, setUser, setIsAuthenticated]);
+  }, [searchParams, navigate, setUser, setToken]);
 
   return (
     <div style={{

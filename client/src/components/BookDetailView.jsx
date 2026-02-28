@@ -19,6 +19,7 @@ const BookDetailView = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -190,7 +191,7 @@ const BookDetailView = () => {
         <div className="book-image-section">
           <div className="book-image-container">
             <img
-              src={book.imageUrl}
+              src={activeImage || book.imageUrl}
               alt={`${book.title} by ${book.author}`}
               className="book-detail-image"
               onError={(e) => {
@@ -203,28 +204,45 @@ const BookDetailView = () => {
           </div>
 
           {/* Additional Images Gallery */}
-          {(book.frontImageUrl || book.backImageUrl || book.googleBooksImageUrl) && (
-            <div className="additional-images-gallery">
-              {book.googleBooksImageUrl && (
-                <div className="gallery-item">
-                  <img src={book.googleBooksImageUrl} alt={`${book.title} - Google Books cover`} />
-                  <span className="gallery-label">Cover</span>
-                </div>
-              )}
-              {book.frontImageUrl && (
-                <div className="gallery-item">
-                  <img src={book.frontImageUrl} alt={`${book.title} - Front view`} />
-                  <span className="gallery-label">Front</span>
-                </div>
-              )}
-              {book.backImageUrl && (
-                <div className="gallery-item">
-                  <img src={book.backImageUrl} alt={`${book.title} - Back view`} />
-                  <span className="gallery-label">Back</span>
-                </div>
-              )}
+          <div className="additional-images-gallery">
+            <div 
+              className={`gallery-item ${(activeImage || book.imageUrl) === book.imageUrl ? 'active' : ''}`}
+              onClick={() => setActiveImage(book.imageUrl)}
+            >
+              <img src={book.imageUrl} alt={`${book.title} - Primary`} />
+              <span className="gallery-label">Primary</span>
             </div>
-          )}
+            
+            {book.googleBooksImageUrl && (
+              <div 
+                className={`gallery-item ${(activeImage === book.googleBooksImageUrl) ? 'active' : ''}`}
+                onClick={() => setActiveImage(book.googleBooksImageUrl)}
+              >
+                <img src={book.googleBooksImageUrl} alt={`${book.title} - Google Books cover`} />
+                <span className="gallery-label">Cover</span>
+              </div>
+            )}
+            
+            {book.frontImageUrl && (
+              <div 
+                className={`gallery-item ${(activeImage === book.frontImageUrl) ? 'active' : ''}`}
+                onClick={() => setActiveImage(book.frontImageUrl)}
+              >
+                <img src={book.frontImageUrl} alt={`${book.title} - Front view`} />
+                <span className="gallery-label">Front</span>
+              </div>
+            )}
+            
+            {book.backImageUrl && (
+              <div 
+                className={`gallery-item ${(activeImage === book.backImageUrl) ? 'active' : ''}`}
+                onClick={() => setActiveImage(book.backImageUrl)}
+              >
+                <img src={book.backImageUrl} alt={`${book.title} - Back view`} />
+                <span className="gallery-label">Back</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Book Information Section */}

@@ -65,26 +65,30 @@ const DashboardPage = () => {
   // Calculate profile completion percentage
   const calculateProfileCompletion = () => {
     let completed = 0;
-    const total = 5;
+    const total = user?.isOAuthUser ? 4 : 5;
 
     if (user?.name) completed++;
-    if (user?.email) completed++;
+    if (!user?.isOAuthUser && user?.emailVerified) completed++;
     if (user?.city) completed++;
-    if (userBooks.length > 0) completed++;
-    if (allTrades.length > 0) completed++;
+    if (userBooks.length > 0 || allTrades.length > 0) completed++;
+    if (allTrades.some(t => t.status === 'completed')) completed++;
 
     return Math.round((completed / total) * 100);
   };
 
-  // Get profile completion items
   const getProfileItems = () => {
-    return [
+    const items = [
       { label: 'Add your name', completed: !!user?.name },
-      { label: 'Verify email', completed: !!user?.email },
       { label: 'Set your location', completed: !!user?.city },
-      { label: 'List your first book', completed: userBooks.length > 0 },
+      { label: 'List your first book', completed: userBooks.length > 0 || allTrades.length > 0 },
       { label: 'Complete a trade', completed: allTrades.some(t => t.status === 'completed') }
     ];
+
+    if (!user?.isOAuthUser) {
+      items.splice(1, 0, { label: 'Verify email', completed: !!user?.emailVerified });
+    }
+
+    return items;
   };
 
   // Calculate trade success rate

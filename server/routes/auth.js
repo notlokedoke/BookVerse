@@ -236,6 +236,8 @@ router.post('/login', [
       privacySettings: user.privacySettings,
       averageRating: user.averageRating,
       ratingCount: user.ratingCount,
+      emailVerified: user.emailVerified,
+      isOAuthUser: !!user.googleId,
       createdAt: user.createdAt
     };
 
@@ -279,6 +281,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       averageRating: req.user.averageRating,
       ratingCount: req.user.ratingCount,
       passwordChangedAt: req.user.passwordChangedAt,
+      isOAuthUser: !!req.user.googleId,
       createdAt: req.user.createdAt
     };
 
@@ -440,6 +443,8 @@ router.put('/profile', [
       privacySettings: updatedUser.privacySettings,
       averageRating: updatedUser.averageRating,
       ratingCount: updatedUser.ratingCount,
+      emailVerified: updatedUser.emailVerified,
+      isOAuthUser: !!updatedUser.googleId,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt
     };
@@ -502,6 +507,12 @@ router.get('/google/callback',
   }),
   async (req, res) => {
     try {
+      if (!req.user) {
+        console.error('Google OAuth callback - No user object');
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        return res.redirect(`${frontendUrl}/login?error=auth_failed`);
+      }
+
       console.log('Google OAuth callback - User:', req.user._id);
       console.log('User email:', req.user.email);
       console.log('User has city:', !!req.user.city);

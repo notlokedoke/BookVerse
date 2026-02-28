@@ -8,7 +8,7 @@ import './CompleteProfilePage.css';
 const CompleteProfilePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { updateUser } = useAuth();
+  const { updateUser, setToken } = useAuth();
 
   const [city, setCity] = useState('');
   const [error, setError] = useState('');
@@ -173,6 +173,7 @@ const CompleteProfilePage = () => {
 
       if (response.data.success) {
         updateUser(response.data.data);
+        setToken(token);
         navigate('/dashboard');
       }
     } catch (err) {
@@ -239,6 +240,7 @@ const CompleteProfilePage = () => {
 
       if (response.data.success) {
         updateUser(response.data.data);
+        setToken(token);
         navigate('/dashboard');
       }
     } catch (err) {

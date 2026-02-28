@@ -49,7 +49,7 @@ const TradesPage = () => {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        setError('Authentication required');
+        setError('Authentication required. Please log in again.');
         setLoading(false);
         return;
       }
@@ -65,11 +65,16 @@ const TradesPage = () => {
       if (response.ok && data.success) {
         setTrades(data.data || []);
       } else {
-        setError(data.error?.message || 'Failed to fetch trades');
+        // Handle specific error cases
+        if (response.status === 401) {
+          setError('Your session has expired. Please log in again.');
+        } else {
+          setError(data.error?.message || 'Failed to fetch trades');
+        }
       }
     } catch (err) {
       console.error('Error fetching trades:', err);
-      setError('Unable to connect to server. Please try again.');
+      setError('Unable to connect to server. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -154,9 +159,23 @@ const TradesPage = () => {
             <div className="error-icon">⚠️</div>
             <h2>Error Loading Trades</h2>
             <p>{error}</p>
-            <button onClick={fetchTrades} className="retry-btn">
-              Try Again
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button onClick={fetchTrades} className="retry-btn">
+                Try Again
+              </button>
+              {error.includes('Authentication') || error.includes('session') ? (
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    navigate('/login');
+                  }} 
+                  className="retry-btn"
+                  style={{ background: 'var(--primary-color)' }}
+                >
+                  Log In Again
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
