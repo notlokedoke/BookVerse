@@ -25,9 +25,14 @@ const bookSchema = new mongoose.Schema({
     }
   },
   genre: {
-    type: String,
-    required: [true, 'Genre is required'],
-    trim: true
+    type: [String], // Changed to array of strings
+    required: [true, 'At least one genre is required'],
+    validate: {
+      validator: function(v) {
+        return Array.isArray(v) && v.length > 0;
+      },
+      message: 'At least one genre is required'
+    }
   },
   isbn: {
     type: String,

@@ -110,8 +110,12 @@ const uploadSingleImage = (fieldName = 'image') => {
               folder: 'bookverse/books',
               transformation: [
                 { width: 800, height: 600, crop: 'limit' }, // Limit max dimensions
-                { quality: 'auto' }, // Auto optimize quality
-                { fetch_format: 'auto' } // Auto select best format
+                { quality: 'auto:best' }, // Auto optimize quality (best setting)
+                { fetch_format: 'auto' }, // Auto select best format
+                { effect: 'sharpen:100' }, // Sharpen blurry images
+                { effect: 'auto_contrast' }, // Auto adjust contrast for better visibility
+                { effect: 'auto_brightness' }, // Auto adjust brightness for poor lighting
+                { effect: 'improve' } // AI-powered general image improvement
               ]
             },
             (error, result) => {
@@ -270,8 +274,12 @@ const uploadBookImages = () => {
                 folder: 'bookverse/books',
                 transformation: [
                   { width: 800, height: 600, crop: 'limit' },
-                  { quality: 'auto' },
-                  { fetch_format: 'auto' }
+                  { quality: 'auto:best' },
+                  { fetch_format: 'auto' },
+                  { effect: 'sharpen:100' },
+                  { effect: 'auto_contrast' },
+                  { effect: 'auto_brightness' },
+                  { effect: 'improve' }
                 ]
               },
               (error, result) => {
@@ -304,8 +312,12 @@ const uploadBookImages = () => {
                 folder: 'bookverse/books',
                 transformation: [
                   { width: 800, height: 600, crop: 'limit' },
-                  { quality: 'auto' },
-                  { fetch_format: 'auto' }
+                  { quality: 'auto:best' },
+                  { fetch_format: 'auto' },
+                  { effect: 'sharpen:100' },
+                  { effect: 'auto_contrast' },
+                  { effect: 'auto_brightness' },
+                  { effect: 'improve' }
                 ]
               },
               (error, result) => {
@@ -338,8 +350,12 @@ const uploadBookImages = () => {
                 folder: 'bookverse/books',
                 transformation: [
                   { width: 800, height: 600, crop: 'limit' },
-                  { quality: 'auto' },
-                  { fetch_format: 'auto' }
+                  { quality: 'auto:best' },
+                  { fetch_format: 'auto' },
+                  { effect: 'sharpen:100' },
+                  { effect: 'auto_contrast' },
+                  { effect: 'auto_brightness' },
+                  { effect: 'improve' }
                 ]
               },
               (error, result) => {
@@ -375,8 +391,12 @@ const uploadBookImages = () => {
                   folder: 'bookverse/books',
                   transformation: [
                     { width: 800, height: 600, crop: 'limit' },
-                    { quality: 'auto' },
-                    { fetch_format: 'auto' }
+                    { quality: 'auto:best' },
+                    { fetch_format: 'auto' },
+                    { effect: 'sharpen:100' },
+                    { effect: 'auto_contrast' },
+                    { effect: 'auto_brightness' },
+                    { effect: 'improve' }
                   ]
                 },
                 (error, result) => {

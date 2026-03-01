@@ -7,7 +7,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
     title: '',
     author: '',
     condition: '',
-    genre: '',
+    genres: [],
     isbn: '',
     description: '',
     publicationYear: '',
@@ -20,7 +20,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLookingUpISBN, setIsLookingUpISBN] = useState(false);
 
-  const { title, author, condition, genre, isbn, description, publicationYear, publisher } = formData;
+  const { title, author, condition, genres, isbn, description, publicationYear, publisher } = formData;
 
   // Condition options based on Book model enum
   const conditionOptions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
@@ -57,7 +57,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
         title: book.title || '',
         author: book.author || '',
         condition: book.condition || '',
-        genre: book.genre || '',
+        genres: Array.isArray(book.genre) ? book.genre : (book.genre ? [book.genre] : []),
         isbn: book.isbn || '',
         description: book.description || '',
         publicationYear: book.publicationYear ? book.publicationYear.toString() : '',
@@ -209,8 +209,8 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
       newErrors.condition = 'Condition is required';
     }
 
-    if (!genre.trim()) {
-      newErrors.genre = 'Genre is required';
+    if (!genres || genres.length === 0) {
+      newErrors.genres = 'At least one genre is required';
     }
 
     // Optional field validations
@@ -253,7 +253,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
       formDataToSend.append('title', title.trim());
       formDataToSend.append('author', author.trim());
       formDataToSend.append('condition', condition);
-      formDataToSend.append('genre', genre.trim());
+      formDataToSend.append('genres', JSON.stringify(genres));
       
       if (isbn && isbn.trim()) {
         formDataToSend.append('isbn', isbn.trim());
@@ -434,22 +434,39 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-genre">Genre *</label>
-              <select
-                id="edit-genre"
-                name="genre"
-                value={genre}
-                onChange={handleChange}
-                className={errors.genre ? 'error' : ''}
-                disabled={isSubmitting}
-                required
-              >
-                <option value="">Select genre</option>
-                {genreOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
+              <label htmlFor="edit-genres">Genres *</label>
+              <div className="genre-multi-select">
+                {genreOptions.map(genreOption => (
+                  <button
+                    key={genreOption}
+                    type="button"
+                    className={`genre-tag ${genres.includes(genreOption) ? 'selected' : ''}`}
+                    onClick={() => {
+                      const newGenres = genres.includes(genreOption)
+                        ? genres.filter(g => g !== genreOption)
+                        : [...genres, genreOption];
+                      setFormData({ ...formData, genres: newGenres });
+                      if (errors.genres && newGenres.length > 0) {
+                        setErrors({ ...errors, genres: '' });
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    {genreOption}
+                    {genres.includes(genreOption) && (
+                      <svg className="check-icon-small" fill="currentColor" viewBox="0 0 20 20" width="16" height="16">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
                 ))}
-              </select>
-              {errors.genre && <span className="field-error">{errors.genre}</span>}
+              </div>
+              {genres.length > 0 && (
+                <div className="selected-genres-summary">
+                  Selected: {genres.join(', ')}
+                </div>
+              )}
+              {errors.genres && <span className="field-error">{errors.genres}</span>}
             </div>
 
             <div className="form-group">

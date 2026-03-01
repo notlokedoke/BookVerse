@@ -15,7 +15,7 @@ const BookListingFormImproved = () => {
     title: '',
     author: '',
     condition: '',
-    genre: '',
+    genres: [], // Changed from 'genre' to 'genres' array
     isbn: '',
     description: '',
     publicationYear: '',
@@ -83,14 +83,18 @@ const BookListingFormImproved = () => {
 
   // Calculate completion percentage
   useEffect(() => {
-    const fields = ['title', 'author', 'condition', 'genre'];
+    const fields = ['title', 'author', 'condition', 'genres'];
     const optionalFields = ['isbn', 'description', 'publicationYear', 'publisher'];
     
     let completed = 0;
     let total = fields.length + optionalFields.length + 1; // +1 for images
     
     fields.forEach(field => {
-      if (formData[field]?.trim()) completed++;
+      if (field === 'genres') {
+        if (formData.genres && formData.genres.length > 0) completed++;
+      } else if (formData[field]?.trim()) {
+        completed++;
+      }
     });
     
     optionalFields.forEach(field => {
@@ -126,8 +130,8 @@ const BookListingFormImproved = () => {
       case 'condition':
         if (!value) error = 'Condition is required';
         break;
-      case 'genre':
-        if (!value?.trim()) error = 'Genre is required';
+      case 'genres':
+        if (!value || value.length === 0) error = 'At least one genre is required';
         break;
       case 'isbn':
         if (value?.trim()) {
@@ -303,7 +307,7 @@ const BookListingFormImproved = () => {
     if (!formData.title?.trim()) newErrors.title = 'Title is required';
     if (!formData.author?.trim()) newErrors.author = 'Author is required';
     if (!formData.condition) newErrors.condition = 'Condition is required';
-    if (!formData.genre?.trim()) newErrors.genre = 'Genre is required';
+    if (!formData.genres || formData.genres.length === 0) newErrors.genres = 'At least one genre is required';
 
     if (images.length === 0 && !formData.googleBooksImage) {
       newErrors.image = 'At least one image is required';
@@ -375,7 +379,7 @@ const BookListingFormImproved = () => {
       formDataToSend.append('title', formData.title.trim());
       formDataToSend.append('author', formData.author.trim());
       formDataToSend.append('condition', formData.condition);
-      formDataToSend.append('genre', formData.genre.trim());
+      formDataToSend.append('genres', JSON.stringify(formData.genres)); // Send as JSON array
       
       if (formData.isbn?.trim()) formDataToSend.append('isbn', formData.isbn.trim());
       if (formData.description?.trim()) formDataToSend.append('description', formData.description.trim());
@@ -561,24 +565,42 @@ const BookListingFormImproved = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="genre">
-              Genre <span className="required">*</span>
+            <label htmlFor="genres">
+              Genres <span className="required">*</span>
+              <span className="tooltip" title="Select one or more genres">ⓘ</span>
             </label>
-            <select
-              id="genre"
-              name="genre"
-              value={formData.genre}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={errors.genre ? 'error' : ''}
-              disabled={isSubmitting}
-            >
-              <option value="">Select a genre</option>
+            <div className="genre-multi-select">
               {genreOptions.map(genre => (
-                <option key={genre} value={genre}>{genre}</option>
+                <button
+                  key={genre}
+                  type="button"
+                  className={`genre-tag ${formData.genres.includes(genre) ? 'selected' : ''}`}
+                  onClick={() => {
+                    const newGenres = formData.genres.includes(genre)
+                      ? formData.genres.filter(g => g !== genre)
+                      : [...formData.genres, genre];
+                    setFormData(prev => ({ ...prev, genres: newGenres }));
+                    if (errors.genres && newGenres.length > 0) {
+                      setErrors(prev => ({ ...prev, genres: '' }));
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {genre}
+                  {formData.genres.includes(genre) && (
+                    <svg className="check-icon-small" fill="currentColor" viewBox="0 0 20 20" width="16" height="16">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
               ))}
-            </select>
-            {errors.genre && <span className="field-error">{errors.genre}</span>}
+            </div>
+            {formData.genres.length > 0 && (
+              <div className="selected-genres-summary">
+                Selected: {formData.genres.join(', ')}
+              </div>
+            )}
+            {errors.genres && <span className="field-error">{errors.genres}</span>}
           </div>
         </div>
 
