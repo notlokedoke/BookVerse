@@ -83,6 +83,17 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // Handle Mongoose CastError (invalid ObjectId format)
+    if (error.name === 'CastError' && error.kind === 'ObjectId') {
+      return res.status(401).json({
+        success: false,
+        error: {
+          message: 'Invalid token. User not found.',
+          code: 'USER_NOT_FOUND'
+        }
+      });
+    }
+
     // Handle other errors (e.g., database errors)
     console.error('Authentication middleware error:', error);
     return res.status(500).json({
