@@ -206,24 +206,6 @@ const uploadBookImages = () => {
         return next();
       }
 
-      // Count total uploaded images
-      const totalImages = 
-        (req.files.coverImage ? 1 : 0) +
-        (req.files.frontImage ? 1 : 0) +
-        (req.files.backImage ? 1 : 0) +
-        (req.files.additionalImages ? req.files.additionalImages.length : 0);
-
-      // Validate minimum 2 images (only if images are uploaded)
-      if (totalImages > 0 && totalImages < 2) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'Minimum 2 images required. Please upload at least 2 images.',
-            code: 'INSUFFICIENT_IMAGES'
-          }
-        });
-      }
-
       // Check if Cloudinary is configured
       if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
         // In test environment without Cloudinary, set mock URLs

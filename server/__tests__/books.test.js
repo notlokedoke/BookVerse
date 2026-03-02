@@ -329,6 +329,10 @@ describe('Books API - Privacy Settings', () => {
     beforeEach(() => {
       // Clear all mocks before each test
       jest.clearAllMocks();
+
+      // Default Open Library cover probe to "not found" so these tests
+      // keep asserting against the mocked Google Books thumbnail payload.
+      mockedAxios.head.mockRejectedValue(new Error('Open Library cover not found'));
     });
 
     test('should return book data for valid ISBN', async () => {
