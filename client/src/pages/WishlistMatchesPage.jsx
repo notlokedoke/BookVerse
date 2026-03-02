@@ -110,7 +110,7 @@ const WishlistMatchesPage = () => {
                   <Link to={`/browse?bookId=${book._id}`} className="book-link">
                     <img 
                       src={book.imageUrl || '/placeholder-book.png'} 
-                      alt={book.title}
+                      alt={book.author ? `${book.title} by ${book.author}` : book.title}
                       className="book-cover"
                     />
                   </Link>

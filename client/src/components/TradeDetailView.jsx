@@ -316,7 +316,7 @@ const TradeDetailView = () => {
                     <div className="book-image-container">
                       <img
                         src={trade.offeredBook?.imageUrl}
-                        alt={trade.offeredBook?.title}
+                        alt={trade.offeredBook?.author ? `${trade.offeredBook.title} by ${trade.offeredBook.author}` : trade.offeredBook?.title}
                         className="book-image"
                         onError={(e) => { e.target.src = '/placeholder-book.png'; }}
                       />
@@ -342,7 +342,7 @@ const TradeDetailView = () => {
                     <div className="book-image-container">
                       <img
                         src={trade.requestedBook?.imageUrl}
-                        alt={trade.requestedBook?.title}
+                        alt={trade.requestedBook?.author ? `${trade.requestedBook.title} by ${trade.requestedBook.author}` : trade.requestedBook?.title}
                         className="book-image"
                         onError={(e) => { e.target.src = '/placeholder-book.png'; }}
                       />

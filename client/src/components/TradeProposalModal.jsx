@@ -186,7 +186,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                 <div className="book-preview">
                   <img 
                     src={requestedBook.imageUrl} 
-                    alt={requestedBook.title}
+                    alt={requestedBook.author ? `${requestedBook.title} by ${requestedBook.author}` : requestedBook.title}
                     className="book-thumbnail"
                   />
                   <div className="book-details">
@@ -225,7 +225,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                         >
                           <img 
                             src={book.imageUrl} 
-                            alt={book.title}
+                            alt={book.author ? `${book.title} by ${book.author}` : book.title}
                             className="book-option-image"
                           />
                           <div className="book-option-info">
