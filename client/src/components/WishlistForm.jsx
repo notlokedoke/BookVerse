@@ -98,6 +98,9 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       if (notes && notes.trim()) {
         dataToSend.notes = notes.trim();
       }
+      if (selectedBook.thumbnail) {
+        dataToSend.imageUrl = selectedBook.thumbnail;
+      }
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await axios.post(`${apiUrl}/api/wishlist`, dataToSend);

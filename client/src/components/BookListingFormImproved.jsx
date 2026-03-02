@@ -87,6 +87,63 @@ const BookListingFormImproved = () => {
     }
   };
 
+  // Validate individual field
+  const validateField = (name, value) => {
+    let error = '';
+
+    switch (name) {
+      case 'title':
+        if (!value?.trim()) error = 'Title is required';
+        break;
+      case 'author':
+        if (!value?.trim()) error = 'Author is required';
+        break;
+      case 'condition':
+        if (!value) error = 'Condition is required';
+        break;
+      case 'genre':
+        if (!value?.trim()) error = 'Genre is required';
+        break;
+      case 'isbn':
+        if (value?.trim()) {
+          const cleanIsbn = value.replace(/[-\s]/g, '');
+          if (!/^(?:\d{9}[\dX]|\d{13})$/.test(cleanIsbn)) {
+            error = 'Invalid ISBN format';
+          }
+        }
+        break;
+      case 'publicationYear':
+        if (value?.trim()) {
+          const year = parseInt(value);
+          const currentYear = new Date().getFullYear();
+          if (isNaN(year) || year < 1000 || year > currentYear + 1) {
+            error = `Year must be between 1000 and ${currentYear + 1}`;
+          }
+        }
+        break;
+      default:
+        break;
+    }
+
+    return error;
+  };
+
+  // Handle field blur
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    
+    if (error) {
+      setErrors(prev => ({ ...prev, [name]: error }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
   // Handle image selection
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -389,6 +446,7 @@ const BookListingFormImproved = () => {
                 placeholder="Enter ISBN (10 or 13 digits)"
                 value={formData.isbn}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.isbn ? 'error' : ''}
                 disabled={isLookingUpISBN}
               />
@@ -449,6 +507,7 @@ const BookListingFormImproved = () => {
                 placeholder="e.g., The Great Gatsby"
                 value={formData.title}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.title ? 'error' : ''}
                 disabled={isSubmitting}
               />
@@ -467,6 +526,7 @@ const BookListingFormImproved = () => {
                 placeholder="e.g., F. Scott Fitzgerald"
                 value={formData.author}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.author ? 'error' : ''}
                 disabled={isSubmitting}
                 list="author-suggestions"
@@ -484,6 +544,7 @@ const BookListingFormImproved = () => {
               name="genre"
               value={formData.genre}
               onChange={handleChange}
+              onBlur={handleBlur}
               className={errors.genre ? 'error' : ''}
               disabled={isSubmitting}
             >
@@ -650,6 +711,7 @@ const BookListingFormImproved = () => {
               placeholder="Describe the book's condition, any notes, or why you're trading it..."
               value={formData.description}
               onChange={handleChange}
+              onBlur={handleBlur}
               className={errors.description ? 'error' : ''}
               disabled={isSubmitting}
               maxLength={500}
@@ -668,6 +730,7 @@ const BookListingFormImproved = () => {
                 placeholder="e.g., 2020"
                 value={formData.publicationYear}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.publicationYear ? 'error' : ''}
                 disabled={isSubmitting}
                 min="1000"
@@ -685,6 +748,7 @@ const BookListingFormImproved = () => {
                 placeholder="e.g., Penguin Books"
                 value={formData.publisher}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.publisher ? 'error' : ''}
                 disabled={isSubmitting}
               />
@@ -702,6 +766,7 @@ const BookListingFormImproved = () => {
                 placeholder="Enter ISBN for better discoverability"
                 value={formData.isbn}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className={errors.isbn ? 'error' : ''}
                 disabled={isSubmitting}
               />

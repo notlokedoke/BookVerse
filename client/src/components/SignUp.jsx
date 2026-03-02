@@ -17,6 +17,8 @@ const SignUp = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { name, email, password, confirmPassword, city } = formData;
 
@@ -42,42 +44,69 @@ const SignUp = () => {
     }
   };
 
-  // Client-side validation
+  // Client-side field validation
+  const validateField = (name, value) => {
+    let error = '';
+
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          error = 'Name is required';
+        }
+        break;
+      case 'email':
+        if (!value.trim()) {
+          error = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = 'Please enter a valid email address';
+        }
+        break;
+      case 'city':
+        if (!value.trim()) {
+          error = 'City or region is required';
+        } else if (value.trim().length < 2) {
+          error = 'Please enter a valid city or region';
+        }
+        break;
+      case 'password':
+        if (!value) {
+          error = 'Password is required';
+        } else if (value.length < 8) {
+          error = 'Password must be at least 8 characters long';
+        }
+        break;
+      case 'confirmPassword':
+        if (!value) {
+          error = 'Please confirm your password';
+        } else if (formData.password !== value) {
+          error = 'Passwords do not match';
+        }
+        break;
+      default:
+        break;
+    }
+
+    return error;
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
-    // Name validation
-    if (!name.trim()) {
-      newErrors.name = 'Name is required';
-    }
+    // Validate all fields
+    const nameError = validateField('name', name);
+    if (nameError) newErrors.name = nameError;
 
-    // Email validation
-    if (!email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+    const emailError = validateField('email', email);
+    if (emailError) newErrors.email = emailError;
 
-    // City validation
-    if (!city.trim()) {
-      newErrors.city = 'City or region is required';
-    } else if (city.trim().length < 2) {
-      newErrors.city = 'Please enter a valid city or region';
-    }
+    const cityError = validateField('city', city);
+    if (cityError) newErrors.city = cityError;
 
-    // Password validation
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
-    }
+    const passwordError = validateField('password', password);
+    if (passwordError) newErrors.password = passwordError;
 
-    // Confirm password validation
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+    const confirmPasswordError = validateField('confirmPassword', confirmPassword);
+    if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError;
 
     // Terms agreement validation
     if (!agreed) {
@@ -86,6 +115,22 @@ const SignUp = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle field blur
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    
+    if (error) {
+      setErrors(prev => ({ ...prev, [name]: error }));
+    } else {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   // Handle form submission
@@ -219,6 +264,7 @@ const SignUp = () => {
                     placeholder="John Smith"
                     value={name}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={errors.name ? 'error' : ''}
                     disabled={isSubmitting}
                     required
@@ -235,6 +281,7 @@ const SignUp = () => {
                     placeholder="your@email.com"
                     value={email}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     className={errors.email ? 'error' : ''}
                     disabled={isSubmitting}
                     required
@@ -247,6 +294,7 @@ const SignUp = () => {
                   <CitySelector
                     value={city}
                     onChange={handleChange}
+                    onBlur={handleBlur}
                     error={errors.city}
                     disabled={isSubmitting}
                     required
@@ -256,34 +304,76 @@ const SignUp = () => {
 
                 <div className="form-group">
                   <label htmlFor="password">Password</label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={handleChange}
-                    className={errors.password ? 'error' : ''}
-                    disabled={isSubmitting}
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={errors.password ? 'error' : ''}
+                      disabled={isSubmitting}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex="-1"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   <small className="field-hint">Min 8 characters, one uppercase, one number</small>
                   {errors.password && <span className="field-error">{errors.password}</span>}
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="confirmPassword">Confirm Password</label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={handleChange}
-                    className={errors.confirmPassword ? 'error' : ''}
-                    disabled={isSubmitting}
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={errors.confirmPassword ? 'error' : ''}
+                      disabled={isSubmitting}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      tabIndex="-1"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {errors.confirmPassword && <span className="field-error">{errors.confirmPassword}</span>}
                 </div>
 

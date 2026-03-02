@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
+const axios = require('axios');
 const Wishlist = require('../models/Wishlist');
 const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
@@ -39,10 +40,13 @@ router.post('/', [
     .trim()
     .isLength({ max: 500 })
     .withMessage('Notes must be less than 500 characters')
-    .customSanitizer(sanitizeString)
+    .customSanitizer(sanitizeString),
+  body('imageUrl')
+    .optional()
+    .trim()
 ], async (req, res) => {
   try {
-    const { title, author, isbn, notes } = req.body;
+    const { title, author, isbn, notes, imageUrl } = req.body;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -87,9 +91,32 @@ router.post('/', [
     }
     if (isbn && isbn.trim()) {
       wishlistData.isbn = isbn.trim();
+      
+      // Try to fetch book cover from Google Books if ISBN is provided and no imageUrl
+      if (!imageUrl || !imageUrl.trim()) {
+        try {
+          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn.trim()}`;
+          const googleResponse = await axios.get(googleBooksUrl);
+          
+          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+            const bookInfo = googleResponse.data.items[0].volumeInfo;
+            if (bookInfo.imageLinks) {
+              // Use the highest quality image available
+              wishlistData.imageUrl = bookInfo.imageLinks.thumbnail || 
+                                     bookInfo.imageLinks.smallThumbnail;
+            }
+          }
+        } catch (googleError) {
+          // Silently fail - image is optional
+          console.log('Could not fetch Google Books image:', googleError.message);
+        }
+      }
     }
     if (notes && notes.trim()) {
       wishlistData.notes = notes.trim();
+    }
+    if (imageUrl && imageUrl.trim()) {
+      wishlistData.imageUrl = imageUrl.trim();
     }
 
     const wishlistItem = new Wishlist(wishlistData);
@@ -217,8 +244,8 @@ router.get('/matches', authenticateToken, async (req, res) => {
           isAvailable: true,
           owner: { $ne: req.userId } // Exclude user's own books
         })
-        .populate('owner', 'name city averageRating ratingCount privacySettings')
-        .limit(10);
+          .populate('owner', 'name city averageRating ratingCount privacySettings')
+          .limit(10);
 
         matchingBooks = isbnMatches.map(book => ({
           ...book.toObject(),
@@ -235,8 +262,8 @@ router.get('/matches', authenticateToken, async (req, res) => {
           isAvailable: true,
           owner: { $ne: req.userId }
         })
-        .populate('owner', 'name city averageRating ratingCount privacySettings')
-        .limit(10);
+          .populate('owner', 'name city averageRating ratingCount privacySettings')
+          .limit(10);
 
         matchingBooks = titleAuthorMatches.map(book => ({
           ...book.toObject(),
@@ -252,8 +279,8 @@ router.get('/matches', authenticateToken, async (req, res) => {
           isAvailable: true,
           owner: { $ne: req.userId }
         })
-        .populate('owner', 'name city averageRating ratingCount privacySettings')
-        .limit(10);
+          .populate('owner', 'name city averageRating ratingCount privacySettings')
+          .limit(10);
 
         matchingBooks = fuzzyMatches.map(book => {
           const similarity = calculateTitleSimilarity(
@@ -280,7 +307,7 @@ router.get('/matches', authenticateToken, async (req, res) => {
       success: true,
       data: matches,
       count: matches.length,
-      message: matches.length > 0 
+      message: matches.length > 0
         ? `Found ${matches.length} wishlist item(s) with available matches`
         : 'No matches found for your wishlist items'
     });
@@ -372,9 +399,9 @@ function escapeRegex(string) {
 function calculateTitleSimilarity(str1, str2) {
   const longer = str1.length > str2.length ? str1 : str2;
   const shorter = str1.length > str2.length ? str2 : str1;
-  
+
   if (longer.length === 0) return 1.0;
-  
+
   const editDistance = getEditDistance(longer, shorter);
   return (longer.length - editDistance) / longer.length;
 }
@@ -401,4 +428,72 @@ function getEditDistance(str1, str2) {
   return costs[str2.length];
 }
 
+/**
+ * @route   POST /api/wishlist/backfill-images
+ * @desc    Backfill missing images for wishlist items with ISBN
+ * @access  Private (requires authentication)
+ */
+router.post('/backfill-images', authenticateToken, async (req, res) => {
+  try {
+    // Find all wishlist items for this user that have ISBN but no imageUrl
+    const wishlistItems = await Wishlist.find({
+      user: req.userId,
+      isbn: { $exists: true, $ne: null, $ne: '' },
+      $or: [
+        { imageUrl: { $exists: false } },
+        { imageUrl: null },
+        { imageUrl: '' }
+      ]
+    });
+
+    let updatedCount = 0;
+    let failedCount = 0;
+
+    // Process each item
+    for (const item of wishlistItems) {
+      try {
+        const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${item.isbn}`;
+        const googleResponse = await axios.get(googleBooksUrl);
+        
+        if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+          const bookInfo = googleResponse.data.items[0].volumeInfo;
+          if (bookInfo.imageLinks) {
+            item.imageUrl = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+            await item.save();
+            updatedCount++;
+          } else {
+            failedCount++;
+          }
+        } else {
+          failedCount++;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch image for ISBN ${item.isbn}:`, error.message);
+        failedCount++;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Backfill complete: ${updatedCount} images added, ${failedCount} failed`,
+      data: {
+        total: wishlistItems.length,
+        updated: updatedCount,
+        failed: failedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('Backfill images error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while backfilling images',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;
+
