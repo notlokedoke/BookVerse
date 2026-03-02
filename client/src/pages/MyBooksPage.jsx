@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
 import EditBookModal from '../components/EditBookModal';
+import FloatingActionButton from '../components/FloatingActionButton';
 import { BookOpen, Plus, Library, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 import './MyBooksPage.css';
@@ -280,6 +281,13 @@ const MyBooksPage = () => {
           </div>
         )}
       </div>
+
+      {/* Floating Action Button - Always visible */}
+      <FloatingActionButton
+        to="/books/create"
+        icon={<Plus size={24} />}
+        label="Add Book"
+      />
     </div>
   );
 };

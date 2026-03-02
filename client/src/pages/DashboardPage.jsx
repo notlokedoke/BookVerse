@@ -24,6 +24,7 @@ import {
   MessageSquare,
   Sparkles
 } from 'lucide-react';
+import FloatingActionButton from '../components/FloatingActionButton';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
@@ -258,6 +259,12 @@ const DashboardPage = () => {
               {getFormattedDate()}
             </p>
           </div>
+        </div>
+        <div className="welcome-actions">
+          <Link to="/browse" className="action-btn-secondary">
+            <Search size={18} />
+            Browse Books
+          </Link>
         </div>
       </section>
 
@@ -562,6 +569,15 @@ const DashboardPage = () => {
             Add Your First Book
           </Link>
         </section>
+      )}
+
+      {/* Floating Action Button - Only show if user has books */}
+      {stats.booksListed > 0 && (
+        <FloatingActionButton
+          to="/books/create"
+          icon={<Plus size={24} />}
+          label="Add Book"
+        />
       )}
     </div>
   );

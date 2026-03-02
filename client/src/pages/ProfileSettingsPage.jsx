@@ -43,6 +43,9 @@ const ProfileSettingsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -116,11 +119,62 @@ const ProfileSettingsPage = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasUnsavedChanges, activeSection, showPasswordModal]);
 
+  const validateField = (name, value) => {
+    let error = '';
+    
+    switch (name) {
+      case 'name':
+        if (!value || value.trim() === '') {
+          error = 'Name is required';
+        } else if (value.trim().length < 2) {
+          error = 'Name must be at least 2 characters';
+        } else if (value.length > 100) {
+          error = 'Name must be less than 100 characters';
+        }
+        break;
+      
+      case 'city':
+        if (!value || value.trim() === '') {
+          error = 'City is required';
+        }
+        break;
+      
+      case 'bio':
+        if (value && value.length > 500) {
+          error = 'Bio must be less than 500 characters';
+        }
+        break;
+      
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
     }));
   };
 
@@ -150,11 +204,64 @@ const ProfileSettingsPage = () => {
     }
   };
 
+  const validatePasswordField = (name, value, allData) => {
+    let error = '';
+    
+    switch (name) {
+      case 'currentPassword':
+        if (!value || value.trim() === '') {
+          error = 'Current password is required';
+        }
+        break;
+      
+      case 'newPassword':
+        if (!value || value.trim() === '') {
+          error = 'New password is required';
+        } else if (value.length < 8) {
+          error = 'Password must be at least 8 characters';
+        } else if (value === allData.currentPassword) {
+          error = 'New password must be different from current password';
+        }
+        break;
+      
+      case 'confirmPassword':
+        if (!value || value.trim() === '') {
+          error = 'Please confirm your password';
+        } else if (value !== allData.newPassword) {
+          error = 'Passwords do not match';
+        }
+        break;
+      
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({
       ...prev,
       [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (passwordErrors[name]) {
+      setPasswordErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handlePasswordBlur = (e) => {
+    const { name, value } = e.target;
+    const error = validatePasswordField(name, value, passwordData);
+    
+    setPasswordErrors(prev => ({
+      ...prev,
+      [name]: error
     }));
   };
 
@@ -184,6 +291,19 @@ const ProfileSettingsPage = () => {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate all fields before submission
+    const newErrors = {};
+    Object.keys(passwordData).forEach(field => {
+      const error = validatePasswordField(field, passwordData[field], passwordData);
+      if (error) newErrors[field] = error;
+    });
+    
+    if (Object.keys(newErrors).length > 0) {
+      setPasswordErrors(newErrors);
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
@@ -219,6 +339,7 @@ const ProfileSettingsPage = () => {
           newPassword: '',
           confirmPassword: ''
         });
+        setPasswordErrors({});
       } else {
         toast.error(data.error?.message || 'Failed to change password');
       }
@@ -232,6 +353,22 @@ const ProfileSettingsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate all fields before submission
+    const newErrors = {};
+    Object.keys(formData).forEach(field => {
+      if (field !== 'privacySettings') {
+        const error = validateField(field, formData[field]);
+        if (error) newErrors[field] = error;
+      }
+    });
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -335,7 +472,39 @@ const ProfileSettingsPage = () => {
     }
   };
 
+  const validateDeleteConfirmation = (value) => {
+    if (!value || value.trim() === '') {
+      return 'Confirmation is required';
+    } else if (value !== 'DELETE') {
+      return 'You must type DELETE exactly';
+    }
+    return '';
+  };
+
+  const handleDeleteConfirmationChange = (e) => {
+    const value = e.target.value;
+    setDeleteConfirmation(value);
+    
+    // Clear error when user starts typing
+    if (deleteError) {
+      setDeleteError('');
+    }
+  };
+
+  const handleDeleteConfirmationBlur = (e) => {
+    const value = e.target.value;
+    const error = validateDeleteConfirmation(value);
+    setDeleteError(error);
+  };
+
   const handleDeleteAccount = async () => {
+    const error = validateDeleteConfirmation(deleteConfirmation);
+    if (error) {
+      setDeleteError(error);
+      toast.error('Please type DELETE to confirm');
+      return;
+    }
+    
     if (deleteConfirmation !== 'DELETE') {
       toast.error('Please type DELETE to confirm');
       return;
@@ -447,9 +616,13 @@ const ProfileSettingsPage = () => {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
+                        onBlur={handleBlur}
                         required
                         placeholder="Enter your name"
                       />
+                      {errors.name && (
+                        <span className="input-error">{errors.name}</span>
+                      )}
                     </div>
 
                     <div className="form-group">
@@ -472,6 +645,7 @@ const ProfileSettingsPage = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="Enter your city"
+                        error={errors.city}
                       />
                     </div>
 
@@ -482,10 +656,14 @@ const ProfileSettingsPage = () => {
                         name="bio"
                         value={formData.bio || ''}
                         onChange={handleInputChange}
+                        onBlur={handleBlur}
                         rows="4"
                         placeholder="Tell others about yourself and your reading interests..."
                         maxLength="500"
                       />
+                      {errors.bio && (
+                        <span className="input-error">{errors.bio}</span>
+                      )}
                       <div className="bio-footer">
                         <span className="input-hint">Share your favorite genres, authors, or what you're looking for</span>
                         <span className={`char-counter ${(formData.bio?.length || 0) > 450 ? 'warning' : ''}`}>
@@ -793,10 +971,14 @@ const ProfileSettingsPage = () => {
                         type="text"
                         id="deleteConfirm"
                         value={deleteConfirmation}
-                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        onChange={handleDeleteConfirmationChange}
+                        onBlur={handleDeleteConfirmationBlur}
                         placeholder="Type DELETE"
                         autoComplete="off"
                       />
+                      {deleteError && (
+                        <span className="input-error">{deleteError}</span>
+                      )}
                     </div>
                   </div>
 
@@ -850,6 +1032,7 @@ const ProfileSettingsPage = () => {
                             name="currentPassword"
                             value={passwordData.currentPassword}
                             onChange={handlePasswordChange}
+                            onBlur={handlePasswordBlur}
                             required
                             placeholder="Enter current password"
                           />
@@ -861,6 +1044,9 @@ const ProfileSettingsPage = () => {
                             {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
+                        {passwordErrors.currentPassword && (
+                          <span className="input-error">{passwordErrors.currentPassword}</span>
+                        )}
                       </div>
 
                       <div className="form-group">
@@ -872,6 +1058,7 @@ const ProfileSettingsPage = () => {
                             name="newPassword"
                             value={passwordData.newPassword}
                             onChange={handlePasswordChange}
+                            onBlur={handlePasswordBlur}
                             required
                             placeholder="Enter new password"
                             minLength="8"
@@ -884,6 +1071,9 @@ const ProfileSettingsPage = () => {
                             {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
+                        {passwordErrors.newPassword && (
+                          <span className="input-error">{passwordErrors.newPassword}</span>
+                        )}
                         {passwordData.newPassword && (
                           <div className="password-strength">
                             <div className="strength-bar">
@@ -915,6 +1105,7 @@ const ProfileSettingsPage = () => {
                             name="confirmPassword"
                             value={passwordData.confirmPassword}
                             onChange={handlePasswordChange}
+                            onBlur={handlePasswordBlur}
                             required
                             placeholder="Confirm new password"
                           />
@@ -926,8 +1117,8 @@ const ProfileSettingsPage = () => {
                             {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
-                        {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
-                          <span className="input-error">Passwords do not match</span>
+                        {passwordErrors.confirmPassword && (
+                          <span className="input-error">{passwordErrors.confirmPassword}</span>
                         )}
                       </div>
                     </div>
