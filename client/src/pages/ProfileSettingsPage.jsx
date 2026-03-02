@@ -42,6 +42,8 @@ const ProfileSettingsPage = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
@@ -508,6 +510,14 @@ const ProfileSettingsPage = () => {
     return '';
   };
 
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmation('');
+    setDeletePassword('');
+    setShowDeletePassword(false);
+    setDeleteError('');
+  };
+
   const handleDeleteConfirmationChange = (e) => {
     const value = e.target.value;
     setDeleteConfirmation(value);
@@ -537,13 +547,24 @@ const ProfileSettingsPage = () => {
       return;
     }
 
+    // Check if user has password (not OAuth-only)
+    if (!user?.isOAuthUser && !deletePassword) {
+      toast.error('Please enter your password to confirm');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/auth/account', {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        body: JSON.stringify({
+          password: deletePassword,
+          confirmText: deleteConfirmation
+        })
       });
 
       const data = await response.json();
@@ -985,7 +1006,7 @@ const ProfileSettingsPage = () => {
 
             {/* Delete Account Modal */}
             {showDeleteModal && (
-              <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+              <div className="modal-overlay" onClick={handleCloseDeleteModal}>
                 <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
                   <div className="modal-header">
                     <div>
@@ -994,7 +1015,7 @@ const ProfileSettingsPage = () => {
                     </div>
                     <button 
                       className="modal-close"
-                      onClick={() => setShowDeleteModal(false)}
+                      onClick={handleCloseDeleteModal}
                       type="button"
                     >
                       <X size={24} />
@@ -1013,6 +1034,32 @@ const ProfileSettingsPage = () => {
                         <li>Wishlist items</li>
                       </ul>
                     </div>
+
+                    {!user?.isOAuthUser && (
+                      <div className="form-group">
+                        <label htmlFor="deletePassword">
+                          Enter your password to confirm
+                        </label>
+                        <div className="password-input-wrapper">
+                          <input
+                            type={showDeletePassword ? 'text' : 'password'}
+                            id="deletePassword"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            placeholder="Enter your password"
+                            autoComplete="current-password"
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowDeletePassword(!showDeletePassword)}
+                            tabIndex={-1}
+                          >
+                            {showDeletePassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="form-group">
                       <label htmlFor="deleteConfirm">
@@ -1037,7 +1084,7 @@ const ProfileSettingsPage = () => {
                     <button
                       type="button"
                       className="btn-cancel"
-                      onClick={() => setShowDeleteModal(false)}
+                      onClick={handleCloseDeleteModal}
                     >
                       Cancel
                     </button>
@@ -1045,7 +1092,7 @@ const ProfileSettingsPage = () => {
                       type="button"
                       className="btn-danger"
                       onClick={handleDeleteAccount}
-                      disabled={loading || deleteConfirmation !== 'DELETE'}
+                      disabled={loading || deleteConfirmation !== 'DELETE' || (!user?.isOAuthUser && !deletePassword)}
                     >
                       {loading ? 'Deleting...' : 'Delete Account'}
                     </button>
