@@ -21,6 +21,7 @@ import TradesPage from './pages/TradesPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
 import './App.css'
 
 // Component to conditionally render navbar
@@ -49,6 +50,7 @@ const AppContent = () => {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/browse" element={<BrowsePage />} />
+            <Route path="/safety" element={<SafetyGuidelinesPage />} />
             
             {/* Protected routes */}
             <Route 

@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  LayoutDashboard
+  LayoutDashboard,
+  Shield
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
@@ -226,6 +227,10 @@ const Navbar = () => {
                       <Settings size={16} />
                       Settings
                     </Link>
+                    <Link to="/safety" className="dropdown-item">
+                      <Shield size={16} />
+                      Safety Guidelines
+                    </Link>
                     <div className="dropdown-divider"></div>
                     <button onClick={handleLogout} className="dropdown-item logout">
                       <LogOut size={16} />
@@ -306,6 +311,10 @@ const Navbar = () => {
                     <Settings size={18} />
                     Settings
                   </Link>
+                  <Link to="/safety" className="mobile-footer-link">
+                    <Shield size={18} />
+                    Safety Guidelines
+                  </Link>
                   <button onClick={handleLogout} className="mobile-footer-link logout">
                     <LogOut size={18} />
                     Sign Out
@@ -318,6 +327,10 @@ const Navbar = () => {
                   <Link to="/browse" className="mobile-nav-link">
                     <Search size={20} />
                     Browse
+                  </Link>
+                  <Link to="/safety" className="mobile-nav-link">
+                    <Shield size={20} />
+                    Safety Guidelines
                   </Link>
                 </div>
                 <div className="mobile-auth-btns">

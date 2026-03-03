@@ -34,12 +34,12 @@ const BookDetailView = () => {
           if (data.success) {
             setBook(data.data);
           } else {
-            setError('Failed to load book details');
+            setError('Failed to load book details. Please refresh the page or try again later.');
           }
         } else if (response.status === 404) {
           setError('Book not found');
         } else {
-          setError('Failed to load book details');
+          setError('Failed to load book details. Please refresh the page or try again later.');
         }
       } catch (err) {
         console.error('Error fetching book:', err);

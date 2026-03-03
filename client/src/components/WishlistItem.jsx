@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { BookOpen, Trash2 } from 'lucide-react';
 import '../components/BookCard.css'; // Inheriting book card styles for uniformity
@@ -7,6 +8,7 @@ import './WishlistItem.css';
 
 const WishlistItem = ({ item, onRemove, isOwnProfile }) => {
   const { user } = useAuth();
+  const toast = useToast();
   const [isRemoving, setIsRemoving] = useState(false);
 
   const handleConfirmRemove = async (e) => {
@@ -29,12 +31,17 @@ const WishlistItem = ({ item, onRemove, isOwnProfile }) => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (response.data.success && onRemove) {
-        onRemove(item._id);
+      if (response.data.success) {
+        // Show green toast notification for 3 seconds
+        toast.success('Book removed from wishlist successfully!');
+        
+        if (onRemove) {
+          onRemove(item._id);
+        }
       }
     } catch (error) {
       console.error('Remove from wishlist error:', error);
-      alert('Failed to remove book from wishlist. Please try again.');
+      toast.error('Failed to remove book from wishlist. Please try again.');
     } finally {
       setIsRemoving(false);
     }
