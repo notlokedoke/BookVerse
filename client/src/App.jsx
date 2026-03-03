@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import BookDetailView from './components/BookDetailView'
 import TradeDetailView from './components/TradeDetailView'
 import HomePage from './pages/HomePage'
@@ -39,7 +40,8 @@ const AppContent = () => {
   return (
     <div className="App">
       {!isAuthPage && !isLandingPage && <Navbar />}
-      <Routes>
+      <div className="app-content">
+        <Routes>
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -130,6 +132,8 @@ const AppContent = () => {
             {/* Redirect unknown routes to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+      </div>
+      {!isAuthPage && !isLandingPage && <Footer />}
     </div>
   )
 }
