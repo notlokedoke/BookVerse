@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import TradeProposalModal from './TradeProposalModal';
 import EditBookModal from './EditBookModal';
+import { formatCityName } from '../utils/formatLocation';
 import './BookDetailView.css';
 
 const BookDetailView = () => {
@@ -324,7 +325,7 @@ const BookDetailView = () => {
                     <div className="owner-info">
                       <h4 className="owner-name">{book.owner.name}</h4>
                       {book.owner.city && book.owner.privacySettings?.showCity !== false && (
-                        <p className="owner-location">📍 {book.owner.city}</p>
+                        <p className="owner-location">📍 {formatCityName(book.owner.city)}</p>
                       )}
                       {book.owner.averageRating > 0 && (
                         <div className="owner-rating">
@@ -344,7 +345,7 @@ const BookDetailView = () => {
                     <div className="owner-info">
                       <h4 className="owner-name">{book.owner.name}</h4>
                       {book.owner.city && book.owner.privacySettings?.showCity !== false && (
-                        <p className="owner-location">📍 {book.owner.city}</p>
+                        <p className="owner-location">📍 {formatCityName(book.owner.city)}</p>
                       )}
                       {book.owner.averageRating > 0 && (
                         <div className="owner-rating">

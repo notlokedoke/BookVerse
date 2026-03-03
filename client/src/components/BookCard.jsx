@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TradeProposalModal from './TradeProposalModal';
+import { formatCityName } from '../utils/formatLocation';
 import './BookCard.css';
 
 const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
@@ -110,14 +111,6 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
             <p className="book-author" title={author}>
               by {author}
             </p>
-            <div className="book-meta">
-              <span className="book-genre">
-                {Array.isArray(genre) ? genre.join(', ') : genre}
-              </span>
-              {createdAt && (
-                <span className="book-date">Listed {formatDate(createdAt)}</span>
-              )}
-            </div>
           </div>
         </Link>
 
@@ -129,7 +122,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
                 <div className="owner-info">
                   <span className="owner-name">{owner.name}</span>
                   {owner.city && owner.privacySettings?.showCity !== false && (
-                    <span className="owner-location">📍 {owner.city}</span>
+                    <span className="owner-location">📍 {formatCityName(owner.city)}</span>
                   )}
                 </div>
                 {owner.averageRating > 0 && (
@@ -146,7 +139,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
                 <div className="owner-info">
                   <span className="owner-name">{owner.name}</span>
                   {owner.city && owner.privacySettings?.showCity !== false && (
-                    <span className="owner-location">📍 {owner.city}</span>
+                    <span className="owner-location">📍 {formatCityName(owner.city)}</span>
                   )}
                 </div>
                 {owner.averageRating > 0 && (
