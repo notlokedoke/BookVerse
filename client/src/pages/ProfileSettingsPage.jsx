@@ -454,8 +454,7 @@ const ProfileSettingsPage = () => {
     { 
       id: 'security', 
       label: 'Account Security', 
-      icon: Lock,
-      badge: (!user?.lastPasswordChange) ? 'warning' : null
+      icon: Lock
     },
     { 
       id: 'notifications', 
@@ -859,11 +858,6 @@ const ProfileSettingsPage = () => {
                       >
                         Change Password
                       </button>
-                    </div>
-
-                    <div className="info-banner">
-                      <Lock size={16} />
-                      <span>Two-factor authentication coming soon</span>
                     </div>
                   </div>
                 </div>

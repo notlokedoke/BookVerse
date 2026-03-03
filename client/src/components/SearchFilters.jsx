@@ -2,6 +2,13 @@ import React from 'react';
 import { Search, MapPin, BookOpen, User, X } from 'lucide-react';
 import './SearchFilters.css';
 
+const genreOptions = [
+  'Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction',
+  'Fantasy', 'Biography', 'History', 'Self-Help', 'Business',
+  'Technology', 'Health', 'Travel', 'Cooking', 'Art',
+  'Poetry', 'Drama', 'Children', 'Young Adult', 'Classic', 'Other'
+];
+
 const SearchFilters = ({
   filters,
   onFilterChange,
@@ -10,6 +17,22 @@ const SearchFilters = ({
   resultsCount,
   loading
 }) => {
+  // Parse genres from string to array
+  const selectedGenres = filters.genre ? filters.genre.split(',') : [];
+
+  const handleGenreToggle = (genre) => {
+    let newGenres;
+    if (selectedGenres.includes(genre)) {
+      // Remove genre
+      newGenres = selectedGenres.filter(g => g !== genre);
+    } else {
+      // Add genre
+      newGenres = [...selectedGenres, genre];
+    }
+    // Convert array back to comma-separated string
+    onFilterChange('genre', newGenres.join(','));
+  };
+
   return (
     <div className="search-filters-bar">
       <div className="filters-container">
@@ -41,20 +64,6 @@ const SearchFilters = ({
 
         <div className="filter-divider"></div>
 
-        {/* Genre Filter */}
-        <div className="filter-input-wrapper">
-          <BookOpen className="filter-icon" size={18} />
-          <input
-            type="text"
-            placeholder="Genre"
-            value={filters.genre}
-            onChange={(e) => onFilterChange('genre', e.target.value)}
-            className="filter-input-field"
-          />
-        </div>
-
-        <div className="filter-divider"></div>
-
         {/* City Filter */}
         <div className="filter-input-wrapper">
           <MapPin className="filter-icon" size={18} />
@@ -79,7 +88,23 @@ const SearchFilters = ({
         )}
       </div>
 
-      {/* Results Summary - integrated below or inline if preferred, keeping simple for now */}
+      {/* Filters Heading and Genre Multi-Select */}
+      <div className="genre-dropdown-panel">
+        <div className="genre-tags-container">
+          {genreOptions.map(genre => (
+            <button
+              key={genre}
+              type="button"
+              className={`genre-tag ${selectedGenres.includes(genre) ? 'selected' : ''}`}
+              onClick={() => handleGenreToggle(genre)}
+            >
+              {genre}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results Summary */}
       {!loading && (
         <div className="results-badge">
           {resultsCount > 0 ? (
