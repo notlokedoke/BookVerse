@@ -41,6 +41,44 @@ const SafetyGuidelinesPage = () => {
         </section>
 
         <section className="guideline-section">
+          <h2>Book Condition Verification</h2>
+          <div className="guideline-content">
+            <p>
+              Before completing a trade, take time to thoroughly inspect the book to ensure it matches 
+              the condition described in the listing. This helps prevent misunderstandings and ensures 
+              fair exchanges.
+            </p>
+
+            <h3>What to Check</h3>
+            <ul>
+              <li><strong>Cover Condition:</strong> Check for tears, creases, stains, or significant wear on the front and back covers</li>
+              <li><strong>Spine Integrity:</strong> Examine the spine for cracks, breaks, or looseness that might affect the book's durability</li>
+              <li><strong>Page Quality:</strong> Flip through pages to check for tears, missing pages, water damage, or excessive highlighting/writing</li>
+              <li><strong>Binding:</strong> Ensure pages are securely bound and not falling out or loose</li>
+              <li><strong>Odors:</strong> Check for musty, smoke, or other unpleasant odors that weren't mentioned in the listing</li>
+              <li><strong>Completeness:</strong> Verify all pages are present, especially for books with maps, illustrations, or appendices</li>
+            </ul>
+
+            <h3>Condition Categories Reference</h3>
+            <ul>
+              <li><strong>New:</strong> Unread with no visible wear, like it just came from the bookstore</li>
+              <li><strong>Like New:</strong> Appears unread with minimal to no wear, may have been read once carefully</li>
+              <li><strong>Good:</strong> Shows normal signs of reading with minor wear, all pages intact and readable</li>
+              <li><strong>Fair:</strong> Well-read with noticeable wear, may have markings or creases, but fully readable</li>
+              <li><strong>Poor:</strong> Significant wear, damage, or markings, but still complete and readable</li>
+            </ul>
+
+            <h3>If the Condition Doesn't Match</h3>
+            <ul>
+              <li>Politely discuss the discrepancy with your trading partner</li>
+              <li>You have the right to decline the trade if the condition is significantly different than described</li>
+              <li>Consider whether the difference is acceptable to you before proceeding</li>
+              <li>Provide honest feedback in your rating to help future traders</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="guideline-section">
           <h2>Online Safety</h2>
           <div className="guideline-content">
             <h3>Protect Your Privacy</h3>
