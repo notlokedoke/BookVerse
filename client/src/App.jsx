@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -23,6 +24,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
+import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
 // Component to conditionally render navbar
@@ -129,8 +131,8 @@ const AppContent = () => {
             />
             <Route path="/books/:bookId" element={<BookDetailView />} />
             
-            {/* Redirect unknown routes to home */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* 404 Not Found - catch all unknown routes */}
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </div>
       {!isAuthPage && !isLandingPage && <Footer />}
@@ -140,11 +142,13 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   )
 }
 

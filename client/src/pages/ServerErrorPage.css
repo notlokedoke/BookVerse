@@ -1,0 +1,214 @@
+.server-error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  padding: 2rem 1rem;
+}
+
+.server-error-container {
+  max-width: 600px;
+  width: 100%;
+  background-color: white;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.server-error-container .error-icon {
+  color: #f5576c;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.server-error-container .error-code {
+  font-size: 6rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.server-error-container .error-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 1rem 0;
+}
+
+.server-error-container .error-message {
+  font-size: 1.125rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.server-error-container .error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.server-error-container .error-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.server-error-container .error-button.primary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.server-error-container .error-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(245, 87, 108, 0.4);
+}
+
+.server-error-container .error-button.secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.server-error-container .error-button.secondary:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.error-details {
+  background-color: #fef2f2;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: left;
+  border-left: 4px solid #f5576c;
+  margin-bottom: 1.5rem;
+}
+
+.details-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 0.75rem;
+}
+
+.error-details ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.error-details li {
+  font-size: 0.9375rem;
+  color: #7f1d1d;
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.error-details li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #f5576c;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.error-support {
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.error-support p {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.error-support a {
+  color: #f5576c;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.error-support a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .server-error-container {
+    padding: 2rem 1.5rem;
+  }
+
+  .server-error-container .error-code {
+    font-size: 4.5rem;
+  }
+
+  .server-error-container .error-title {
+    font-size: 1.5rem;
+  }
+
+  .server-error-container .error-message {
+    font-size: 1rem;
+  }
+
+  .server-error-container .error-actions {
+    flex-direction: column;
+  }
+
+  .server-error-container .error-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .server-error-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .server-error-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .server-error-container .error-code {
+    font-size: 3.5rem;
+  }
+
+  .server-error-container .error-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+}
