@@ -21,6 +21,7 @@ const applyUserPrivacySettings = (user, options = {}) => {
   const userResponse = {
     _id: user._id,
     name: user.name,
+    bio: user.bio,
     averageRating: user.averageRating || 0,
     ratingCount: user.ratingCount || 0,
     createdAt: user.createdAt,
