@@ -78,10 +78,9 @@ router.post('/isbn/:isbn', async (req, res) => {
     // Get the highest resolution image available from Google Books
     // Priority: extraLarge > large > medium > small > thumbnail
     let coverImage = null;
-    let googleCoverImage = null;
     
     if (bookInfo.imageLinks) {
-      googleCoverImage = 
+      coverImage = 
         bookInfo.imageLinks.extraLarge ||
         bookInfo.imageLinks.large ||
         bookInfo.imageLinks.medium ||
@@ -90,24 +89,12 @@ router.post('/isbn/:isbn', async (req, res) => {
         null;
       
       // Remove edge effects and use HTTPS for better quality
-      if (googleCoverImage) {
-        googleCoverImage = googleCoverImage
+      if (coverImage) {
+        coverImage = coverImage
           .replace('&edge=curl', '')  // Remove curl effect
           .replace('zoom=1', 'zoom=2') // Increase zoom for better quality (1-5 scale)
           .replace('http://', 'https://'); // Use HTTPS
       }
-    }
-
-    // Since Google Books sometimes returns a generic "Image Not Available" placeholder
-    // that we cannot easily detect programmatically, we prioritize Open Library covers.
-    try {
-      const openLibraryUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`;
-      // Make a lightweight HEAD request to check if Open Library actually has an image (returns 404 if missing)
-      await axios.head(openLibraryUrl, { timeout: 5000 });
-      coverImage = openLibraryUrl;
-    } catch (error) {
-      // Open library doesn't have it (returns 404) or request failed, fallback to Google Books image
-      coverImage = googleCoverImage;
     }
 
     // Format the response data

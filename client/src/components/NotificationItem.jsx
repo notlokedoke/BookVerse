@@ -60,8 +60,12 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
     }
   };
 
-  const notificationLink = notification.relatedTrade
-    ? `/trades/${notification.relatedTrade}`
+  const tradeId = notification.relatedTrade && typeof notification.relatedTrade === 'object' 
+    ? notification.relatedTrade._id 
+    : notification.relatedTrade;
+
+  const notificationLink = tradeId
+    ? `/trades/${tradeId}`
     : '#';
 
   return (

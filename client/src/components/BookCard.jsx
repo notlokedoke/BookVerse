@@ -114,47 +114,6 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
           </div>
         </Link>
 
-        {/* Owner Information */}
-        {showOwner && owner && (
-          <div className="book-owner">
-            {isAuthenticated ? (
-              <Link to={`/profile/${owner._id}`} className="owner-link">
-                <div className="owner-info">
-                  <span className="owner-name">{owner.name}</span>
-                  {owner.city && owner.privacySettings?.showCity !== false && (
-                    <span className="owner-location">📍 {formatCityName(owner.city)}</span>
-                  )}
-                </div>
-                {owner.averageRating > 0 && (
-                  <div className="owner-rating">
-                    <span className="rating-stars">⭐</span>
-                    <span className="rating-value">
-                      {owner.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-              </Link>
-            ) : (
-              <div className="owner-info-guest">
-                <div className="owner-info">
-                  <span className="owner-name">{owner.name}</span>
-                  {owner.city && owner.privacySettings?.showCity !== false && (
-                    <span className="owner-location">📍 {formatCityName(owner.city)}</span>
-                  )}
-                </div>
-                {owner.averageRating > 0 && (
-                  <div className="owner-rating">
-                    <span className="rating-stars">⭐</span>
-                    <span className="rating-value">
-                      {owner.averageRating.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Edit and Delete Buttons for Owner */}
         {(showEditButton || showDeleteButton) && (onEdit || onDelete) && (
           <div className="book-actions">

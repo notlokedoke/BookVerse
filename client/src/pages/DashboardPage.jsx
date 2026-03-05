@@ -100,27 +100,28 @@ const DashboardPage = () => {
     return Math.round((completed / total) * 100);
   };
 
-  // Get recent activity items
+  // Get recent activity items (limit to 5 for dashboard)
   const getRecentActivity = () => {
     const activities = [];
 
     // Add recent trades as activities
-    allTrades.slice(0, 5).forEach(trade => {
+    allTrades.forEach(trade => {
       const isProposer = trade.proposer._id === user?.userId;
       activities.push({
         id: trade._id,
         type: 'trade',
         status: trade.status,
         title: isProposer
-          ? `Trade proposed to ${trade.receiver?.name}`
-          : `Trade received from ${trade.proposer?.name}`,
+          ? `Trade ${trade.status} with ${trade.receiver?.name}`
+          : `Trade ${trade.status} from ${trade.proposer?.name}`,
         book: trade.requestedBook?.title,
         time: new Date(trade.createdAt || Date.now()),
-        icon: trade.status === 'completed' ? 'completed' : trade.status === 'accepted' ? 'active' : 'pending'
+        icon: trade.status === 'completed' ? 'completed' : trade.status === 'accepted' ? 'active' : 'pending',
+        link: `/trades`
       });
     });
 
-    // Sort by time
+    // Sort by time and return only 5 for dashboard
     return activities.sort((a, b) => b.time - a.time).slice(0, 5);
   };
 
@@ -397,11 +398,20 @@ const DashboardPage = () => {
           {recentActivity.length > 0 && (
             <section className="activity-section glass-card">
               <div className="section-header">
-                <h2><Bell size={18} /> Recent Activity</h2>
+                <h2>
+                  <Bell size={18} /> Recent Activity
+                </h2>
+                <Link to="/activity" className="view-all-link">
+                  View All <ArrowRight size={14} />
+                </Link>
               </div>
               <div className="activity-timeline">
                 {recentActivity.map((activity, idx) => (
-                  <div key={activity.id || idx} className="activity-item">
+                  <Link
+                    key={activity.id || idx}
+                    to={activity.link}
+                    className="activity-item clickable"
+                  >
                     <div className={`activity-dot ${activity.icon}`}></div>
                     <div className="activity-content">
                       <p className="activity-title">{activity.title}</p>
@@ -410,7 +420,7 @@ const DashboardPage = () => {
                       )}
                     </div>
                     <span className="activity-time">{getRelativeTime(activity.time)}</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </section>

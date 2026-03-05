@@ -623,10 +623,23 @@
   background: var(--bg-subtle);
   border-radius: 0.75rem;
   transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.activity-item.clickable {
+  cursor: pointer;
 }
 
 .activity-item:hover {
   background: #f1f5f9;
+  transform: translateX(2px);
+}
+
+.activity-item.clickable:hover {
+  background: linear-gradient(90deg, #f0fdf4 0%, #f1f5f9 100%);
+  border-left: 3px solid var(--primary);
+  padding-left: calc(0.75rem - 3px);
 }
 
 .activity-dot {

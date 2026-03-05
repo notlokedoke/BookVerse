@@ -92,32 +92,27 @@ router.post('/', [
     if (isbn && isbn.trim()) {
       wishlistData.isbn = isbn.trim();
       
-      // Try to fetch book cover from Open Library first, then fallback to Google Books 
+      // Try to fetch book cover from Google Books API if not provided
       if (!imageUrl || !imageUrl.trim()) {
         try {
           const cleanIsbn = isbn.replace(/[-\s]/g, '');
-          const openLibraryUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`;
+          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
+          const googleResponse = await axios.get(googleBooksUrl, { timeout: 5000 });
           
-          // Make a lightweight HEAD request to check if Open Library actually has an image
-          let coverImage = null;
-          try {
-            await axios.head(openLibraryUrl, { timeout: 5000 });
-            coverImage = openLibraryUrl;
-          } catch (olError) {
-            // Open Library failed, fallback to Google Books
-            const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
-            const googleResponse = await axios.get(googleBooksUrl);
-            
-            if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-              const bookInfo = googleResponse.data.items[0].volumeInfo;
-              if (bookInfo.imageLinks) {
-                coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+            const bookInfo = googleResponse.data.items[0].volumeInfo;
+            if (bookInfo.imageLinks) {
+              let coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+              
+              // Improve image quality
+              if (coverImage) {
+                coverImage = coverImage
+                  .replace('&edge=curl', '')
+                  .replace('zoom=1', 'zoom=2')
+                  .replace('http://', 'https://');
+                wishlistData.imageUrl = coverImage;
               }
             }
-          }
-          
-          if (coverImage) {
-            wishlistData.imageUrl = coverImage;
           }
         } catch (error) {
           // Silently fail - image is optional
@@ -497,20 +492,21 @@ router.post('/backfill-images', authenticateToken, async (req, res) => {
     for (const item of wishlistItems) {
       try {
         const cleanIsbn = item.isbn.replace(/[-\s]/g, '');
-        const openLibraryUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`;
+        const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
+        const googleResponse = await axios.get(googleBooksUrl, { timeout: 5000 });
         
         let coverImage = null;
-        try {
-          await axios.head(openLibraryUrl, { timeout: 5000 });
-          coverImage = openLibraryUrl;
-        } catch (olError) {
-          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
-          const googleResponse = await axios.get(googleBooksUrl);
-          
-          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-            const bookInfo = googleResponse.data.items[0].volumeInfo;
-            if (bookInfo.imageLinks) {
-              coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+        if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+          const bookInfo = googleResponse.data.items[0].volumeInfo;
+          if (bookInfo.imageLinks) {
+            coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+            
+            // Improve image quality
+            if (coverImage) {
+              coverImage = coverImage
+                .replace('&edge=curl', '')
+                .replace('zoom=1', 'zoom=2')
+                .replace('http://', 'https://');
             }
           }
         }

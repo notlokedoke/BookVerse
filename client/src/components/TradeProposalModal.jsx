@@ -181,29 +181,64 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
         ) : (
           <>
             <div className="modal-body">
-              <div className="requested-book-info">
-                <h3>You want to trade for:</h3>
-                <div className="book-preview">
-                  <img 
-                    src={requestedBook.imageUrl} 
-                    alt={requestedBook.author ? `${requestedBook.title} by ${requestedBook.author}` : requestedBook.title}
-                    className="book-thumbnail"
-                  />
-                  <div className="book-details">
-                    <h4>{requestedBook.title}</h4>
-                    <p className="book-author">by {requestedBook.author}</p>
-                    <span className="book-condition">{requestedBook.condition}</span>
+              {/* Side-by-Side Trade Comparison */}
+              <div className="trade-comparison">
+                <div className="trade-side">
+                  <div className="trade-label">They offer</div>
+                  <div className="book-card-compact">
+                    <img 
+                      src={requestedBook.imageUrl} 
+                      alt={requestedBook.title}
+                      className="book-compact-image"
+                    />
+                    <div className="book-compact-info">
+                      <h4>{requestedBook.title}</h4>
+                      <p className="author-compact">by {requestedBook.author}</p>
+                      <span className="condition-badge-compact">{requestedBook.condition}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="divider">
-                <span>↓</span>
+                <div className="trade-arrow">
+                  <span>⇄</span>
+                </div>
+
+                <div className="trade-side">
+                  <div className="trade-label">You offer</div>
+                  {selectedBook ? (
+                    <div className="book-card-compact selected">
+                      {(() => {
+                        const book = userBooks.find(b => b._id === selectedBook);
+                        return book ? (
+                          <>
+                            <img 
+                              src={book.imageUrl} 
+                              alt={book.title}
+                              className="book-compact-image"
+                            />
+                            <div className="book-compact-info">
+                              <h4>{book.title}</h4>
+                              <p className="author-compact">by {book.author}</p>
+                              <span className="condition-badge-compact">{book.condition}</span>
+                            </div>
+                          </>
+                        ) : null;
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="book-card-compact placeholder">
+                      <div className="placeholder-content">
+                        <span className="placeholder-icon">📚</span>
+                        <p>Select a book below</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label htmlFor="offered-book">Select a book to offer:</label>
+                  <label className="selection-label">Select your book to offer:</label>
                   
                   {loading ? (
                     <div className="loading-books">
@@ -216,25 +251,24 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                       <p className="hint">Create a book listing first to propose trades.</p>
                     </div>
                   ) : (
-                    <div className="books-grid">
+                    <div className="books-grid-compact">
                       {userBooks.map((book) => (
                         <div
                           key={book._id}
-                          className={`book-option ${selectedBook === book._id ? 'selected' : ''}`}
-                          onClick={() => setSelectedBook(book._id)}
+                          className={`book-grid-item ${selectedBook === book._id ? 'selected' : ''}`}
+                          onClick={() => setSelectedBook(selectedBook === book._id ? '' : book._id)}
                         >
                           <img 
                             src={book.imageUrl} 
-                            alt={book.author ? `${book.title} by ${book.author}` : book.title}
-                            className="book-option-image"
+                            alt={book.title}
+                            className="book-grid-image"
                           />
-                          <div className="book-option-info">
+                          <div className="book-grid-info">
                             <h5>{book.title}</h5>
-                            <p className="book-option-author">{book.author}</p>
-                            <span className="book-option-condition">{book.condition}</span>
+                            <p>{book.author}</p>
                           </div>
                           {selectedBook === book._id && (
-                            <div className="selected-indicator">✓</div>
+                            <div className="check-indicator">✓</div>
                           )}
                         </div>
                       ))}
@@ -262,7 +296,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                     className="submit-button"
                     disabled={submitting || !selectedBook || userBooks.length === 0}
                   >
-                    {submitting ? 'Proposing...' : 'Propose Trade'}
+                    {submitting ? 'Proposing...' : 'Send Trade Proposal'}
                   </button>
                 </div>
               </form>
