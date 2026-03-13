@@ -106,7 +106,7 @@ describe('TradeProposalModal', () => {
       />
     );
 
-    expect(screen.getByText('You want to trade for:')).toBeInTheDocument();
+    expect(screen.getByText('They offer')).toBeInTheDocument();
     expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
     expect(screen.getByText('by F. Scott Fitzgerald')).toBeInTheDocument();
     expect(screen.getByText('Good')).toBeInTheDocument();
@@ -228,7 +228,7 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
     expect(bookOption).toHaveClass('selected');
@@ -259,11 +259,11 @@ describe('TradeProposalModal', () => {
     });
 
     // Select a book
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -305,7 +305,7 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     expect(submitButton).toBeDisabled();
   });
 
@@ -336,11 +336,11 @@ describe('TradeProposalModal', () => {
     });
 
     // Select a book
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -378,10 +378,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -419,10 +419,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -460,10 +460,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -501,10 +501,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -542,10 +542,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -583,10 +583,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -624,10 +624,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -665,10 +665,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -707,10 +707,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -748,10 +748,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -799,10 +799,10 @@ describe('TradeProposalModal', () => {
       expect(screen.getByText('To Kill a Mockingbird')).toBeInTheDocument();
     });
 
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -921,7 +921,7 @@ describe('TradeProposalModal', () => {
     );
 
     await waitFor(() => {
-      const submitButton = screen.getByRole('button', { name: /propose trade/i });
+      const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
       expect(submitButton).toBeDisabled();
     });
   });
@@ -947,11 +947,11 @@ describe('TradeProposalModal', () => {
     });
 
     // Select a book
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -985,11 +985,11 @@ describe('TradeProposalModal', () => {
     });
 
     // Select a book
-    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-option');
+    const bookOption = screen.getByText('To Kill a Mockingbird').closest('.book-grid-item');
     fireEvent.click(bookOption);
 
     // Submit the form
-    const submitButton = screen.getByRole('button', { name: /propose trade/i });
+    const submitButton = screen.getByRole('button', { name: /send trade proposal/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
