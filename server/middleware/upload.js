@@ -25,7 +25,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 3 * 1024 * 1024, // 3MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit (Req 15.2)
     files: 1 // Only allow single file upload
   },
   fileFilter: fileFilter
@@ -35,7 +35,7 @@ const upload = multer({
 const uploadMultiple = multer({
   storage: storage,
   limits: {
-    fileSize: 3 * 1024 * 1024, // 3MB limit per file
+    fileSize: 5 * 1024 * 1024, // 5MB limit per file (Req 15.2)
     files: 2 // Allow up to 2 files (front and back)
   },
   fileFilter: fileFilter
@@ -53,7 +53,7 @@ const uploadSingleImage = (fieldName = 'image') => {
             return res.status(400).json({
               success: false,
               error: {
-                message: 'File too large. Maximum size is 3MB.',
+                message: 'File too large. Maximum size is 5MB.',
                 code: 'FILE_TOO_LARGE'
               }
             });
@@ -92,8 +92,14 @@ const uploadSingleImage = (fieldName = 'image') => {
       }
 
       try {
-        // Generate unique filename
+        // Generate unique filename using crypto for security (Req 15.2)
+        // Format: UUID-timestamp to prevent overwrites and ensure uniqueness
         const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}`;
+        
+        // Sanitize original filename by removing special characters (Req 15.2)
+        const sanitizedOriginalName = req.file.originalname
+          .replace(/[^a-zA-Z0-9.-]/g, '_')
+          .substring(0, 100); // Limit length
         
         // Upload to Cloudinary
         const result = await new Promise((resolve, reject) => {
@@ -121,6 +127,7 @@ const uploadSingleImage = (fieldName = 'image') => {
         // Add the Cloudinary URL to the request object
         req.imageUrl = result.secure_url;
         req.cloudinaryPublicId = result.public_id;
+        req.sanitizedFilename = sanitizedOriginalName;
 
         next();
       } catch (error) {
@@ -164,7 +171,7 @@ const uploadBookImages = () => {
             return res.status(400).json({
               success: false,
               error: {
-                message: 'File too large. Maximum size is 3MB per image.',
+                message: 'File too large. Maximum size is 5MB per image.',
                 code: 'FILE_TOO_LARGE'
               }
             });
@@ -216,7 +223,14 @@ const uploadBookImages = () => {
         // Upload cover image (legacy single-image field) if provided.
         // frontImage takes precedence when both are present.
         if (req.files.coverImage && req.files.coverImage[0] && !req.files.frontImage) {
+          // Generate unique filename using crypto for security (Req 15.2)
           const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}-cover`;
+          
+          // Sanitize original filename (Req 15.2)
+          const sanitizedName = req.files.coverImage[0].originalname
+            .replace(/[^a-zA-Z0-9.-]/g, '_')
+            .substring(0, 100);
+          
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -238,11 +252,19 @@ const uploadBookImages = () => {
 
           req.frontImageUrl = result.secure_url;
           req.frontImagePublicId = result.public_id;
+          req.sanitizedCoverFilename = sanitizedName;
         }
 
         // Upload front image if provided
         if (req.files.frontImage && req.files.frontImage[0]) {
+          // Generate unique filename using crypto for security (Req 15.2)
           const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}-front`;
+          
+          // Sanitize original filename (Req 15.2)
+          const sanitizedName = req.files.frontImage[0].originalname
+            .replace(/[^a-zA-Z0-9.-]/g, '_')
+            .substring(0, 100);
+          
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -264,11 +286,19 @@ const uploadBookImages = () => {
 
           req.frontImageUrl = result.secure_url;
           req.frontImagePublicId = result.public_id;
+          req.sanitizedFrontFilename = sanitizedName;
         }
 
         // Upload back image if provided
         if (req.files.backImage && req.files.backImage[0]) {
+          // Generate unique filename using crypto for security (Req 15.2)
           const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}-back`;
+          
+          // Sanitize original filename (Req 15.2)
+          const sanitizedName = req.files.backImage[0].originalname
+            .replace(/[^a-zA-Z0-9.-]/g, '_')
+            .substring(0, 100);
+          
           const result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               {
@@ -290,6 +320,7 @@ const uploadBookImages = () => {
 
           req.backImageUrl = result.secure_url;
           req.backImagePublicId = result.public_id;
+          req.sanitizedBackFilename = sanitizedName;
         }
 
         next();
