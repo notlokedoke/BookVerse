@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BookOpen } from 'lucide-react';
 import './LoginForm.css';
 
 const LoginForm = () => {
@@ -136,7 +137,9 @@ const LoginForm = () => {
       {/* Header */}
       <div className="login-header">
         <Link to="/" className="logo-container">
-          <div className="logo-icon">📚</div>
+          <div className="logo-icon">
+            <BookOpen size={24} strokeWidth={2.5} />
+          </div>
           <span className="logo-text">BookVerse</span>
         </Link>
       </div>

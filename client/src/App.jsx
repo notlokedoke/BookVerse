@@ -11,7 +11,7 @@ import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import BrowsePage from './pages/BrowsePage'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
+import RegisterPage from './pages/SignUpPage'
 import AuthCallbackPage from './pages/AuthCallbackPage'
 import CompleteProfilePage from './pages/CompleteProfilePage'
 import UserProfilePage from './pages/UserProfilePage'
@@ -26,6 +26,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
+import HelpCenterPage from './pages/HelpCenterPage'
 import NotFoundPage from './pages/NotFoundPage'
 import './App.css'
 
@@ -59,6 +60,7 @@ const AppContent = () => {
             <Route path="/safety" element={<SafetyGuidelinesPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/help" element={<HelpCenterPage />} />
             
             {/* Protected routes */}
             <Route 
