@@ -82,10 +82,14 @@ const generalLimiter = rateLimit({
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
 
-// CORS configuration
+// CORS configuration - whitelist frontend domain only and restrict methods
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Restrict to only necessary HTTP methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Restrict allowed headers
+  exposedHeaders: ['Content-Range', 'X-Content-Range'], // Headers that can be exposed to the browser
+  maxAge: 600 // Cache preflight requests for 10 minutes
 }));
 
 // Compression middleware
