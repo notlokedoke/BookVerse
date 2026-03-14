@@ -153,6 +153,7 @@ const uploadBookImages = () => {
   return async (req, res, next) => {
     // Apply multer middleware for multiple fields
     uploadMultiple.fields([
+      { name: 'coverImage', maxCount: 1 },
       { name: 'frontImage', maxCount: 1 },
       { name: 'backImage', maxCount: 1 }
     ])(req, res, async (err) => {
@@ -196,6 +197,10 @@ const uploadBookImages = () => {
       // Check if Cloudinary is configured
       if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
         // In test environment without Cloudinary, set mock URLs
+        if (req.files.coverImage) {
+          req.frontImageUrl = 'https://example.com/test-cover-image.jpg';
+          req.frontImagePublicId = 'test-cover-public-id';
+        }
         if (req.files.frontImage) {
           req.frontImageUrl = 'https://example.com/test-front-image.jpg';
           req.frontImagePublicId = 'test-front-public-id';
@@ -208,6 +213,33 @@ const uploadBookImages = () => {
       }
 
       try {
+        // Upload cover image (legacy single-image field) if provided.
+        // frontImage takes precedence when both are present.
+        if (req.files.coverImage && req.files.coverImage[0] && !req.files.frontImage) {
+          const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}-cover`;
+          const result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              {
+                resource_type: 'image',
+                public_id: `bookverse/books/${uniqueFilename}`,
+                folder: 'bookverse/books',
+                transformation: [
+                  { width: 800, height: 600, crop: 'limit' },
+                  { quality: 'auto' },
+                  { fetch_format: 'auto' }
+                ]
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            ).end(req.files.coverImage[0].buffer);
+          });
+
+          req.frontImageUrl = result.secure_url;
+          req.frontImagePublicId = result.public_id;
+        }
+
         // Upload front image if provided
         if (req.files.frontImage && req.files.frontImage[0]) {
           const uniqueFilename = `${crypto.randomUUID()}-${Date.now()}-front`;

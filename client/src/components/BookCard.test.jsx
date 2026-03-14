@@ -3,6 +3,17 @@ import { BrowserRouter } from 'react-router-dom';
 import BookCard from './BookCard';
 import { vi } from 'vitest';
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { _id: '507f191e810c19729de860ea', name: 'Test User' }
+  })
+}));
+
+vi.mock('./TradeProposalModal', () => ({
+  default: () => null
+}));
+
 // Mock data
 const mockBook = {
   _id: '507f1f77bcf86cd799439011',
@@ -45,7 +56,7 @@ const mockBookWithPrivateCity = {
 
 const renderWithRouter = (component) => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {component}
     </BrowserRouter>
   );

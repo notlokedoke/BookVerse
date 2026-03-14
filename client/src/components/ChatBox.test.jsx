@@ -99,7 +99,7 @@ describe('ChatBox', () => {
       
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/messages/trade/trade123',
+          expect.stringContaining('/api/messages/trade/trade123'),
           expect.objectContaining({
             headers: {
               'Authorization': 'Bearer fake-token'

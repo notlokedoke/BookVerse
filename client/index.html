@@ -5,8 +5,88 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BookVerse - Book Trading Platform</title>
+    <style>
+      /* Styles for noscript message */
+      .noscript-message {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        text-align: center;
+      }
+      .noscript-container {
+        max-width: 600px;
+        background-color: white;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      .noscript-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+      }
+      .noscript-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1rem;
+      }
+      .noscript-text {
+        font-size: 1.125rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+      .noscript-steps {
+        text-align: left;
+        background-color: #f9fafb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+      }
+      .noscript-steps h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.75rem;
+      }
+      .noscript-steps ol {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: #6b7280;
+      }
+      .noscript-steps li {
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+      }
+    </style>
   </head>
   <body>
+    <noscript>
+      <div class="noscript-message">
+        <div class="noscript-container">
+          <div class="noscript-icon">⚠️</div>
+          <h1 class="noscript-title">JavaScript Required</h1>
+          <p class="noscript-text">
+            BookVerse requires JavaScript to function properly. Please enable JavaScript 
+            in your browser settings to access the book trading platform.
+          </p>
+          <div class="noscript-steps">
+            <h3>How to enable JavaScript:</h3>
+            <ol>
+              <li>Open your browser settings or preferences</li>
+              <li>Find the "Privacy & Security" or "Content" section</li>
+              <li>Enable JavaScript or allow scripts to run</li>
+              <li>Refresh this page</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

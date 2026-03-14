@@ -537,8 +537,8 @@
 }
 
 .stat-link {
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
@@ -1007,8 +1007,8 @@
 }
 
 .quick-action {
-  width: 32px;
-  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
   background: rgba(255, 255, 255, 0.95);
   border: none;
   border-radius: 50%;

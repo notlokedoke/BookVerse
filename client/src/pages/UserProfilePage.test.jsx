@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { vi } from 'vitest';
 import axios from 'axios';
 import UserProfilePage from './UserProfilePage';
@@ -20,9 +20,22 @@ vi.mock('../context/AuthContext', () => ({
   useAuth: () => mockAuthContext,
 }));
 
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    showToast: vi.fn()
+  })
+}));
+
 const renderWithProviders = (component, initialEntries = ['/']) => {
   return render(
-    <MemoryRouter initialEntries={initialEntries}>
+    <MemoryRouter
+      initialEntries={initialEntries}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route path="/profile" element={component} />
         <Route path="/profile/:userId" element={component} />
@@ -154,9 +167,9 @@ describe('UserProfilePage', () => {
       expect(screen.getAllByText('Reviews')).toHaveLength(2); // One in stats, one in section header
     });
 
-    // Check if "No ratings yet" message is displayed
+    // Check if "No reviews yet" message is displayed
     await waitFor(() => {
-      expect(screen.getByText('No ratings yet')).toBeInTheDocument();
+      expect(screen.getByText('No reviews yet')).toBeInTheDocument();
     });
 
     // Verify RatingDisplay shows 0 ratings

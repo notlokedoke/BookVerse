@@ -3,9 +3,20 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import BookGrid from './BookGrid';
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { _id: 'test-user-1', name: 'Test User' }
+  })
+}));
+
+vi.mock('./TradeProposalModal', () => ({
+  default: () => null
+}));
+
 const renderWithRouter = (component) => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       {component}
     </BrowserRouter>
   );

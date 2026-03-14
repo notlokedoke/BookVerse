@@ -8,7 +8,8 @@ describe('SearchFilters', () => {
     filters: {
       city: '',
       genre: '',
-      author: ''
+      author: '',
+      title: ''
     },
     onFilterChange: vi.fn(),
     onClearFilters: vi.fn(),
@@ -24,9 +25,10 @@ describe('SearchFilters', () => {
   test('renders all filter inputs', () => {
     render(<SearchFilters {...defaultProps} />);
 
-    expect(screen.getByLabelText('City')).toBeInTheDocument();
-    expect(screen.getByLabelText('Genre')).toBeInTheDocument();
-    expect(screen.getByLabelText('Author')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('City')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Genre')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Author')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by book title...')).toBeInTheDocument();
   });
 
   test('displays filter values correctly', () => {
@@ -46,7 +48,7 @@ describe('SearchFilters', () => {
   test('calls onFilterChange when city input changes', () => {
     render(<SearchFilters {...defaultProps} />);
 
-    const cityInput = screen.getByLabelText('City');
+    const cityInput = screen.getByPlaceholderText('City');
     fireEvent.change(cityInput, { target: { value: 'Boston' } });
 
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('city', 'Boston');
@@ -55,7 +57,7 @@ describe('SearchFilters', () => {
   test('calls onFilterChange when genre input changes', () => {
     render(<SearchFilters {...defaultProps} />);
 
-    const genreInput = screen.getByLabelText('Genre');
+    const genreInput = screen.getByPlaceholderText('Genre');
     fireEvent.change(genreInput, { target: { value: 'Mystery' } });
 
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('genre', 'Mystery');
@@ -64,7 +66,7 @@ describe('SearchFilters', () => {
   test('calls onFilterChange when author input changes', () => {
     render(<SearchFilters {...defaultProps} />);
 
-    const authorInput = screen.getByLabelText('Author');
+    const authorInput = screen.getByPlaceholderText('Author');
     fireEvent.change(authorInput, { target: { value: 'John Smith' } });
 
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('author', 'John Smith');
@@ -73,19 +75,19 @@ describe('SearchFilters', () => {
   test('shows clear filters button when filters are active', () => {
     render(<SearchFilters {...defaultProps} hasActiveFilters={true} />);
 
-    expect(screen.getByText('Clear Filters')).toBeInTheDocument();
+    expect(screen.getByTitle('Clear all filters')).toBeInTheDocument();
   });
 
   test('hides clear filters button when no filters are active', () => {
     render(<SearchFilters {...defaultProps} hasActiveFilters={false} />);
 
-    expect(screen.queryByText('Clear Filters')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Clear all filters')).not.toBeInTheDocument();
   });
 
   test('calls onClearFilters when clear button is clicked', () => {
     render(<SearchFilters {...defaultProps} hasActiveFilters={true} />);
 
-    const clearButton = screen.getByText('Clear Filters');
+    const clearButton = screen.getByTitle('Clear all filters');
     fireEvent.click(clearButton);
 
     expect(defaultProps.onClearFilters).toHaveBeenCalled();
@@ -103,10 +105,10 @@ describe('SearchFilters', () => {
     expect(screen.getByText('1 book found')).toBeInTheDocument();
   });
 
-  test('displays filtered indicator when filters are active', () => {
+  test('displays results count when filters are active', () => {
     render(<SearchFilters {...defaultProps} resultsCount={10} hasActiveFilters={true} />);
 
-    expect(screen.getByText('10 books found (filtered)')).toBeInTheDocument();
+    expect(screen.getByText('10 books found')).toBeInTheDocument();
   });
 
   test('displays no books found message when results count is zero', () => {

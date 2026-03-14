@@ -1,6 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '../context/AuthContext';
 import BookListingForm from './BookListingForm';
 import { vi } from 'vitest';
 import axios from 'axios';
@@ -18,18 +17,20 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock the AuthContext
-const mockAuthContext = {
-  user: { id: '1', name: 'Test User' },
-  isAuthenticated: true
-};
+const mockUseAuth = vi.fn();
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => mockUseAuth()
+}));
 
 const renderWithProviders = (component) => {
+  mockUseAuth.mockReturnValue({
+    user: { _id: '1', name: 'Test User' },
+    isAuthenticated: true
+  });
+
   return render(
-    <BrowserRouter>
-      <AuthProvider value={mockAuthContext}>
-        {component}
-      </AuthProvider>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {component}
     </BrowserRouter>
   );
 };
@@ -47,7 +48,8 @@ describe('BookListingForm', () => {
     expect(screen.getByLabelText(/author/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/condition/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/genre/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/book photo/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/front photo/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/back photo/i)).toBeInTheDocument();
   });
 
   test('shows validation errors for empty required fields', async () => {
@@ -61,7 +63,7 @@ describe('BookListingForm', () => {
       expect(screen.getByText(/author is required/i)).toBeInTheDocument();
       expect(screen.getByText(/condition is required/i)).toBeInTheDocument();
       expect(screen.getByText(/genre is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/book photo is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/at least one image is required/i)).toBeInTheDocument();
     });
   });
 
@@ -114,7 +116,7 @@ describe('BookListingForm', () => {
   test('validates image file type', async () => {
     renderWithProviders(<BookListingForm />);
     
-    const fileInput = screen.getByLabelText(/book photo/i);
+    const fileInput = screen.getByLabelText(/front photo/i);
     const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
     
     fireEvent.change(fileInput, { target: { files: [invalidFile] } });
@@ -127,21 +129,21 @@ describe('BookListingForm', () => {
   test('validates image file size', async () => {
     renderWithProviders(<BookListingForm />);
     
-    const fileInput = screen.getByLabelText(/book photo/i);
-    // Create a file larger than 5MB
-    const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+    const fileInput = screen.getByLabelText(/front photo/i);
+    // Create a file larger than 3MB
+    const largeFile = new File(['x'.repeat(4 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
     
     fireEvent.change(fileInput, { target: { files: [largeFile] } });
 
     await waitFor(() => {
-      expect(screen.getByText(/image file must be less than 5mb/i)).toBeInTheDocument();
+      expect(screen.getByText(/image file must be less than 3mb/i)).toBeInTheDocument();
     });
   });
 
   test('shows image preview when valid image is selected', async () => {
     renderWithProviders(<BookListingForm />);
     
-    const fileInput = screen.getByLabelText(/book photo/i);
+    const fileInput = screen.getByLabelText(/front photo/i);
     const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
     
     // Mock FileReader
@@ -156,10 +158,12 @@ describe('BookListingForm', () => {
     fireEvent.change(fileInput, { target: { files: [validFile] } });
     
     // Simulate FileReader onload
-    mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+    act(() => {
+      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+    });
 
     await waitFor(() => {
-      const previewImage = screen.getByAltText(/book preview/i);
+      const previewImage = screen.getByAltText(/front preview/i);
       expect(previewImage).toBeInTheDocument();
       expect(previewImage).toHaveAttribute('src', 'data:image/jpeg;base64,test');
     });
@@ -168,7 +172,7 @@ describe('BookListingForm', () => {
   test('clears image error when valid image is selected', async () => {
     renderWithProviders(<BookListingForm />);
     
-    const fileInput = screen.getByLabelText(/book photo/i);
+    const fileInput = screen.getByLabelText(/front photo/i);
     
     // First, trigger an error with invalid file
     const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
@@ -219,7 +223,7 @@ describe('BookListingForm', () => {
       expect(screen.getByDisplayValue('A classic American novel')).toBeInTheDocument();
     });
 
-    expect(axios.post).toHaveBeenCalledWith('/api/books/isbn/9780743273565');
+    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/books/isbn/9780743273565'));
   });
 
   test('shows error when ISBN lookup fails', async () => {
@@ -249,7 +253,7 @@ describe('BookListingForm', () => {
       expect(screen.getByText('No book found with this ISBN')).toBeInTheDocument();
     });
 
-    expect(axios.post).toHaveBeenCalledWith('/api/books/isbn/9999999999999');
+    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/books/isbn/9999999999999'));
   });
 
   test('disables lookup button when ISBN is empty', () => {
@@ -294,7 +298,7 @@ describe('BookListingForm', () => {
     const authorInput = screen.getByLabelText(/author/i);
     const conditionSelect = screen.getByLabelText(/condition/i);
     const genreSelect = screen.getByLabelText(/genre/i);
-    const fileInput = screen.getByLabelText(/book photo/i);
+    const fileInput = screen.getByLabelText(/front photo/i);
     
     fireEvent.change(titleInput, { target: { value: 'Test Book' } });
     fireEvent.change(authorInput, { target: { value: 'Test Author' } });
