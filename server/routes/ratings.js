@@ -1,29 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const { body, param, validationResult } = require('express-validator');
 const Rating = require('../models/Rating');
 const Trade = require('../models/Trade');
 const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
 
 /**
  * @route   GET /api/ratings/user/:userId
  * @desc    Get all ratings for a specific user
  * @access  Public
  */
-router.get('/user/:userId', async (req, res) => {
+router.get('/user/:userId', [
+  param('userId')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid user ID format')
+], async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    // Validate user ID format
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid user ID format',
-          code: 'INVALID_USER_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { userId } = req.params;
 
     // Verify user exists
     const user = await User.findById(userId);
@@ -65,20 +73,27 @@ router.get('/user/:userId', async (req, res) => {
  * @desc    Get rating for a specific trade by the authenticated user
  * @access  Private (requires authentication)
  */
-router.get('/trade/:tradeId', authenticateToken, async (req, res) => {
+router.get('/trade/:tradeId', [
+  authenticateToken,
+  param('tradeId')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
   try {
-    const { tradeId } = req.params;
-
-    // Validate trade ID format
-    if (!tradeId.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { tradeId } = req.params;
 
     // Find rating by trade and authenticated user
     const rating = await Rating.findOne({
@@ -121,75 +136,51 @@ router.get('/trade/:tradeId', authenticateToken, async (req, res) => {
  * @desc    Submit a rating for a completed trade
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', [
+  authenticateToken,
+  sanitizeInput,
+  body('trade')
+    .trim()
+    .notEmpty()
+    .withMessage('Trade ID is required')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format'),
+  body('stars')
+    .notEmpty()
+    .withMessage('Stars rating is required')
+    .isInt({ min: 1, max: 5 })
+    .withMessage('Stars must be an integer between 1 and 5'),
+  body('comment')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Comment must not exceed 1000 characters')
+    .customSanitizer(sanitizeString),
+  // Custom validation for comment requirement
+  body('comment').custom((value, { req }) => {
+    const stars = parseInt(req.body.stars);
+    if (stars <= 3 && (!value || value.trim().length === 0)) {
+      throw new Error('Comment is required for ratings of 3 stars or lower');
+    }
+    return true;
+  })
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { trade: tradeId, stars, comment } = req.body;
-
-    // Validate required fields
-    if (!tradeId) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Trade ID is required',
-          code: 'MISSING_TRADE_ID'
-        }
-      });
-    }
-
-    if (stars === undefined || stars === null || stars === '') {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Stars rating is required',
-          code: 'MISSING_STARS'
-        }
-      });
-    }
-
-    // Validate stars is a number between 1 and 5
-    const starsNum = Number(stars);
-    if (isNaN(starsNum) || starsNum < 1 || starsNum > 5) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Stars must be a number between 1 and 5',
-          code: 'INVALID_STARS'
-        }
-      });
-    }
-
-    // Validate stars is an integer
-    if (!Number.isInteger(starsNum)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Stars must be an integer value',
-          code: 'INVALID_STARS'
-        }
-      });
-    }
-
-    // Validate comment is required for stars <= 3
-    if (starsNum <= 3 && (!comment || comment.trim().length === 0)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Comment is required for ratings of 3 stars or lower',
-          code: 'COMMENT_REQUIRED'
-        }
-      });
-    }
-
-    // Validate trade ID format
-    if (!tradeId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
-        }
-      });
-    }
+    const starsNum = parseInt(stars);
 
     // Fetch trade with populated references
     const trade = await Trade.findById(tradeId)

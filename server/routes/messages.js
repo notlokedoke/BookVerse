@@ -1,61 +1,49 @@
 const express = require('express');
 const router = express.Router();
+const { body, param, validationResult } = require('express-validator');
 const Message = require('../models/Message');
 const Trade = require('../models/Trade');
 const Notification = require('../models/Notification');
 const { authenticateToken } = require('../middleware/auth');
+const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
 
 /**
  * @route   POST /api/messages
  * @desc    Send a message in a trade chat
  * @access  Private (requires authentication)
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', [
+  authenticateToken,
+  sanitizeInput,
+  body('trade')
+    .trim()
+    .notEmpty()
+    .withMessage('Trade ID is required')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format'),
+  body('content')
+    .trim()
+    .notEmpty()
+    .withMessage('Message content is required')
+    .isLength({ min: 1, max: 1000 })
+    .withMessage('Message content must be between 1 and 1000 characters')
+    .customSanitizer(sanitizeString)
+], async (req, res) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
     const { trade, content } = req.body;
-
-    // Validate required fields
-    if (!trade || !content) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Trade ID and message content are required',
-          code: 'MISSING_REQUIRED_FIELDS'
-        }
-      });
-    }
-
-    // Validate trade ID format
-    if (!trade.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
-        }
-      });
-    }
-
-    // Validate content length
-    if (content.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Message content cannot be empty',
-          code: 'EMPTY_CONTENT'
-        }
-      });
-    }
-
-    if (content.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Message content cannot exceed 1000 characters',
-          code: 'CONTENT_TOO_LONG'
-        }
-      });
-    }
 
     // Fetch trade to validate it exists and user is part of it
     const tradeDoc = await Trade.findById(trade)
@@ -164,20 +152,27 @@ router.post('/', authenticateToken, async (req, res) => {
  * @desc    Get all messages for a trade
  * @access  Private (requires authentication)
  */
-router.get('/trade/:tradeId', authenticateToken, async (req, res) => {
+router.get('/trade/:tradeId', [
+  authenticateToken,
+  param('tradeId')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
   try {
-    const { tradeId } = req.params;
-
-    // Validate trade ID format
-    if (!tradeId.match(/^[0-9a-fA-F]{24}$/)) {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Invalid trade ID format',
-          code: 'INVALID_TRADE_ID'
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
         }
       });
     }
+
+    const { tradeId } = req.params;
 
     // Fetch trade to validate it exists and user is part of it
     const tradeDoc = await Trade.findById(tradeId);
