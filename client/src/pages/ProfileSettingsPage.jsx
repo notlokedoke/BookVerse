@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import PrivacyToggle from '../components/PrivacyToggle';
 import CitySelector from '../components/common/CitySelector';
-import { User, Shield, Lock, Bell, AlertTriangle, X, Eye, EyeOff } from 'lucide-react';
+import { User, Shield, Lock, Bell, AlertTriangle, X, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 import './ProfileSettingsPage.css';
 
 const ProfileSettingsPage = () => {
@@ -46,6 +46,33 @@ const ProfileSettingsPage = () => {
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
   const [deleteError, setDeleteError] = useState('');
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+
+  const handleVerifyEmail = async () => {
+    setVerifyingEmail(true);
+    try {
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user.email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || 'Verification email sent successfully!');
+      } else {
+        toast.error(data.error?.message || 'Failed to send verification email');
+      }
+    } catch (err) {
+      toast.error('An error occurred. Please try again.');
+      console.error('Verify email error:', err);
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -625,16 +652,40 @@ const ProfileSettingsPage = () => {
                       )}
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group email-verification-group">
                       <label htmlFor="email">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        value={user?.email || ''}
-                        disabled
-                        className="disabled-input"
-                      />
-                      <span className="input-hint">Email cannot be changed</span>
+                      <div className="email-input-wrapper">
+                        <input
+                          type="email"
+                          id="email"
+                          value={user?.email || ''}
+                          disabled
+                          className="disabled-input"
+                        />
+                        {user && !user.isOAuthUser && (
+                          <div className={`verification-badge ${user.emailVerified ? 'verified' : 'unverified'}`}>
+                            {user.emailVerified ? (
+                              <><CheckCircle size={14} /> Verified</>
+                            ) : (
+                              <><AlertCircle size={14} /> Unverified</>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="email-footer">
+                        <span className="input-hint">Email cannot be changed</span>
+                        {user && !user.isOAuthUser && !user.emailVerified && (
+                          <button 
+                            type="button" 
+                            className="btn-verify-email"
+                            onClick={handleVerifyEmail}
+                            disabled={verifyingEmail}
+                          >
+                            {verifyingEmail ? 'Sending...' : 'Send Verification Link'}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="form-group">

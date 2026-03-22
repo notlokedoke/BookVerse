@@ -54,7 +54,7 @@ app.use(helmet({
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per 15 minutes per IP
+  max: 10, // 10 requests per 15 minutes per IP
   message: {
     success: false,
     error: {
@@ -66,7 +66,14 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // Skip rate limiting in test environment
-    return process.env.NODE_ENV === 'test';
+    if (process.env.NODE_ENV === 'test') {
+      return true;
+    }
+    // Skip rate limiting for OAuth callbacks (they're already authenticated by Google)
+    if (req.path.includes('/google/callback')) {
+      return true;
+    }
+    return false;
   }
 });
 
