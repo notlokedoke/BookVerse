@@ -111,7 +111,9 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
               by {author}
             </p>
             <div className="book-meta">
-              <span className="book-genre">{genre}</span>
+              <span className="book-genre">
+                {Array.isArray(genre) ? genre.join(', ') : genre}
+              </span>
               {createdAt && (
                 <span className="book-date">Listed {formatDate(createdAt)}</span>
               )}

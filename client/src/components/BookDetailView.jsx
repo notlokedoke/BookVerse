@@ -252,7 +252,13 @@ const BookDetailView = () => {
             <p className="book-author">by {book.author}</p>
             
             <div className="book-meta-tags">
-              <span className="genre-tag">{book.genre}</span>
+              {Array.isArray(book.genre) ? (
+                book.genre.map((g, index) => (
+                  <span key={index} className="genre-tag">{g}</span>
+                ))
+              ) : (
+                <span className="genre-tag">{book.genre}</span>
+              )}
               {book.isbn && (
                 <span className="isbn-tag">ISBN: {book.isbn}</span>
               )}
@@ -269,8 +275,8 @@ const BookDetailView = () => {
             </div>
 
             <div className="detail-item">
-              <label>Genre</label>
-              <span>{book.genre}</span>
+              <label>Genre{Array.isArray(book.genre) && book.genre.length > 1 ? 's' : ''}</label>
+              <span>{Array.isArray(book.genre) ? book.genre.join(', ') : book.genre}</span>
             </div>
 
             {book.publicationYear && (

@@ -75,6 +75,27 @@ router.post('/isbn/:isbn', async (req, res) => {
     // Extract book information from the first result
     const bookInfo = response.data.items[0].volumeInfo;
 
+    // Get the highest resolution image available from Google Books
+    // Priority: extraLarge > large > medium > small > thumbnail
+    let coverImage = null;
+    if (bookInfo.imageLinks) {
+      coverImage = 
+        bookInfo.imageLinks.extraLarge ||
+        bookInfo.imageLinks.large ||
+        bookInfo.imageLinks.medium ||
+        bookInfo.imageLinks.small ||
+        bookInfo.imageLinks.thumbnail ||
+        null;
+      
+      // Remove zoom parameter and edge effects to get higher quality
+      if (coverImage) {
+        coverImage = coverImage
+          .replace('&edge=curl', '')  // Remove curl effect
+          .replace('zoom=1', 'zoom=0') // Remove zoom restriction
+          .replace('http://', 'https://'); // Use HTTPS
+      }
+    }
+
     // Format the response data
     const formattedBookData = {
       title: bookInfo.title || '',
@@ -86,7 +107,7 @@ router.post('/isbn/:isbn', async (req, res) => {
       description: bookInfo.description || '',
       pageCount: bookInfo.pageCount || null,
       categories: bookInfo.categories || [],
-      thumbnail: bookInfo.imageLinks?.thumbnail || null
+      thumbnail: coverImage
     };
 
     res.status(200).json({
@@ -207,12 +228,32 @@ router.get('/search-external', async (req, res) => {
         isbn = isbn13 ? isbn13.identifier : (isbn10 ? isbn10.identifier : null);
       }
 
+      // Get the highest resolution image available
+      let coverImage = null;
+      if (bookInfo.imageLinks) {
+        coverImage = 
+          bookInfo.imageLinks.extraLarge ||
+          bookInfo.imageLinks.large ||
+          bookInfo.imageLinks.medium ||
+          bookInfo.imageLinks.small ||
+          bookInfo.imageLinks.thumbnail ||
+          null;
+        
+        // Remove zoom parameter and edge effects to get higher quality
+        if (coverImage) {
+          coverImage = coverImage
+            .replace('&edge=curl', '')
+            .replace('zoom=1', 'zoom=0')
+            .replace('http://', 'https://');
+        }
+      }
+
       return {
         id: item.id,
         title: bookInfo.title || '',
         author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
         isbn: isbn,
-        thumbnail: bookInfo.imageLinks?.thumbnail || null,
+        thumbnail: coverImage,
         publishedDate: bookInfo.publishedDate || null
       };
     });
@@ -282,13 +323,21 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
     .withMessage('Condition is required')
     .isIn(['New', 'Like New', 'Good', 'Fair', 'Poor'])
     .withMessage('Condition must be one of: New, Like New, Good, Fair, Poor'),
-  body('genre')
-    .trim()
-    .notEmpty()
-    .withMessage('Genre is required')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Genre must be between 1 and 100 characters')
-    .customSanitizer(sanitizeString),
+  body('genres')
+    .custom((value) => {
+      // Parse JSON string if it's a string
+      const genres = typeof value === 'string' ? JSON.parse(value) : value;
+      if (!Array.isArray(genres) || genres.length === 0) {
+        throw new Error('At least one genre is required');
+      }
+      if (genres.some(g => typeof g !== 'string' || g.trim().length === 0)) {
+        throw new Error('All genres must be non-empty strings');
+      }
+      if (genres.some(g => g.length > 100)) {
+        throw new Error('Each genre must not exceed 100 characters');
+      }
+      return true;
+    }),
   body('isbn')
     .optional({ checkFalsy: true })
     .trim()
@@ -327,7 +376,7 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Please provide all required fields: title, author, condition, and genre',
+          message: 'Please provide all required fields: title, author, condition, and genres',
           code: 'MISSING_REQUIRED_FIELDS',
           details: errors.array()
         }
@@ -359,7 +408,13 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
   next();
 }, async (req, res) => {
   try {
-    const { title, author, condition, genre, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
+    const { title, author, condition, genres, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
+
+    // Parse genres if it's a JSON string
+    const genresArray = typeof genres === 'string' ? JSON.parse(genres) : genres;
+    
+    // Sanitize each genre
+    const sanitizedGenres = genresArray.map(g => sanitizeString(g.trim()));
 
     // Determine primary image URL (prefer front, then Google Books, then back)
     const imageUrl = req.frontImageUrl || googleBooksImageUrl || req.backImageUrl;
@@ -370,7 +425,7 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
       title: sanitizeString(title.trim()),
       author: sanitizeString(author.trim()),
       condition,
-      genre: sanitizeString(genre.trim()),
+      genre: sanitizedGenres,
       imageUrl: imageUrl,
       googleBooksImageUrl: googleBooksImageUrl || null,
       frontImageUrl: req.frontImageUrl || null,
@@ -497,7 +552,7 @@ router.get('/', async (req, res) => {
       query.title = new RegExp(title, 'i'); // Case-insensitive partial match
     }
     if (genre) {
-      query.genre = genre; // Exact genre match
+      query.genre = genre; // Match if genre is in the array (MongoDB handles this automatically)
     }
     if (author) {
       query.author = new RegExp(author, 'i'); // Case-insensitive partial match
@@ -665,7 +720,7 @@ router.get('/user/:userId', async (req, res) => {
 router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, author, condition, genre, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
+    const { title, author, condition, genres, isbn, description, publicationYear, publisher, googleBooksImageUrl } = req.body;
 
     // Validate book ID format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
@@ -723,14 +778,26 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
       });
     }
 
-    if (genre !== undefined && (!genre || genre.trim().length === 0)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Genre cannot be empty',
-          code: 'INVALID_GENRE'
-        }
-      });
+    if (genres !== undefined) {
+      const genresArray = typeof genres === 'string' ? JSON.parse(genres) : genres;
+      if (!Array.isArray(genresArray) || genresArray.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'At least one genre is required',
+            code: 'INVALID_GENRE'
+          }
+        });
+      }
+      if (genresArray.some(g => typeof g !== 'string' || g.trim().length === 0)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'All genres must be non-empty strings',
+            code: 'INVALID_GENRE'
+          }
+        });
+      }
     }
 
     // Validate condition if provided
@@ -753,7 +820,10 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
     if (title !== undefined) updateData.title = sanitizeString(title.trim());
     if (author !== undefined) updateData.author = sanitizeString(author.trim());
     if (condition !== undefined) updateData.condition = condition;
-    if (genre !== undefined) updateData.genre = sanitizeString(genre.trim());
+    if (genres !== undefined) {
+      const genresArray = typeof genres === 'string' ? JSON.parse(genres) : genres;
+      updateData.genre = genresArray.map(g => sanitizeString(g.trim()));
+    }
     if (isbn !== undefined) {
       const trimmedIsbn = isbn.trim();
       updateData.isbn = trimmedIsbn === '' ? null : sanitizeString(trimmedIsbn);
