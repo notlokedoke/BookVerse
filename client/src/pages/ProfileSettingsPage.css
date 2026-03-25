@@ -1,7 +1,7 @@
 /* Settings Page Layout */
 .settings-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f9f4 0%, #e8f5e9 50%, #ffffff 100%);
+  background: #ECF0F1;
   padding: 2rem 0 4rem;
 }
 
@@ -37,11 +37,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 2px solid #fbbf24;
-  border-radius: 1rem;
+  background: #FFF8E1;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
   animation: slideDown 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 @keyframes slideDown {
@@ -111,12 +111,10 @@
 }
 
 .settings-nav {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(46, 204, 113, 0.1);
-  border-radius: 1.25rem;
+  background: #FFFFFF;
+  border-radius: 12px;
   padding: 0.75rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .nav-item {
@@ -157,9 +155,9 @@
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+  background: #2ECC71;
   color: white;
-  box-shadow: 0 4px 16px rgba(46, 204, 113, 0.35), 0 2px 8px rgba(46, 204, 113, 0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
   transform: translateX(0);
 }
 
@@ -266,21 +264,18 @@
   flex: 1;
 }
 
-/* Glass Card */
+/* Material Card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(46, 204, 113, 0.08);
-  border-radius: 1.25rem;
+  background: #FFFFFF;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
   margin-bottom: 1.5rem;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-color: rgba(46, 204, 113, 0.15);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
 }
 
 /* Form Groups */
@@ -541,9 +536,8 @@
   align-items: center;
   gap: 0.875rem;
   padding: 1.125rem 1.25rem;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid #bfdbfe;
-  border-radius: 0.875rem;
+  background: #E3F2FD;
+  border-radius: 8px;
   color: #1e40af;
   font-size: 0.9375rem;
   font-weight: 500;
@@ -589,14 +583,15 @@
 }
 
 .btn-save {
-  background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+  background: #2ECC71;
   color: white;
-  box-shadow: 0 4px 16px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .btn-save:hover:not(:disabled) {
-  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
   transform: translateY(-2px);
+  background: #27AE60;
 }
 
 .btn-save:active:not(:disabled) {
@@ -621,14 +616,15 @@
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: #E74C3C;
   color: white;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .btn-danger:hover {
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
   transform: translateY(-2px);
+  background: #C0392B;
 }
 
 /* Danger Zone */
@@ -668,7 +664,6 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -846,7 +841,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2ECC71 0%, #1abc9c 100%);
+  background: #2ECC71;
   color: white;
   display: flex;
   align-items: center;
@@ -919,7 +914,6 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;

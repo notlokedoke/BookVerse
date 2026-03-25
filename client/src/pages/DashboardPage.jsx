@@ -349,7 +349,7 @@ const DashboardPage = () => {
           {/* Quick Stats */}
           <section className="stats-section">
             <div className="stats-grid">
-              <Link to="/trades?status=pending" className="stat-card gradient-pink">
+              <Link to="/trades?status=pending" className="stat-card theme-neutral">
                 <div className="stat-icon-container">
                   <Clock size={24} />
                 </div>
@@ -362,7 +362,7 @@ const DashboardPage = () => {
                 )}
               </Link>
 
-              <Link to="/trades?status=active" className="stat-card gradient-amber">
+              <Link to="/trades?status=active" className="stat-card theme-secondary">
                 <div className="stat-icon-container">
                   <RefreshCw size={24} />
                 </div>
@@ -372,7 +372,7 @@ const DashboardPage = () => {
                 </div>
               </Link>
 
-              <Link to="/trades?status=completed" className="stat-card gradient-blue">
+              <Link to="/trades?status=completed" className="stat-card theme-primary">
                 <div className="stat-icon-container">
                   <CheckCircle size={24} />
                 </div>
@@ -382,7 +382,7 @@ const DashboardPage = () => {
                 </div>
               </Link>
 
-              <Link to="/my-books" className="stat-card gradient-purple">
+              <Link to="/my-books" className="stat-card theme-accent">
                 <div className="stat-icon-container">
                   <BookOpen size={24} />
                 </div>

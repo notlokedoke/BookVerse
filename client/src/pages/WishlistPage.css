@@ -1,7 +1,7 @@
 /* Wishlist Page */
 .wishlist-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f9f4 0%, #ffffff 50%);
+  background: #ECF0F1;
   padding: 2rem 0;
 }
 
@@ -32,7 +32,7 @@
 .header-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #2ECC71 0%, #1abc9c 100%);
+  background: #2ECC71;
   border-radius: 1rem;
   display: flex;
   align-items: center;
