@@ -71,6 +71,16 @@
 }
 
 /* Genre Filter Multi-Select */
+.genre-filter-panel {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  margin-top: 1rem;
+}
+
+/* Legacy support - can be removed if not used elsewhere */
 .genre-dropdown-panel {
   background: white;
   border-radius: 1rem;

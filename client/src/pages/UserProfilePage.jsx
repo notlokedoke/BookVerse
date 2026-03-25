@@ -39,8 +39,11 @@ const UserProfilePage = () => {
       const booksRes = await axios.get(`/api/books/user/${targetUserId}`);
       setUserBooks(booksRes.data.data?.books || []);
 
-      // Fetch wishlist
-      const wishlistRes = await axios.get(`/api/wishlist/user/${targetUserId}`);
+      // Fetch wishlist (public for others, all for own profile)
+      const wishlistEndpoint = isOwnProfile 
+        ? `/api/wishlist/user/${targetUserId}`
+        : `/api/wishlist/user/${targetUserId}/public`;
+      const wishlistRes = await axios.get(wishlistEndpoint);
       setWishlist(wishlistRes.data.data || []);
 
       // Fetch ratings
@@ -245,8 +248,8 @@ const UserProfilePage = () => {
               </div>
             </section>
 
-            {/* Wishlist Section - Only for own profile */}
-            {isOwnProfile && (
+            {/* Wishlist Section - Show for own profile or if user has public wishlist items */}
+            {(isOwnProfile || wishlist.length > 0) && (
               <section className="profile-section">
                 <div className="section-header-inline">
                   <h2 className="section-title">
@@ -254,6 +257,9 @@ const UserProfilePage = () => {
                     Wishlist
                     <span className="count-badge">{wishlist.length}</span>
                   </h2>
+                  {!isOwnProfile && wishlist.length > 0 && (
+                    <span className="wishlist-hint">Books this user is looking for</span>
+                  )}
                 </div>
                 
                 <div className="section-content">
@@ -270,7 +276,7 @@ const UserProfilePage = () => {
                     </div>
                   ) : (
                     <div className="empty-state-modern">
-                      <BookOpen size={48} />
+                      <Heart size={48} />
                       <h3>Your wishlist is empty</h3>
                       <p>Add books you're looking for to help others find matches</p>
                       <Link to="/wishlist/create" className="btn-primary-modern">

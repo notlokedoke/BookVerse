@@ -4,14 +4,14 @@
 
 /* CSS Custom Properties */
 :root {
-  --color-accent: #1ABC9C;
-  --color-primary: #2ECC71;
+  --color-accent: var(--color-primary);
+  --color-primary: var(--color-primary);
   --color-warning: #F39C12;
-  --color-secondary: #2C3E50;
-  --primary: #2ECC71;
-  --primary-dark: #27AE60;
-  --primary-light: #E8F8F0;
-  --text-primary: #2C3E50;
+  --color-secondary: var(--color-secondary);
+  --primary: var(--color-primary, #1ABC9C);
+  --primary-dark: var(--color-primary-dark, #16A085);
+  --primary-light: var(--color-primary-10, rgba(26, 188, 156, 0.1));
+  --text-primary: var(--color-secondary);
   --text-secondary: #7F8C8D;
   --text-muted: #95A5A6;
   --border-light: #E8ECEF;
@@ -23,7 +23,7 @@
 
 .my-books-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
 }
 
 .my-books-container {
@@ -116,7 +116,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.75rem 2rem;
-  background: #2C3E50;
+  background: var(--color-secondary);
   border-radius: 12px;
   margin-bottom: 2rem;
   color: white;
@@ -286,15 +286,15 @@
 }
 
 .stat-card.gradient-blue {
-  border-left-color: #1ABC9C;
+  border-left-color: var(--color-primary);
 }
 
 .stat-card.gradient-green {
-  border-left-color: #2ECC71;
+  border-left-color: var(--color-primary);
 }
 
 .stat-card.gradient-purple {
-  border-left-color: #2C3E50;
+  border-left-color: var(--color-secondary);
 }
 
 .stat-icon-container {
@@ -311,7 +311,7 @@
 
 .stat-card.gradient-purple .stat-icon-container {
   background: #EBF0F5;
-  color: #2C3E50;
+  color: var(--color-secondary);
 }
 
 .stat-content {
@@ -553,6 +553,105 @@
   border-radius: 12px;
   box-shadow: var(--elevation-1);
   transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   Pagination
+   =================================== */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--elevation-1);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(.disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.pagination-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.page-number {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-number:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.page-number.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.pagination-ellipsis {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* ===================================

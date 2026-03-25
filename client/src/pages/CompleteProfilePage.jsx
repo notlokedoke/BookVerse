@@ -287,7 +287,7 @@ const CompleteProfilePage = () => {
                 placeholder="e.g., New York, NY"
               />
               <small className="field-hint">
-                We use your location to connect you with nearby book traders
+                We use your city to connect you with local book traders in your area
               </small>
             </div>
 

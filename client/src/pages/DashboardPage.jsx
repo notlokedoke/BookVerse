@@ -25,6 +25,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import FloatingActionButton from '../components/FloatingActionButton';
+import RecommendedBooks from '../components/RecommendedBooks';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
@@ -44,6 +45,11 @@ const DashboardPage = () => {
   const [recentBooks, setRecentBooks] = useState([]);
   const [allTrades, setAllTrades] = useState([]);
   const [userBooks, setUserBooks] = useState([]);
+  const [wishlistStats, setWishlistStats] = useState({
+    totalItems: 0,
+    matchesFound: 0,
+    recentMatches: []
+  });
 
   // Get time-based greeting
   const getGreeting = () => {
@@ -172,14 +178,32 @@ const DashboardPage = () => {
         trade => trade.status === 'completed'
       );
 
-      // Fetch user's books
-      const booksRes = await axios.get(`/api/books/user/${user._id}`);
+      // Fetch user's books (with high limit to get all books)
+      const booksRes = await axios.get(`/api/books/user/${user._id}?limit=100&includeUnavailable=true`);
       const books = booksRes.data.data?.books || [];
       setUserBooks(books);
 
       // Fetch recent books from all users (for recommendations)
       const allBooksRes = await axios.get('/api/books?limit=8');
       const allBooks = allBooksRes.data.data?.books || [];
+
+      // Fetch wishlist data
+      const wishlistRes = await axios.get('/api/wishlist', config);
+      const wishlistItems = wishlistRes.data.data || [];
+
+      // Fetch wishlist matches
+      const matchesRes = await axios.get('/api/wishlist/matches', config);
+      const matches = matchesRes.data.data || [];
+
+      // Calculate wishlist stats
+      const totalMatches = matches.reduce((acc, m) => acc + m.matches.length, 0);
+      const recentMatches = matches.slice(0, 3); // Get first 3 for display
+
+      setWishlistStats({
+        totalItems: wishlistItems.length,
+        matchesFound: totalMatches,
+        recentMatches: recentMatches
+      });
 
       // Update stats
       setStats({
@@ -391,8 +415,71 @@ const DashboardPage = () => {
                   <p className="stat-label">Books Listed</p>
                 </div>
               </Link>
+
+              <Link to="/wishlist" className="stat-card theme-wishlist">
+                <div className="stat-icon-container">
+                  <Heart size={24} />
+                </div>
+                <div className="stat-content">
+                  <p className="stat-value">{wishlistStats.totalItems}</p>
+                  <p className="stat-label">Wishlist</p>
+                </div>
+                {wishlistStats.matchesFound > 0 && (
+                  <span className="stat-badge pulse">{wishlistStats.matchesFound}</span>
+                )}
+              </Link>
             </div>
           </section>
+
+          {/* Wishlist Matches Widget */}
+          {wishlistStats.matchesFound > 0 && (
+            <section className="wishlist-matches-section glass-card">
+              <div className="section-header">
+                <h2>
+                  <Heart size={18} /> Wishlist Matches
+                </h2>
+                <Link to="/wishlist" className="view-all-link">
+                  View All <ArrowRight size={14} />
+                </Link>
+              </div>
+              <p className="wishlist-matches-subtitle">
+                {wishlistStats.matchesFound} {wishlistStats.matchesFound === 1 ? 'book' : 'books'} from your wishlist {wishlistStats.matchesFound === 1 ? 'is' : 'are'} now available!
+              </p>
+              <div className="wishlist-matches-grid">
+                {wishlistStats.recentMatches.map((match, idx) => (
+                  <div key={idx} className="wishlist-match-card">
+                    <div className="wishlist-match-header">
+                      <span className="wishlist-match-label">Looking for:</span>
+                      <h4>{match.wishlistItem.title}</h4>
+                    </div>
+                    <div className="wishlist-match-books">
+                      {match.matches.slice(0, 2).map((book) => (
+                        <Link
+                          key={book._id}
+                          to={`/browse?bookId=${book._id}`}
+                          className="wishlist-match-book"
+                        >
+                          <img
+                            src={book.imageUrl || '/placeholder-book.png'}
+                            alt={book.title}
+                          />
+                          <div className="wishlist-match-book-info">
+                            <p className="wishlist-match-book-title">{book.title}</p>
+                            <p className="wishlist-match-book-owner">by {book.owner?.name}</p>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    {match.matches.length > 2 && (
+                      <Link to="/wishlist" className="wishlist-match-more">
+                        +{match.matches.length - 2} more {match.matches.length - 2 === 1 ? 'match' : 'matches'}
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Activity Timeline */}
           {recentActivity.length > 0 && (
@@ -568,6 +655,11 @@ const DashboardPage = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Personalized Recommendations */}
+      {stats.booksListed > 0 && (
+        <RecommendedBooks limit={6} />
       )}
 
       {/* Empty State */}

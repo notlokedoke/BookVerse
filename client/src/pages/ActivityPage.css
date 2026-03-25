@@ -1,7 +1,7 @@
 /* Activity Page Styles */
 .activity-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
   padding: 2rem 0;
 }
 
@@ -95,8 +95,8 @@
 
 .mark-all-read-btn:hover {
   background: #f9fafb;
-  border-color: #2ECC71;
-  color: #2ECC71;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* Filters */
@@ -138,8 +138,8 @@
 }
 
 .filter-tab.active {
-  background: #2ECC71;
-  border-color: #2ECC71;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: white;
 }
 
@@ -215,14 +215,14 @@
 }
 
 .activity-card:hover {
-  border-color: #2ECC71;
+  border-color: var(--color-primary);
   box-shadow: 0 4px 12px rgba(46, 204, 113, 0.1);
   transform: translateY(-1px);
 }
 
 .activity-card.unread {
   background: linear-gradient(90deg, #f0fdf4 0%, #ffffff 100%);
-  border-left: 3px solid #2ECC71;
+  border-left: 3px solid var(--color-primary);
 }
 
 .activity-icon {
@@ -278,7 +278,7 @@
 .unread-dot {
   width: 8px;
   height: 8px;
-  background: #2ECC71;
+  background: var(--color-primary);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -317,7 +317,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   display: flex;
   align-items: center;
@@ -334,7 +334,7 @@
 }
 
 .activity-card:hover .activity-arrow {
-  color: #2ECC71;
+  color: var(--color-primary);
   transform: translateX(4px);
 }
 
@@ -356,7 +356,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2ECC71;
+  color: var(--color-primary);
 }
 
 .empty-activity h3 {
@@ -377,7 +377,7 @@
 
 .reset-filter-btn {
   padding: 0.75rem 1.5rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -388,7 +388,7 @@
 }
 
 .reset-filter-btn:hover {
-  background: #27AE60;
+  background: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
 }

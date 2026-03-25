@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './MessageBubble.css';
 
-const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true }) => {
+const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true, onDelete }) => {
+  const [showDeleteBtn, setShowDeleteBtn] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const formatTime = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -12,8 +15,26 @@ const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true })
     });
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await onDelete(message._id);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div className={`message-bubble-wrapper ${isOwnMessage ? 'own-message' : 'other-message'}`}>
+    <div 
+      className={`message-bubble-wrapper ${isOwnMessage ? 'own-message' : 'other-message'}`}
+      onMouseEnter={() => isOwnMessage && setShowDeleteBtn(true)}
+      onMouseLeave={() => setShowDeleteBtn(false)}
+    >
       {!isOwnMessage && showAvatar && (
         <div className="message-avatar">
           {senderName.charAt(0).toUpperCase()}
@@ -23,7 +44,7 @@ const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true })
         <div className="message-avatar-spacer"></div>
       )}
       
-      <div className={`message-bubble ${isOwnMessage ? 'own' : 'other'}`}>
+      <div className={`message-bubble ${isOwnMessage ? 'own' : 'other'} ${isDeleting ? 'deleting' : ''}`}>
         {!isOwnMessage && showAvatar && (
           <div className="message-sender">{senderName}</div>
         )}
@@ -40,6 +61,15 @@ const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true })
             </span>
           )}
         </div>
+        {isOwnMessage && showDeleteBtn && !isDeleting && (
+          <button 
+            className="delete-message-btn" 
+            onClick={handleDelete}
+            title="Delete message"
+          >
+            🗑️
+          </button>
+        )}
       </div>
     </div>
   );

@@ -43,7 +43,7 @@
 
 .notification-item.unread .notification-icon {
   background: #d1fae5;
-  color: #2ECC71;
+  color: var(--color-primary);
 }
 
 .notification-content {
@@ -73,6 +73,6 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #2ECC71;
+  background: var(--color-primary);
   margin-top: 0.5rem;
 }

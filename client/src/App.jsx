@@ -30,6 +30,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import HelpCenterPage from './pages/HelpCenterPage'
 import NotFoundPage from './pages/NotFoundPage'
+import NearbyBooks from './components/NearbyBooks'
 import './App.css'
 
 // Component to conditionally render navbar and footer
@@ -138,6 +139,14 @@ const AppContent = () => {
               } 
             />
             <Route 
+              path="/nearby" 
+              element={
+                <ProtectedRoute>
+                  <NearbyBooks />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/trades" 
               element={
                 <ProtectedRoute>
@@ -166,7 +175,7 @@ const AppContent = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
           <AppContent />
         </AuthProvider>

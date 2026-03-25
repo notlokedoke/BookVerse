@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
+import GenreSelector from './GenreSelector';
 import './BookListingFormImproved.css';
 
 const BookListingFormImproved = () => {
@@ -20,7 +21,8 @@ const BookListingFormImproved = () => {
     description: '',
     publicationYear: '',
     publisher: '',
-    googleBooksImage: null
+    googleBooksImage: null,
+    coverSource: null // Track where the cover came from
   });
   
   // Image state
@@ -31,6 +33,9 @@ const BookListingFormImproved = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLookingUpISBN, setIsLookingUpISBN] = useState(false);
+
+  // Open Library images work directly (CORS enabled)
+  // No proxy needed!
   const [showISBNLookup, setShowISBNLookup] = useState(true);
   const [isDraft, setIsDraft] = useState(false);
   const [completionPercentage, setCompletionPercentage] = useState(0);
@@ -38,6 +43,7 @@ const BookListingFormImproved = () => {
   // Refs
   const fileInputRef = useRef(null);
   const dragCounter = useRef(0);
+  const submitInFlightRef = useRef(false);
 
   // Condition options with descriptions
   const conditionOptions = [
@@ -73,13 +79,7 @@ const BookListingFormImproved = () => {
     }
   ];
 
-  // Popular genres
-  const genreOptions = [
-    'Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction',
-    'Fantasy', 'Biography', 'History', 'Self-Help', 'Business',
-    'Technology', 'Health', 'Travel', 'Cooking', 'Art',
-    'Poetry', 'Drama', 'Children', 'Young Adult', 'Classic', 'Other'
-  ];
+  // Genre selection is now handled by GenreSelector component
 
   // Calculate completion percentage
   useEffect(() => {
@@ -186,8 +186,8 @@ const BookListingFormImproved = () => {
         toast.error(`${file.name} is not an image file`);
         return false;
       }
-      if (file.size > 3 * 1024 * 1024) {
-        toast.error(`${file.name} is too large (max 3MB)`);
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 10MB)`);
         return false;
       }
       return true;
@@ -273,22 +273,53 @@ const BookListingFormImproved = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Show progress message
+      toast.info('Looking up book information...');
+      
       const response = await axios.post(`${apiUrl}/api/books/isbn/${formData.isbn.trim()}`);
 
       if (response.data.success) {
         const bookData = response.data.data;
+        const sources = response.data.meta?.sources || {};
         
-        setFormData(prev => ({
-          ...prev,
-          title: bookData.title || prev.title,
-          author: bookData.author || prev.author,
-          publisher: bookData.publisher || prev.publisher,
-          publicationYear: bookData.publicationYear?.toString() || prev.publicationYear,
-          description: bookData.description || prev.description,
-          googleBooksImage: bookData.thumbnail || null
-        }));
+        console.log('ISBN Lookup Response:', bookData);
+        console.log('Title:', bookData.title);
+        console.log('Author:', bookData.author);
+        console.log('Description:', bookData.description);
+        console.log('Description length:', bookData.description?.length);
+        console.log('Thumbnail URL:', bookData.thumbnail);
+        console.log('Data sources:', sources);
+        
+        // Store the original URL (not proxied) - proxy will be applied during display only
+        const originalThumbnailUrl = bookData.thumbnail;
+        
+        // Update form data with all fields
+        const newFormData = {
+          ...formData,
+          title: bookData.title || formData.title,
+          author: bookData.author || formData.author,
+          publisher: bookData.publisher || formData.publisher,
+          publicationYear: bookData.publicationYear?.toString() || formData.publicationYear,
+          description: bookData.description || formData.description,
+          googleBooksImage: originalThumbnailUrl || null,
+          coverSource: bookData.source || null
+        };
+        
+        console.log('Setting form data:', newFormData);
+        setFormData(newFormData);
 
-        toast.success('Book information retrieved successfully!');
+        // Show success message with source information
+        let successMsg = '✓ Book information retrieved';
+        if (bookData.thumbnail) {
+          successMsg += ' with cover image';
+        }
+        if (bookData.source) {
+          successMsg += ` from ${bookData.source}`;
+        }
+        successMsg += '!';
+        
+        toast.success(successMsg);
         setShowISBNLookup(false);
       }
     } catch (error) {
@@ -367,11 +398,19 @@ const BookListingFormImproved = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Hard guard against duplicate submits from rapid click/enter.
+    if (submitInFlightRef.current || isSubmitting) {
+      console.log('⚠️ Duplicate submission blocked');
+      return;
+    }
+
     if (!validateForm()) {
       toast.error('Please fix the errors before submitting');
       return;
     }
 
+    console.log('📤 Starting book submission...');
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -399,23 +438,27 @@ const BookListingFormImproved = () => {
       }
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
+      console.log('📡 Sending request to server...');
       const response = await axios.post(`${apiUrl}/api/books`, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
       if (response.data.success) {
+        console.log('✅ Book created successfully:', response.data.data._id);
         toast.success('Book listing created successfully!');
         localStorage.removeItem('bookDraft');
         
-        setTimeout(() => {
-          navigate('/my-books');
-        }, 1500);
+        // Navigate immediately to prevent any re-submission
+        navigate('/my-books', { replace: true });
       }
     } catch (error) {
+      console.error('❌ Book creation failed:', error);
       const errorMsg = error.response?.data?.error?.message || 'Failed to create listing';
       toast.error(errorMsg);
       setErrors({ general: errorMsg });
-    } finally {
+      
+      // Reset submission state on error so user can retry
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -567,39 +610,18 @@ const BookListingFormImproved = () => {
           <div className="form-group">
             <label htmlFor="genres">
               Genres <span className="required">*</span>
-              <span className="tooltip" title="Select one or more genres">ⓘ</span>
+              <span className="tooltip" title="Select up to 5 genres that best describe your book">ⓘ</span>
             </label>
-            <div className="genre-multi-select">
-              {genreOptions.map(genre => (
-                <button
-                  key={genre}
-                  type="button"
-                  className={`genre-tag ${formData.genres.includes(genre) ? 'selected' : ''}`}
-                  onClick={() => {
-                    const newGenres = formData.genres.includes(genre)
-                      ? formData.genres.filter(g => g !== genre)
-                      : [...formData.genres, genre];
-                    setFormData(prev => ({ ...prev, genres: newGenres }));
-                    if (errors.genres && newGenres.length > 0) {
-                      setErrors(prev => ({ ...prev, genres: '' }));
-                    }
-                  }}
-                  disabled={isSubmitting}
-                >
-                  {genre}
-                  {formData.genres.includes(genre) && (
-                    <svg className="check-icon-small" fill="currentColor" viewBox="0 0 20 20" width="16" height="16">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </div>
-            {formData.genres.length > 0 && (
-              <div className="selected-genres-summary">
-                Selected: {formData.genres.join(', ')}
-              </div>
-            )}
+            <GenreSelector
+              selectedGenres={formData.genres}
+              onChange={(newGenres) => {
+                setFormData(prev => ({ ...prev, genres: newGenres }));
+                if (errors.genres && newGenres.length > 0) {
+                  setErrors(prev => ({ ...prev, genres: '' }));
+                }
+              }}
+              maxSelections={5}
+            />
             {errors.genres && <span className="field-error">{errors.genres}</span>}
           </div>
         </div>
@@ -678,7 +700,7 @@ const BookListingFormImproved = () => {
             <p className="upload-text">
               <span className="upload-highlight">Click to upload</span> or drag and drop
             </p>
-            <p className="upload-hint">PNG, JPG up to 3MB each</p>
+            <p className="upload-hint">PNG, JPG up to 10MB each</p>
           </div>
 
           {errors.image && <span className="field-error">{errors.image}</span>}
@@ -688,8 +710,23 @@ const BookListingFormImproved = () => {
             <div className="image-previews">
               {formData.googleBooksImage && (
                 <div className="preview-item google-books">
-                  <img src={formData.googleBooksImage} alt="Google Books cover" />
-                  <div className="preview-badge">ISBN Cover</div>
+                  <img 
+                    src={formData.googleBooksImage} 
+                    alt="Book cover from ISBN lookup"
+                    style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      console.error('❌ Image failed to load');
+                      console.error('Image URL:', formData.googleBooksImage);
+                      e.target.style.display = 'none';
+                    }}
+                    onLoad={(e) => {
+                      console.log('✅ Image loaded successfully');
+                      e.target.style.display = 'block';
+                    }}
+                  />
+                  <div className="preview-badge">
+                    {formData.coverSource || 'OPEN LIBRARY'}
+                  </div>
                 </div>
               )}
               {images.map((img, index) => (
@@ -748,9 +785,6 @@ const BookListingFormImproved = () => {
           <div className="form-group">
             <label htmlFor="description">
               Description
-              <span className="char-count">
-                {formData.description?.length || 0}/500
-              </span>
             </label>
             <textarea
               id="description"
@@ -761,8 +795,7 @@ const BookListingFormImproved = () => {
               onBlur={handleBlur}
               className={errors.description ? 'error' : ''}
               disabled={isSubmitting}
-              maxLength={500}
-              rows="4"
+              rows="6"
             />
             {errors.description && <span className="field-error">{errors.description}</span>}
           </div>
@@ -846,7 +879,7 @@ const BookListingFormImproved = () => {
           <button
             type="submit"
             className="btn-primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || submitInFlightRef.current}
           >
             {isSubmitting ? (
               <>

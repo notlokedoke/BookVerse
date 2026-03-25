@@ -365,6 +365,26 @@ const TradeDetailView = () => {
               </div>
             )}
 
+            {/* Complete Trade Section - After Chat */}
+            {trade.status === 'accepted' && (isProposer || isReceiver) && (
+              <div className="glass-card" style={{ marginTop: '4rem' }}>
+                <div className="section-title">
+                  <CheckCircle size={24} className="text-primary" />
+                  <span>Complete Trade</span>
+                </div>
+                <p className="text-neutral-600 mb-4">
+                  Mark as complete after physical exchange.
+                </p>
+                <button
+                  onClick={handleCompleteTrade}
+                  disabled={actionLoading}
+                  className="btn-large btn-primary-gradient w-full"
+                >
+                  {actionLoading ? <Spinner size="sm" /> : <><CheckCircle size={20} /> Mark Complete</>}
+                </button>
+              </div>
+            )}
+
             {/* Rating Section (Completed Trades) - Moved to main column bottom */}
             {trade.status === 'completed' && (isProposer || isReceiver) && (
               <div className="glass-card mt-8">
@@ -443,26 +463,6 @@ const TradeDetailView = () => {
                       {actionLoading ? <Spinner size="sm" /> : <><XCircle size={20} /> Decline Trade</>}
                     </button>
                   </div>
-                </div>
-              )}
-
-              {/* Completion Action */}
-              {trade.status === 'accepted' && (isProposer || isReceiver) && (
-                <div className="glass-card mb-6 highlight-card">
-                  <div className="section-title small">
-                    <CheckCircle size={20} className="text-primary" />
-                    <span>Complete Trade</span>
-                  </div>
-                  <p className="text-sm text-neutral-600 mb-4">
-                    Mark as complete after physical exchange.
-                  </p>
-                  <button
-                    onClick={handleCompleteTrade}
-                    disabled={actionLoading}
-                    className="btn-large btn-primary-gradient w-full"
-                  >
-                    {actionLoading ? <Spinner size="sm" /> : <><CheckCircle size={20} /> Mark Complete</>}
-                  </button>
                 </div>
               )}
             </div>

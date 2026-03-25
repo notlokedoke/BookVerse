@@ -6,6 +6,7 @@ const Wishlist = require('../models/Wishlist');
 const Book = require('../models/Book');
 const { authenticateToken } = require('../middleware/auth');
 const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
+const { getCoverImage } = require('../utils/bookLookup');
 
 /**
  * @route   POST /api/wishlist
@@ -43,10 +44,23 @@ router.post('/', [
     .customSanitizer(sanitizeString),
   body('imageUrl')
     .optional()
+    .trim(),
+  body('sourceBook')
+    .optional()
     .trim()
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid source book ID format'),
+  body('priority')
+    .optional()
+    .isInt({ min: 1, max: 5 })
+    .withMessage('Priority must be between 1 and 5'),
+  body('isPublic')
+    .optional()
+    .isBoolean()
+    .withMessage('isPublic must be a boolean')
 ], async (req, res) => {
   try {
-    const { title, author, isbn, notes, imageUrl } = req.body;
+    const { title, author, isbn, notes, imageUrl, sourceBook, priority, isPublic } = req.body;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -85,34 +99,21 @@ router.post('/', [
       title: title.trim()
     };
 
-    // Add optional fields if provided
+    // Add optional fields if provided (only add if they have actual values)
     if (author && author.trim()) {
       wishlistData.author = author.trim();
     }
     if (isbn && isbn.trim()) {
       wishlistData.isbn = isbn.trim();
       
-      // Try to fetch book cover from Google Books API if not provided
+      // Try to fetch book cover using hybrid lookup (Google Books primary, Open Library fallback)
       if (!imageUrl || !imageUrl.trim()) {
         try {
           const cleanIsbn = isbn.replace(/[-\s]/g, '');
-          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
-          const googleResponse = await axios.get(googleBooksUrl, { timeout: 5000 });
+          const coverImage = await getCoverImage(cleanIsbn);
           
-          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-            const bookInfo = googleResponse.data.items[0].volumeInfo;
-            if (bookInfo.imageLinks) {
-              let coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
-              
-              // Improve image quality
-              if (coverImage) {
-                coverImage = coverImage
-                  .replace('&edge=curl', '')
-                  .replace('zoom=1', 'zoom=2')
-                  .replace('http://', 'https://');
-                wishlistData.imageUrl = coverImage;
-              }
-            }
+          if (coverImage) {
+            wishlistData.imageUrl = coverImage;
           }
         } catch (error) {
           // Silently fail - image is optional
@@ -120,11 +121,22 @@ router.post('/', [
         }
       }
     }
+    // If no ISBN, explicitly don't include it in the data (not even as undefined)
+    
     if (notes && notes.trim()) {
       wishlistData.notes = notes.trim();
     }
     if (imageUrl && imageUrl.trim()) {
       wishlistData.imageUrl = imageUrl.trim();
+    }
+    if (sourceBook && sourceBook.trim()) {
+      wishlistData.sourceBook = sourceBook.trim();
+    }
+    if (priority) {
+      wishlistData.priority = priority;
+    }
+    if (typeof isPublic === 'boolean') {
+      wishlistData.isPublic = isPublic;
     }
 
     const wishlistItem = new Wishlist(wishlistData);
@@ -177,6 +189,53 @@ router.post('/', [
 });
 
 /**
+ * @route   GET /api/wishlist/check/:bookId
+ * @desc    Check if a book is in user's wishlist
+ * @access  Private (requires authentication)
+ */
+router.get('/check/:bookId', authenticateToken, async (req, res) => {
+  try {
+    const { bookId } = req.params;
+
+    // Validate bookId format
+    if (!bookId || !bookId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid book ID format',
+          code: 'INVALID_BOOK_ID'
+        }
+      });
+    }
+
+    // Check if book is in wishlist
+    const wishlistItem = await Wishlist.findOne({
+      user: req.userId,
+      sourceBook: bookId
+    });
+
+    res.json({
+      success: true,
+      data: {
+        inWishlist: !!wishlistItem,
+        wishlistItem: wishlistItem || null
+      }
+    });
+
+  } catch (error) {
+    console.error('Check wishlist error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while checking wishlist',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   GET /api/wishlist
  * @desc    Get all wishlist items for authenticated user
  * @access  Private (requires authentication)
@@ -201,6 +260,54 @@ router.get('/', authenticateToken, async (req, res) => {
       success: false,
       error: {
         message: 'An error occurred while fetching wishlist',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
+ * @route   GET /api/wishlist/user/:userId/public
+ * @desc    Get public wishlist items for specified user
+ * @access  Public
+ */
+router.get('/user/:userId/public', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Validate userId format
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Invalid user ID format',
+          code: 'INVALID_USER_ID'
+        }
+      });
+    }
+
+    // Fetch only public wishlist items for specified user
+    const wishlistItems = await Wishlist.find({ 
+      user: userId,
+      isPublic: true,
+      fulfilledBy: null // Don't show fulfilled items
+    })
+      .populate('user', 'name city averageRating ratingCount privacySettings')
+      .sort({ priority: -1, createdAt: -1 }); // Sort by priority first, then date
+
+    res.json({
+      success: true,
+      data: wishlistItems,
+      count: wishlistItems.length
+    });
+
+  } catch (error) {
+    console.error('Get public wishlist error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching public wishlist',
         code: 'INTERNAL_ERROR'
       }
     });
@@ -492,24 +599,7 @@ router.post('/backfill-images', authenticateToken, async (req, res) => {
     for (const item of wishlistItems) {
       try {
         const cleanIsbn = item.isbn.replace(/[-\s]/g, '');
-        const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
-        const googleResponse = await axios.get(googleBooksUrl, { timeout: 5000 });
-        
-        let coverImage = null;
-        if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-          const bookInfo = googleResponse.data.items[0].volumeInfo;
-          if (bookInfo.imageLinks) {
-            coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
-            
-            // Improve image quality
-            if (coverImage) {
-              coverImage = coverImage
-                .replace('&edge=curl', '')
-                .replace('zoom=1', 'zoom=2')
-                .replace('http://', 'https://');
-            }
-          }
-        }
+        const coverImage = await getCoverImage(cleanIsbn);
         
         if (coverImage) {
           item.imageUrl = coverImage;

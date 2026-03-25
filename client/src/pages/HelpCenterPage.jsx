@@ -30,7 +30,7 @@ const HelpCenterPage = () => {
         },
         {
           q: 'How do I complete my profile?',
-          a: 'After registration, go to Profile Settings from the navbar. Add your city, bio, and profile picture. Your city helps connect you with nearby traders.'
+          a: 'After registration, go to Profile Settings from the navbar. Add your city, bio, and profile picture. Your city helps connect you with local traders in your area for in-person book exchanges.'
         },
         {
           q: 'Is BookVerse free to use?',
@@ -104,6 +104,14 @@ const HelpCenterPage = () => {
         {
           q: 'Will I be notified of wishlist matches?',
           a: 'Yes! When someone lists a book from your wishlist, you\'ll receive an in-app notification so you can quickly propose a trade.'
+        },
+        {
+          q: 'What is the "Local" feature?',
+          a: 'The "Local" feature shows you all books available in your city for in-person trades. This makes it easy to find books nearby without needing to ship or travel long distances.'
+        },
+        {
+          q: 'Why can I only see books in my city?',
+          a: 'BookVerse focuses on local, in-person book exchanges to make trading convenient and build community. Meeting locally means no shipping costs, faster exchanges, and the chance to meet fellow book lovers in your area.'
         }
       ]
     },

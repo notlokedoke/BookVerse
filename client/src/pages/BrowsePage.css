@@ -5,15 +5,15 @@
 
 /* CSS Custom Properties */
 :root {
-  --color-accent: #1ABC9C;
-  --color-primary: #2ECC71;
+  --color-accent: var(--color-primary);
+  --color-primary: var(--color-primary);
   --color-warning: #F39C12;
-  --color-secondary: #2C3E50;
+  --color-secondary: var(--color-secondary);
   
   
   --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
-  --primary: #2ECC71;
+  --primary: var(--color-primary, #1ABC9C);
   --primary-dark: #25a35a;
   --text-primary: #1a1a2e;
   --text-secondary: #6b7280;
@@ -24,7 +24,7 @@
 
 .browse-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
 }
 
 .browse-container {
@@ -102,7 +102,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.75rem 2rem;
-  background: #2C3E50;
+  background: var(--color-secondary);
   border-radius: 1.25rem;
   margin-bottom: 2rem;
   color: white;
@@ -132,7 +132,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #2ECC71;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,7 +199,7 @@
   padding: 1.5rem 2rem;
   margin-bottom: 2rem;
   border-radius: 1.25rem;
-  background: #2C3E50;
+  background: var(--color-secondary);
   color: white;
   position: relative;
   overflow: hidden;
@@ -296,7 +296,7 @@
 .header-icon-container {
   width: 56px;
   height: 56px;
-  background: #2ECC71;
+  background: var(--color-primary);
   border-radius: 1rem;
   display: flex;
   align-items: center;

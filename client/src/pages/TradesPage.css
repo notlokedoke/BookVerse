@@ -5,13 +5,13 @@
 
 /* CSS Custom Properties */
 :root {
-  --primary: #2ECC71;
-  --primary-dark: #27AE60;
-  --primary-light: #E8F8F0;
-  --secondary: #2C3E50;
-  --accent: #1ABC9C;
+  --primary: var(--color-primary, #1ABC9C);
+  --primary-dark: var(--color-primary-dark, #16A085);
+  --primary-light: var(--color-primary-10, rgba(26, 188, 156, 0.1));
+  --secondary: var(--color-secondary);
+  --accent: var(--color-primary);
   --accent-dark: #16A085;
-  --text-primary: #2C3E50;
+  --text-primary: var(--color-secondary);
   --text-secondary: #7F8C8D;
   --text-muted: #95A5A6;
   --border-light: #E8ECEF;
@@ -23,7 +23,7 @@
 
 .trades-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
 }
 
 .trades-container {
@@ -125,7 +125,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.75rem 2rem;
-  background: #2C3E50;
+  background: var(--color-secondary);
   border-radius: 12px;
   margin-bottom: 2rem;
   color: white;

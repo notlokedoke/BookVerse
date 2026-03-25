@@ -1,0 +1,191 @@
+/**
+ * BookVerse Color System
+ * Modern & Minimal Design Palette
+ * 
+ * Philosophy: Trust, clarity, and professionalism for peer-to-peer book trading
+ */
+
+:root {
+  /* ============================================
+     PRIMARY COLORS - Teal (Brand Identity)
+     ============================================ */
+  --color-primary: #1ABC9C;
+  --color-primary-light: #48C9B0;
+  --color-primary-lighter: #76D7C4;
+  --color-primary-dark: #16A085;
+  --color-primary-darker: #138D75;
+
+  /* Primary with opacity variants */
+  --color-primary-10: rgba(26, 188, 156, 0.1);
+  --color-primary-20: rgba(26, 188, 156, 0.2);
+  --color-primary-30: rgba(26, 188, 156, 0.3);
+  --color-primary-50: rgba(26, 188, 156, 0.5);
+
+  /* ============================================
+     SECONDARY COLORS - Slate Gray (Text & Headers)
+     ============================================ */
+  --color-secondary: #2C3E50;
+  --color-secondary-light: #34495E;
+  --color-secondary-lighter: #5D6D7E;
+  --color-secondary-dark: #1A252F;
+
+  /* ============================================
+     NEUTRAL COLORS - Grays (Backgrounds & Borders)
+     ============================================ */
+  --color-neutral-50: #F8F9FA;
+  --color-neutral-100: #ECF0F1;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-400: #BDC3C7;
+  --color-neutral-500: #95A5A6;
+  --color-neutral-600: #7F8C8D;
+  --color-neutral-700: #64748B;
+  --color-neutral-800: #475569;
+  --color-neutral-900: #1E293B;
+
+  /* ============================================
+     SEMANTIC COLORS - Status & Feedback
+     ============================================ */
+  
+  /* Success - Green (Completed trades, confirmations) */
+  --color-success: var(--color-primary-dark);
+  --color-success-light: var(--color-primary);
+  --color-success-lighter: #58D68D;
+  --color-success-dark: #229954;
+  --color-success-bg: rgba(39, 174, 96, 0.1);
+
+  /* Warning - Orange (Pending actions, cautions) */
+  --color-warning: #F39C12;
+  --color-warning-light: #F8B739;
+  --color-warning-lighter: #FAD7A0;
+  --color-warning-dark: #D68910;
+  --color-warning-bg: rgba(243, 156, 18, 0.1);
+
+  /* Error - Red (Declined trades, errors, validation) */
+  --color-error: #E74C3C;
+  --color-error-light: #EC7063;
+  --color-error-lighter: #F1948A;
+  --color-error-dark: #C0392B;
+  --color-error-bg: rgba(231, 76, 60, 0.1);
+
+  /* Info - Blue (Notifications, informational messages) */
+  --color-info: #3498DB;
+  --color-info-light: #5DADE2;
+  --color-info-lighter: #85C1E9;
+  --color-info-dark: #2874A6;
+  --color-info-bg: rgba(52, 152, 219, 0.1);
+
+  /* ============================================
+     ACCENT COLORS - Special Elements
+     ============================================ */
+  
+  /* Mint Green Accent (Featured books, special highlights, fresh content) */
+  --color-accent: #98FB98;
+  --color-accent-light: #B4FDB4;
+  --color-accent-lighter: #D0FED0;
+  --color-accent-dark: #7CE87C;
+  --color-accent-darker: #60D060;
+  
+  /* Accent with opacity variants */
+  --color-accent-10: rgba(152, 251, 152, 0.1);
+  --color-accent-20: rgba(152, 251, 152, 0.2);
+  --color-accent-30: rgba(152, 251, 152, 0.3);
+  --color-accent-50: rgba(152, 251, 152, 0.5);
+
+  /* ============================================
+     TEXT COLORS - Hierarchy
+     ============================================ */
+  --text-primary: #2C3E50;        /* Main headings, important text */
+  --text-secondary: #475569;      /* Body text, descriptions */
+  --text-tertiary: #64748B;       /* Captions, metadata */
+  --text-disabled: #95A5A6;       /* Disabled states */
+  --text-inverse: #FFFFFF;        /* Text on dark backgrounds */
+  --text-link: #1ABC9C;           /* Links, interactive text */
+  --text-link-hover: #16A085;     /* Link hover state */
+
+  /* ============================================
+     BACKGROUND COLORS
+     ============================================ */
+  --bg-primary: #FFFFFF;          /* Main content background */
+  --bg-secondary: #F8F9FA;        /* Alternate sections */
+  --bg-tertiary: #ECF0F1;         /* Cards, panels */
+  --bg-overlay: rgba(44, 62, 80, 0.5);  /* Modal overlays */
+  --bg-hover: rgba(26, 188, 156, 0.05); /* Hover states */
+
+  /* ============================================
+     BORDER COLORS
+     ============================================ */
+  --border-light: #ECF0F1;        /* Subtle dividers */
+  --border-medium: #D1D5DB;       /* Standard borders */
+  --border-dark: #BDC3C7;         /* Emphasized borders */
+  --border-focus: #1ABC9C;        /* Focus states */
+
+  /* ============================================
+     SHADOW COLORS
+     ============================================ */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  --shadow-primary: 0 4px 12px rgba(26, 188, 156, 0.3);
+  --shadow-error: 0 4px 12px rgba(231, 76, 60, 0.3);
+
+  /* ============================================
+     GRADIENT COLORS
+     ============================================ */
+  --gradient-primary: linear-gradient(135deg, #1ABC9C 0%, #16A085 100%);
+  --gradient-secondary: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+  --gradient-accent: linear-gradient(135deg, #98FB98 0%, #7CE87C 100%);
+  --gradient-success: linear-gradient(135deg, var(--color-primary-dark) 0%, #229954 100%);
+  --gradient-overlay: linear-gradient(180deg, rgba(44, 62, 80, 0) 0%, rgba(44, 62, 80, 0.8) 100%);
+}
+
+/* ============================================
+   DARK MODE SUPPORT (Optional)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1A252F;
+    --bg-secondary: var(--color-secondary);
+    --bg-tertiary: #34495E;
+    
+    --text-primary: var(--color-neutral-100);
+    --text-secondary: #BDC3C7;
+    --text-tertiary: #95A5A6;
+    
+    --border-light: #34495E;
+    --border-medium: #5D6D7E;
+    --border-dark: #7F8C8D;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Background utilities */
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary-light { background-color: var(--color-primary-light); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-accent { background-color: var(--color-accent); }
+.bg-success { background-color: var(--color-success); }
+.bg-warning { background-color: var(--color-warning); }
+.bg-error { background-color: var(--color-error); }
+.bg-info { background-color: var(--color-info); }
+
+/* Text color utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-accent { color: var(--color-accent); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-error { color: var(--color-error); }
+.text-info { color: var(--color-info); }
+.text-link { color: var(--text-link); }
+
+/* Border utilities */
+.border-primary { border-color: var(--color-primary); }
+.border-light { border-color: var(--border-light); }
+.border-medium { border-color: var(--border-medium); }
+.border-dark { border-color: var(--border-dark); }

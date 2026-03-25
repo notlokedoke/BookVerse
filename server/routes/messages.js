@@ -427,4 +427,76 @@ router.get('/trade/:tradeId/unread-count', [
   }
 });
 
+/**
+ * @route   DELETE /api/messages/:id
+ * @desc    Delete a message (only sender can delete their own message)
+ * @access  Private (requires authentication, sender only)
+ */
+router.delete('/:id', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid message ID format')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        }
+      });
+    }
+
+    const { id } = req.params;
+
+    // Fetch message
+    const message = await Message.findById(id);
+
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Message not found',
+          code: 'MESSAGE_NOT_FOUND'
+        }
+      });
+    }
+
+    // Validate that authenticated user is the sender
+    if (message.sender.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          message: 'You can only delete your own messages',
+          code: 'NOT_AUTHORIZED'
+        }
+      });
+    }
+
+    // Delete the message
+    await Message.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Message deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete message error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while deleting the message',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

@@ -5,7 +5,7 @@
   right: 2rem;
   width: 56px;
   height: 56px;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 50%;

@@ -1,7 +1,7 @@
 /* Wishlist Page */
 .wishlist-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
   padding: 2rem 0;
 }
 
@@ -32,7 +32,7 @@
 .header-icon {
   width: 64px;
   height: 64px;
-  background: #2ECC71;
+  background: var(--color-primary);
   border-radius: 1rem;
   display: flex;
   align-items: center;
@@ -58,7 +58,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.75rem;
@@ -104,11 +104,11 @@
 
 .tab:hover {
   background: #f8fafc;
-  color: #2ECC71;
+  color: var(--color-primary);
 }
 
 .tab.active {
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
 }
 
@@ -137,7 +137,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
@@ -183,7 +183,7 @@
 .btn-view-matches {
   flex: 1;
   padding: 0.5rem 1rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -246,7 +246,7 @@
 
 .match-count {
   display: inline-block;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
@@ -289,7 +289,7 @@
 }
 
 .book-info h4:hover {
-  color: #2ECC71;
+  color: var(--color-primary);
 }
 
 .book-author {
@@ -326,7 +326,7 @@
 .owner-avatar {
   width: 32px;
   height: 32px;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -340,7 +340,7 @@
   display: block;
   width: 100%;
   padding: 0.5rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   text-align: center;
   text-decoration: none;
@@ -364,7 +364,7 @@
 }
 
 .empty-icon {
-  color: #2ECC71;
+  color: var(--color-primary);
   margin-bottom: 1.5rem;
 }
 
@@ -385,7 +385,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 1rem 2rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 0.75rem;
@@ -412,7 +412,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid #f3f4f6;
-  border-top-color: #2ECC71;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -454,4 +454,33 @@
   .matched-books-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Fulfilled Wishlist Items */
+.wishlist-card.fulfilled {
+  opacity: 0.7;
+  background: #f8f9fa;
+  border: 2px solid #10b981;
+}
+
+.fulfilled-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #10b981;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.wishlist-card.fulfilled .wishlist-cover {
+  opacity: 0.8;
+}
+
+.wishlist-card.fulfilled .wishlist-actions {
+  opacity: 0.6;
 }

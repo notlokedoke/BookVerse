@@ -27,23 +27,50 @@ monitorDatabaseConnection();
 monitorMemoryUsage();
 
 // Security Middleware
+// Security Middleware - More permissive for OAuth in development
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 app.use(helmet({
-  contentSecurityPolicy: {
+  contentSecurityPolicy: isDevelopment ? false : {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "http:"],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "https://api.cloudinary.com", "https://www.googleapis.com"],
-      frameSrc: ["'none'"],
+      scriptSrc: [
+        "'self'", 
+        "'unsafe-inline'",
+        "'unsafe-eval'",
+        "https://accounts.google.com",
+        "https://apis.google.com",
+        "https://www.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'", 
+        "https://api.cloudinary.com", 
+        "https://www.googleapis.com",
+        "https://accounts.google.com",
+        "https://oauth2.googleapis.com",
+        "https://books.google.com",
+        "https://books.googleusercontent.com",
+        "https://play.google.com",
+        "https://www.gstatic.com"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://accounts.google.com",
+        "https://www.google.com"
+      ],
+      formAction: ["'self'", "https://accounts.google.com"],
       objectSrc: ["'none'"],
-      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+      upgradeInsecureRequests: []
     }
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
   hsts: {
-    maxAge: 31536000, // 1 year in seconds
+    maxAge: 31536000,
     includeSubDomains: true,
     preload: true
   },
@@ -84,8 +111,8 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting in test environment
-    return process.env.NODE_ENV === 'test';
+    // Skip rate limiting in test and development environments
+    return process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
   }
 });
 
@@ -146,6 +173,8 @@ const messageRoutes = require('./routes/messages');
 const ratingRoutes = require('./routes/ratings');
 const notificationRoutes = require('./routes/notifications');
 const contactRoutes = require('./routes/contact');
+const recommendationRoutes = require('./routes/recommendations');
+const nearbyRoutes = require('./routes/nearby');
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
@@ -177,6 +206,8 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/nearby', nearbyRoutes);
 
 // Multer error handling middleware (after routes)
 app.use((error, req, res, next) => {
