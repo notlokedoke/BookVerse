@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import BookGrid from '../components/BookGrid';
 import SearchFilters from '../components/SearchFilters';
+import GenreSidebar from '../components/GenreSidebar';
 import { Search, Sparkles, TrendingUp, Filter } from 'lucide-react';
 import './BrowsePage.css';
 
@@ -66,7 +67,7 @@ const BrowsePage = () => {
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '20'
+        limit: '25'
       });
 
       // Add filters if they have values
@@ -92,8 +93,26 @@ const BrowsePage = () => {
       const data = await response.json();
 
       if (data.success) {
-        setBooks(data.data.books);
-        setPagination(data.data.pagination);
+        const fetchedBooks = data.data.books;
+        const paginationData = data.data.pagination;
+        
+        // If current page is empty and we're not on page 1, redirect to last valid page
+        if (fetchedBooks.length === 0 && page > 1 && paginationData.totalPages > 0) {
+          const lastValidPage = Math.min(page - 1, paginationData.totalPages);
+          updateURLParams(currentFilters, lastValidPage);
+          fetchBooks(lastValidPage, currentFilters);
+          return;
+        }
+        
+        // If current page exceeds total pages, go to last page
+        if (page > paginationData.totalPages && paginationData.totalPages > 0) {
+          updateURLParams(currentFilters, paginationData.totalPages);
+          fetchBooks(paginationData.totalPages, currentFilters);
+          return;
+        }
+        
+        setBooks(fetchedBooks);
+        setPagination(paginationData);
       } else {
         throw new Error(data.error?.message || 'Failed to fetch books');
       }
@@ -258,7 +277,7 @@ const BrowsePage = () => {
 
         {/* Search & Filters Section */}
         <section className="filters-section-wrapper">
-          <h2 className="filters-section-heading">Filters</h2>
+          <h2 className="filters-section-heading">Search</h2>
           <div className="filters-section glass-card">
             <SearchFilters
               filters={filters}
@@ -276,14 +295,27 @@ const BrowsePage = () => {
           </div>
         </section>
 
-        {/* Book Grid */}
-        <BookGrid
-          books={books}
-          loading={loading}
-          error={error}
-          pagination={pagination}
-          onPageChange={handlePageChange}
-        />
+        {/* Main Content with Sidebar */}
+        <div className="browse-content-layout">
+          {/* Left Sidebar - Genre Filter */}
+          <aside className="browse-sidebar">
+            <GenreSidebar
+              selectedGenre={filters.genre}
+              onChange={(genre) => handleFilterChange('genre', genre)}
+            />
+          </aside>
+
+          {/* Main Content - Book Grid */}
+          <main className="browse-main-content">
+            <BookGrid
+              books={books}
+              loading={loading}
+              error={error}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+            />
+          </main>
+        </div>
       </div>
     </div>
   );

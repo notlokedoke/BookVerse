@@ -214,48 +214,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-container">
-          <div className="footer-content">
-            <div className="footer-section">
-              <div className="footer-logo">
-                <BookOpen size={24} />
-                <span>BookVerse</span>
-              </div>
-              <p>Connecting book lovers worldwide through the joy of sharing stories.</p>
-            </div>
-
-            <div className="footer-links">
-              <div className="footer-column">
-                <h4>Product</h4>
-                <Link to="/browse">Browse Books</Link>
-                <Link to="/register">Sign Up</Link>
-                <Link to="/login">Login</Link>
-              </div>
-
-              <div className="footer-column">
-                <h4>Company</h4>
-                <Link to="/about">About Us</Link>
-                <Link to="/contact">Contact</Link>
-                <Link to="/help">Help Center</Link>
-              </div>
-
-              <div className="footer-column">
-                <h4>Legal</h4>
-                <a href="#privacy">Privacy Policy</a>
-                <a href="#terms">Terms of Service</a>
-                <Link to="/safety">Safety Guidelines</Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <p>&copy; 2024 BookVerse. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

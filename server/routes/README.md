@@ -30,7 +30,7 @@ Content-Type: multipart/form-data
 - `coverImage` (file, required): Image file (JPEG, PNG, GIF, WebP, max 5MB)
 - `title` (string, required): Book title
 - `author` (string, required): Book author
-- `condition` (string, required): Book condition (New, Like New, Good, Fair, Poor)
+- `condition` (string, required): Book condition (Like New, Good, Fair, Poor)
 - `genre` (string, required): Book genre
 - `isbn` (string, optional): Book ISBN
 - `description` (string, optional): Book description

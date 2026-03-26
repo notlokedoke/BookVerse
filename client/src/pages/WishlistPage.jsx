@@ -7,15 +7,22 @@ import './WishlistPage.css';
 
 const WishlistPage = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
-  const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('items'); // 'items' or 'matches'
   const [error, setError] = useState(null);
   const toast = useToast();
 
   useEffect(() => {
     fetchWishlist();
-    fetchMatches();
+  }, []);
+
+  // Add effect to refetch when returning to the page
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchWishlist();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const fetchWishlist = async () => {
@@ -34,6 +41,8 @@ const WishlistPage = () => {
       });
       
       console.log('Wishlist response:', response.data);
+      console.log('Wishlist items count:', response.data.data?.length);
+      console.log('Wishlist items:', response.data.data);
       setWishlistItems(response.data.data || []);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
@@ -55,9 +64,10 @@ const WishlistPage = () => {
       const response = await axios.get('/api/wishlist/matches', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMatches(response.data.data || []);
+      return response.data.data || [];
     } catch (error) {
       console.error('Error fetching matches:', error);
+      return [];
     }
   };
 
@@ -73,16 +83,10 @@ const WishlistPage = () => {
       });
       toast.success('Removed from wishlist');
       fetchWishlist();
-      fetchMatches();
     } catch (error) {
       console.error('Error deleting wishlist item:', error);
       toast.error('Failed to remove item');
     }
-  };
-
-  const getMatchCount = (wishlistItemId) => {
-    const match = matches.find(m => m.wishlistItem._id === wishlistItemId);
-    return match ? match.matches.length : 0;
   };
 
   if (loading) {
@@ -127,32 +131,13 @@ const WishlistPage = () => {
             </div>
           </div>
           <Link to="/wishlist/create" className="btn-add-wishlist">
-            <Plus size={20} />
-            Add Book
+            <span className="btn-icon">+</span>
+            <span className="btn-text">Add Book</span>
           </Link>
         </div>
 
-        {/* Tabs */}
-        <div className="wishlist-tabs">
-          <button
-            className={`tab ${activeTab === 'items' ? 'active' : ''}`}
-            onClick={() => setActiveTab('items')}
-          >
-            <BookOpen size={18} />
-            My Wishlist ({wishlistItems.length})
-          </button>
-          <button
-            className={`tab ${activeTab === 'matches' ? 'active' : ''}`}
-            onClick={() => setActiveTab('matches')}
-          >
-            <Search size={18} />
-            Matches ({matches.reduce((acc, m) => acc + m.matches.length, 0)})
-          </button>
-        </div>
-
         {/* Content */}
-        {activeTab === 'items' ? (
-          wishlistItems.length === 0 ? (
+        {wishlistItems.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
                 <Heart size={64} />
@@ -167,7 +152,6 @@ const WishlistPage = () => {
           ) : (
             <div className="wishlist-grid">
               {wishlistItems.map((item) => {
-                const matchCount = getMatchCount(item._id);
                 const isFulfilled = !!item.fulfilledBy;
                 return (
                   <div key={item._id} className={`wishlist-card ${isFulfilled ? 'fulfilled' : ''}`}>
@@ -176,112 +160,49 @@ const WishlistPage = () => {
                         ✓ Fulfilled
                       </div>
                     )}
-                    {!isFulfilled && matchCount > 0 && (
-                      <div className="match-badge">
-                        {matchCount} {matchCount === 1 ? 'match' : 'matches'} found!
-                      </div>
-                    )}
                     
-                    {item.imageUrl && (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title}
-                        className="wishlist-cover"
-                      />
-                    )}
+                    <div className="wishlist-image-container">
+                      {item.imageUrl ? (
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.title}
+                          className="wishlist-cover"
+                        />
+                      ) : (
+                        <img 
+                          src="/placeholder-book.svg" 
+                          alt={item.title}
+                          className="wishlist-cover"
+                        />
+                      )}
+                    </div>
                     
                     <div className="wishlist-info">
                       <h3>{item.title}</h3>
                       {item.author && <p className="wishlist-author">by {item.author}</p>}
-                      {item.isbn && <p className="wishlist-isbn">ISBN: {item.isbn}</p>}
-                      
-                      <div className="wishlist-actions">
-                        {matchCount > 0 && (
-                          <button
-                            onClick={() => setActiveTab('matches')}
-                            className="btn-view-matches"
-                          >
-                            View Matches
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(item._id)}
-                          className="btn-delete"
-                          title="Remove from wishlist"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                    </div>
+                    
+                    <div className="wishlist-actions">
+                      <Link
+                        to="/wishlist/matches"
+                        className="btn-view-matches"
+                      >
+                        View Matches
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(item._id)}
+                        className="btn-delete"
+                        title="Remove from wishlist"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
           )
-        ) : (
-          // Matches Tab
-          matches.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">
-                <Search size={64} />
-              </div>
-              <h2>No matches yet</h2>
-              <p>We'll notify you when books matching your wishlist become available!</p>
-            </div>
-          ) : (
-            <div className="matches-section">
-              {matches.map((match, index) => (
-                <div key={index} className="match-group">
-                  <div className="match-header">
-                    <h3>Looking for: {match.wishlistItem.title}</h3>
-                    {match.wishlistItem.author && (
-                      <p className="match-author">by {match.wishlistItem.author}</p>
-                    )}
-                    <span className="match-count">
-                      {match.matches.length} available
-                    </span>
-                  </div>
-
-                  <div className="matched-books-grid">
-                    {match.matches.map((book) => (
-                      <div key={book._id} className="matched-book-card">
-                        <Link to={`/books/${book._id}`}>
-                          <img 
-                            src={book.imageUrl || '/placeholder-book.png'} 
-                            alt={book.title}
-                            className="book-cover"
-                          />
-                        </Link>
-                        <div className="book-info">
-                          <Link to={`/books/${book._id}`}>
-                            <h4>{book.title}</h4>
-                          </Link>
-                          <p className="book-author">{book.author}</p>
-                          <p className="book-condition">Condition: {book.condition}</p>
-                          
-                          {book.owner && (
-                            <div className="book-owner">
-                              <Link to={`/profile/${book.owner._id}`}>
-                                <div className="owner-avatar">
-                                  {book.owner.name?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                                <span>{book.owner.name || 'Unknown'}</span>
-                              </Link>
-                            </div>
-                          )}
-
-                          <Link to={`/books/${book._id}`} className="btn-view-book">
-                            View Details
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        )}
+        }
       </div>
     </div>
   );

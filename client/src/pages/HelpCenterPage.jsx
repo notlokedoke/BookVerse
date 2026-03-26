@@ -49,7 +49,7 @@ const HelpCenterPage = () => {
         },
         {
           q: 'What book conditions can I choose?',
-          a: 'We have five condition categories: New (unread), Like New (minimal wear), Good (normal reading wear), Fair (noticeable wear but readable), and Poor (significant wear but complete).'
+          a: 'We have four condition categories for secondhand books: Like New (minimal wear, excellent condition), Good (normal reading wear), Fair (noticeable wear but readable), and Poor (significant wear but complete).'
         },
         {
           q: 'Can I edit or delete my book listings?',

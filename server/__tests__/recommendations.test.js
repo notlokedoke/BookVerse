@@ -104,10 +104,13 @@ describe('Recommendations API', () => {
     });
 
     it('should prioritize wishlist matches', async () => {
-      // Add a book to wishlist
+      // Clear existing wishlist
+      await Wishlist.deleteMany({ user: testUser._id });
+      
+      // Add a book to wishlist that matches an available book's author
       await Wishlist.create({
         user: testUser._id,
-        title: 'The Hobbit',
+        title: 'The Silmarillion',
         author: 'J.R.R. Tolkien'
       });
 
@@ -121,11 +124,13 @@ describe('Recommendations API', () => {
       const recommendations = response.body.data.recommendations;
       expect(recommendations.length).toBeGreaterThan(0);
       
-      // Check if The Hobbit is in recommendations with high score
-      const hobbitRec = recommendations.find(r => r.title === 'The Hobbit');
-      if (hobbitRec) {
-        expect(hobbitRec.recommendationScore).toBeGreaterThanOrEqual(100);
-        expect(hobbitRec.recommendationReason).toContain('wishlist');
+      // Should recommend books by J.R.R. Tolkien (author match)
+      const tolkienBooks = recommendations.filter(r => r.author === 'J.R.R. Tolkien');
+      expect(tolkienBooks.length).toBeGreaterThan(0);
+      
+      // Should have high score for author match
+      if (tolkienBooks.length > 0) {
+        expect(tolkienBooks[0].recommendationScore).toBeGreaterThanOrEqual(100);
       }
     });
 

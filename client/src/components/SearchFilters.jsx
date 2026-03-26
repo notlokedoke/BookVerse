@@ -1,6 +1,5 @@
 import React from 'react';
 import { Search, MapPin, BookOpen, User, X } from 'lucide-react';
-import GenreFilter from './GenreFilter';
 import './SearchFilters.css';
 
 const SearchFilters = ({
@@ -66,27 +65,6 @@ const SearchFilters = ({
           </button>
         )}
       </div>
-
-      {/* Genre Filter Section */}
-      <div className="genre-filter-panel">
-        <GenreFilter
-          selectedGenre={filters.genre}
-          onChange={(genre) => onFilterChange('genre', genre)}
-        />
-      </div>
-
-      {/* Results Summary */}
-      {!loading && (
-        <div className="results-badge">
-          {resultsCount > 0 ? (
-            <span>
-              {resultsCount} book{resultsCount !== 1 ? 's' : ''} found
-            </span>
-          ) : (
-            <span>No books found</span>
-          )}
-        </div>
-      )}
     </div>
   );
 };

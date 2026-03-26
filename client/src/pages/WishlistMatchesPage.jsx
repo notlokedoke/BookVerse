@@ -43,16 +43,6 @@ const WishlistMatchesPage = () => {
     }
   };
 
-  const getMatchBadge = (matchType, matchScore) => {
-    if (matchType === 'exact') {
-      return <span className="match-badge exact">Perfect Match</span>;
-    } else if (matchType === 'strong') {
-      return <span className="match-badge strong">Strong Match</span>;
-    } else {
-      return <span className="match-badge fuzzy">{matchScore}% Match</span>;
-    }
-  };
-
   if (loading) {
     return (
       <div className="wishlist-matches-container">
@@ -105,8 +95,6 @@ const WishlistMatchesPage = () => {
             <div className="matched-books-grid">
               {match.matches.map((book) => (
                 <div key={book._id} className="matched-book-card">
-                  {getMatchBadge(book.matchType, book.matchScore)}
-                  
                   <Link to={`/browse?bookId=${book._id}`} className="book-link">
                     <img 
                       src={book.imageUrl || '/placeholder-book.png'} 

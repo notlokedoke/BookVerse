@@ -37,12 +37,28 @@ const MyBooksPage = () => {
       setError(null);
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=20`
+        `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=28`
       );
 
       if (response.data.success) {
-        setBooks(response.data.data.books || []);
-        setPagination(response.data.data.pagination);
+        const fetchedBooks = response.data.data.books || [];
+        const paginationData = response.data.data.pagination;
+        
+        // If current page is empty and we're not on page 1, redirect to last valid page
+        if (fetchedBooks.length === 0 && page > 1 && paginationData.totalPages > 0) {
+          const lastValidPage = Math.min(page - 1, paginationData.totalPages);
+          navigate(`/my-books?page=${lastValidPage}`);
+          return;
+        }
+        
+        // If current page exceeds total pages, go to last page
+        if (page > paginationData.totalPages && paginationData.totalPages > 0) {
+          navigate(`/my-books?page=${paginationData.totalPages}`);
+          return;
+        }
+        
+        setBooks(fetchedBooks);
+        setPagination(paginationData);
       } else {
         setError('Failed to fetch your books');
       }
@@ -71,7 +87,7 @@ const MyBooksPage = () => {
       const preloadNextPage = async () => {
         try {
           const response = await axios.get(
-            `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${nextPage}&limit=20`
+            `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${nextPage}&limit=28`
           );
           
           if (response.data.success) {
@@ -129,16 +145,15 @@ const MyBooksPage = () => {
       );
 
       if (response.data.success) {
-        // Remove the deleted book from the books list
-        setBooks(prevBooks =>
-          prevBooks.filter(book => book._id !== deletingBook._id)
-        );
-
         toast.success('Book listing deleted successfully');
 
         // Close confirmation dialog
         setShowDeleteConfirm(false);
         setDeletingBook(null);
+
+        // Refetch books to update pagination
+        const currentPage = parseInt(searchParams.get('page')) || 1;
+        await fetchUserBooks(currentPage);
       } else {
         setError('Failed to delete book');
       }
@@ -233,7 +248,7 @@ const MyBooksPage = () => {
               <div className="skeleton-stat-card"></div>
             </div>
             <div className="skeleton-grid">
-              {[...Array(Math.min(20, pagination.totalBooks || 6))].map((_, i) => (
+              {[...Array(Math.min(28, pagination.totalBooks || 8))].map((_, i) => (
                 <div key={i} className="skeleton-card"></div>
               ))}
             </div>
