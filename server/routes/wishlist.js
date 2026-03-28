@@ -92,23 +92,36 @@ router.post('/', [
     if (isbn && isbn.trim()) {
       wishlistData.isbn = isbn.trim();
       
-      // Try to fetch book cover from Google Books if ISBN is provided and no imageUrl
+      // Try to fetch book cover from Open Library first, then fallback to Google Books 
       if (!imageUrl || !imageUrl.trim()) {
         try {
-          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn.trim()}`;
-          const googleResponse = await axios.get(googleBooksUrl);
+          const cleanIsbn = isbn.replace(/[-\s]/g, '');
+          const openLibraryUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`;
           
-          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-            const bookInfo = googleResponse.data.items[0].volumeInfo;
-            if (bookInfo.imageLinks) {
-              // Use the highest quality image available
-              wishlistData.imageUrl = bookInfo.imageLinks.thumbnail || 
-                                     bookInfo.imageLinks.smallThumbnail;
+          // Make a lightweight HEAD request to check if Open Library actually has an image
+          let coverImage = null;
+          try {
+            await axios.head(openLibraryUrl, { timeout: 5000 });
+            coverImage = openLibraryUrl;
+          } catch (olError) {
+            // Open Library failed, fallback to Google Books
+            const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
+            const googleResponse = await axios.get(googleBooksUrl);
+            
+            if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+              const bookInfo = googleResponse.data.items[0].volumeInfo;
+              if (bookInfo.imageLinks) {
+                coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+              }
             }
           }
-        } catch (googleError) {
+          
+          if (coverImage) {
+            wishlistData.imageUrl = coverImage;
+          }
+        } catch (error) {
           // Silently fail - image is optional
-          console.log('Could not fetch Google Books image:', googleError.message);
+          console.log('Could not fetch book image:', error.message);
         }
       }
     }
@@ -452,18 +465,29 @@ router.post('/backfill-images', authenticateToken, async (req, res) => {
     // Process each item
     for (const item of wishlistItems) {
       try {
-        const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${item.isbn}`;
-        const googleResponse = await axios.get(googleBooksUrl);
+        const cleanIsbn = item.isbn.replace(/[-\s]/g, '');
+        const openLibraryUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg?default=false`;
         
-        if (googleResponse.data.items && googleResponse.data.items.length > 0) {
-          const bookInfo = googleResponse.data.items[0].volumeInfo;
-          if (bookInfo.imageLinks) {
-            item.imageUrl = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
-            await item.save();
-            updatedCount++;
-          } else {
-            failedCount++;
+        let coverImage = null;
+        try {
+          await axios.head(openLibraryUrl, { timeout: 5000 });
+          coverImage = openLibraryUrl;
+        } catch (olError) {
+          const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`;
+          const googleResponse = await axios.get(googleBooksUrl);
+          
+          if (googleResponse.data.items && googleResponse.data.items.length > 0) {
+            const bookInfo = googleResponse.data.items[0].volumeInfo;
+            if (bookInfo.imageLinks) {
+              coverImage = bookInfo.imageLinks.thumbnail || bookInfo.imageLinks.smallThumbnail;
+            }
           }
+        }
+        
+        if (coverImage) {
+          item.imageUrl = coverImage;
+          await item.save();
+          updatedCount++;
         } else {
           failedCount++;
         }
