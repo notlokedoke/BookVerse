@@ -277,6 +277,102 @@ describe('Auth Routes', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe(validUserData.email);
     });
+
+    test('should generate valid JWT token that can be verified', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        })
+        .expect(200);
+
+      const token = response.body.data.token;
+      expect(token).toBeDefined();
+      expect(typeof token).toBe('string');
+
+      // Verify the token can be decoded
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      expect(decoded).toHaveProperty('id');
+      expect(decoded).toHaveProperty('iat'); // issued at
+      expect(decoded).toHaveProperty('exp'); // expiration
+      expect(decoded.id).toBe(response.body.data.user._id);
+    });
+
+    test('should include correct user ID in JWT token payload', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        })
+        .expect(200);
+
+      const token = response.body.data.token;
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // The token payload should contain the user's ID
+      expect(decoded.id).toBe(response.body.data.user._id);
+      
+      // Verify we can use this token to fetch the user profile
+      const profileResponse = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(profileResponse.body.data._id).toBe(decoded.id);
+      expect(profileResponse.body.data.email).toBe(validUserData.email);
+    });
+
+    test('should set token expiration time', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        })
+        .expect(200);
+
+      const token = response.body.data.token;
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Check that expiration is set
+      expect(decoded.exp).toBeDefined();
+      expect(decoded.iat).toBeDefined();
+      
+      // Verify expiration is in the future
+      const currentTime = Math.floor(Date.now() / 1000);
+      expect(decoded.exp).toBeGreaterThan(currentTime);
+      
+      // Verify expiration is approximately 24 hours from now (with 1 minute tolerance)
+      const expectedExpiration = currentTime + (24 * 60 * 60);
+      expect(decoded.exp).toBeGreaterThanOrEqual(expectedExpiration - 60);
+      expect(decoded.exp).toBeLessThanOrEqual(expectedExpiration + 60);
+    });
+
+    test('should not include sensitive data in JWT token payload', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        })
+        .expect(200);
+
+      const token = response.body.data.token;
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Token should only contain user ID, not sensitive information
+      expect(decoded).not.toHaveProperty('password');
+      expect(decoded).not.toHaveProperty('email');
+      expect(decoded).not.toHaveProperty('name');
+      expect(decoded.id).toBeDefined();
+    });
   });
 
   describe('GET /api/auth/me', () => {
@@ -620,6 +716,233 @@ describe('Auth Routes', () => {
 
       expect(profileResponse.body.data.name).toBe(updateData.name);
       expect(profileResponse.body.data.city).toBe(updateData.city);
+    });
+  });
+
+  describe('Protected Route Access', () => {
+    const validUserData = {
+      name: 'Protected User',
+      email: 'protected@example.com',
+      password: 'password123',
+      city: 'Denver'
+    };
+
+    let authToken;
+    let userId;
+
+    beforeEach(async () => {
+      // Create a user and get auth token
+      const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send(validUserData);
+      
+      userId = registerResponse.body.data._id;
+
+      const loginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: validUserData.email,
+          password: validUserData.password
+        });
+      
+      authToken = loginResponse.body.data.token;
+    });
+
+    test('should allow access to protected route with valid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('_id');
+      expect(response.body.data._id).toBe(userId);
+      expect(response.body.data.email).toBe(validUserData.email);
+    });
+
+    test('should deny access to protected route without token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should deny access to protected route with invalid token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer invalid.jwt.token')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should deny access to protected route with malformed token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer malformed-token-without-dots')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should deny access to protected route with token signed with wrong secret', async () => {
+      const jwt = require('jsonwebtoken');
+      const wrongSecretToken = jwt.sign(
+        { id: userId },
+        'wrong-secret-key',
+        { expiresIn: '1h' }
+      );
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${wrongSecretToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should deny access to protected route with expired token', async () => {
+      const jwt = require('jsonwebtoken');
+      const expiredToken = jwt.sign(
+        { id: userId },
+        process.env.JWT_SECRET,
+        { expiresIn: '1ms' }
+      );
+
+      // Wait to ensure token is expired
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('INVALID_TOKEN');
+      expect(response.body.error.message).toBe('Invalid or expired token');
+    });
+
+    test('should deny access to protected route with token for deleted user', async () => {
+      // Delete the user
+      await User.findByIdAndDelete(userId);
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('USER_NOT_FOUND');
+      expect(response.body.error.message).toBe('Invalid token. User not found.');
+    });
+
+    test('should deny access to protected route with empty Authorization header', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', '')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should deny access to protected route with Bearer prefix but no token', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', 'Bearer ')
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should deny access to protected route with token but no Bearer prefix', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', authToken)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('NO_TOKEN');
+      expect(response.body.error.message).toBe('Access denied. No token provided.');
+    });
+
+    test('should allow access to multiple protected routes with same valid token', async () => {
+      // Test GET /api/auth/me
+      const meResponse = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(meResponse.body.success).toBe(true);
+      expect(meResponse.body.data._id).toBe(userId);
+
+      // Test PUT /api/auth/profile
+      const profileResponse = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: 'Updated Name' })
+        .expect(200);
+
+      expect(profileResponse.body.success).toBe(true);
+      expect(profileResponse.body.data.name).toBe('Updated Name');
+    });
+
+    test('should extract correct user ID from token for protected routes', async () => {
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // Verify the returned user matches the token's user ID
+      expect(response.body.data._id).toBe(userId);
+      expect(response.body.data.email).toBe(validUserData.email);
+      expect(response.body.data.name).toBe(validUserData.name);
+    });
+
+    test('should deny access with token containing invalid user ID format', async () => {
+      const jwt = require('jsonwebtoken');
+      const invalidIdToken = jwt.sign(
+        { id: 'not-a-valid-objectid' },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${invalidIdToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('USER_NOT_FOUND');
+    });
+
+    test('should deny access with token missing user ID in payload', async () => {
+      const jwt = require('jsonwebtoken');
+      const noIdToken = jwt.sign(
+        { email: validUserData.email }, // Missing 'id' field
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${noIdToken}`)
+        .expect(401);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('USER_NOT_FOUND');
     });
   });
 });
