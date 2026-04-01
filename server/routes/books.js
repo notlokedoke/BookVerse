@@ -631,8 +631,15 @@ router.get('/', async (req, res) => {
     }
 
     // Add sorting and pagination
+    // Use random sorting to give all users fair visibility
+    // Add a random field for shuffling, then sort by it
     pipeline.push(
-      { $sort: { createdAt: -1 } },
+      { 
+        $addFields: { 
+          randomSort: { $rand: {} } 
+        } 
+      },
+      { $sort: { randomSort: 1 } },
       { $skip: skip },
       { $limit: limitNum }
     );

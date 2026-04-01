@@ -129,13 +129,22 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
             <p className="book-author" title={author}>
               by {author}
             </p>
-            {owner && (
-              <p className="book-owner-name" title={`Listed by ${owner.username}`}>
-                {owner.username}
-              </p>
-            )}
           </div>
         </Link>
+
+        {/* Owner Info - Outside the main link to make it independently clickable */}
+        {showOwner && owner && (
+          <Link to={`/profile/${owner._id}`} className="book-owner-link">
+            <div className="book-owner-info">
+              <span className="owner-avatar">
+                {owner.name?.charAt(0).toUpperCase()}
+              </span>
+              <span className="owner-name" title={`View ${owner.name}'s profile`}>
+                {owner.name}
+              </span>
+            </div>
+          </Link>
+        )}
 
         {/* Propose Trade Button for Available Books */}
         {isAuthenticated && !isOwner && isAvailable && (
