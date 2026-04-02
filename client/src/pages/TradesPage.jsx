@@ -1,40 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import TradeCard from '../components/TradeCard';
-import { RefreshCw, Clock, CheckCircle, XCircle, TrendingUp, Search } from 'lucide-react';
+import { RefreshCw, Search, TrendingUp } from 'lucide-react';
 import './TradesPage.css';
 
 const TradesPage = () => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('all'); // all, incoming, outgoing
-  const [statusFilter, setStatusFilter] = useState('all'); // all, pending, active, completed
-
-  // Set initial status filter from URL parameter
-  useEffect(() => {
-    const statusParam = searchParams.get('status');
-    if (statusParam && ['pending', 'active', 'completed'].includes(statusParam)) {
-      setStatusFilter(statusParam);
-    }
-  }, [searchParams]);
-
-  // Update URL when status filter changes
-  const handleStatusFilterChange = (status) => {
-    setStatusFilter(status);
-    if (status === 'all') {
-      // Remove status parameter if showing all
-      searchParams.delete('status');
-      setSearchParams(searchParams);
-    } else {
-      // Update status parameter
-      setSearchParams({ status });
-    }
-  };
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     fetchTrades();
@@ -80,50 +57,23 @@ const TradesPage = () => {
     }
   };
 
-  // Filter trades based on active tab and status filter
-  const getFilteredTrades = () => {
-    if (!user) return [];
+  const filteredTrades = useMemo(() => {
+    let filtered = [...trades];
 
-    let filtered = trades;
-
-    // Apply tab filter (incoming/outgoing)
-    switch (activeTab) {
-      case 'incoming':
-        filtered = filtered.filter(trade => trade.receiver?._id === user._id);
-        break;
-      case 'outgoing':
-        filtered = filtered.filter(trade => trade.proposer?._id === user._id);
-        break;
-      default:
-        // 'all' - no filtering by direction
-        break;
+    if (activeTab === 'incoming') {
+      filtered = filtered.filter(trade => trade.receiver?._id === user?._id);
     }
 
-    // Apply status filter
-    switch (statusFilter) {
-      case 'pending':
-        filtered = filtered.filter(trade => trade.status === 'proposed');
-        break;
-      case 'active':
-        filtered = filtered.filter(trade => trade.status === 'accepted');
-        break;
-      case 'completed':
-        filtered = filtered.filter(trade => trade.status === 'completed');
-        break;
-      default:
-        // 'all' - no filtering by status
-        break;
+    if (activeTab === 'outgoing') {
+      filtered = filtered.filter(trade => trade.proposer?._id === user?._id);
     }
 
     return filtered;
-  };
+  }, [trades, activeTab, user]);
 
-  const filteredTrades = getFilteredTrades();
+  // Global counts for stat cards
   const incomingCount = trades.filter(trade => trade.receiver?._id === user?._id).length;
   const outgoingCount = trades.filter(trade => trade.proposer?._id === user?._id).length;
-  const pendingCount = trades.filter(trade => trade.status === 'proposed').length;
-  const activeCount = trades.filter(trade => trade.status === 'accepted').length;
-  const completedCount = trades.filter(trade => trade.status === 'completed').length;
 
   // Skeleton loading state
   if (loading) {
@@ -199,118 +149,70 @@ const TradesPage = () => {
           </div>
         </section>
 
-        {/* Trades Stats */}
-        <section className="trades-stats">
-          <button 
-            className="stat-card gradient-pink clickable"
-            onClick={() => handleStatusFilterChange('pending')}
-          >
-            <div className="stat-icon-container">
-              <Clock size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{pendingCount}</p>
-              <p className="stat-label">Pending</p>
-            </div>
-            {pendingCount > 0 && (
-              <span className="stat-badge pulse">!</span>
-            )}
-          </button>
-          <button 
-            className="stat-card gradient-amber clickable"
-            onClick={() => handleStatusFilterChange('active')}
-          >
-            <div className="stat-icon-container">
-              <CheckCircle size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{activeCount}</p>
-              <p className="stat-label">Active</p>
-            </div>
-          </button>
-          <button 
-            className="stat-card gradient-blue clickable"
-            onClick={() => handleStatusFilterChange('completed')}
-          >
-            <div className="stat-icon-container">
-              <CheckCircle size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{completedCount}</p>
-              <p className="stat-label">Completed</p>
-            </div>
-          </button>
-          <button 
-            className="stat-card gradient-purple clickable"
-            onClick={() => handleStatusFilterChange('all')}
-          >
-            <div className="stat-icon-container">
-              <RefreshCw size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{trades.length}</p>
-              <p className="stat-label">Total Trades</p>
-            </div>
-          </button>
-        </section>
-
-        {/* Tabs */}
-        <section className="trades-tabs glass-card">
-          <button
-            className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            All Trades
-            <span className="tab-count">{trades.length}</span>
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'incoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('incoming')}
-          >
-            Incoming
-            <span className="tab-count">{incomingCount}</span>
-          </button>
-          <button
-            className={`tab-button ${activeTab === 'outgoing' ? 'active' : ''}`}
-            onClick={() => setActiveTab('outgoing')}
-          >
-            Outgoing
-            <span className="tab-count">{outgoingCount}</span>
-          </button>
-        </section>
-
-        {/* Trades List */}
-        {filteredTrades.length > 0 ? (
-          <section className="trades-section">
-            <div className="trades-grid">
-              {filteredTrades.map((trade) => (
-                <TradeCard key={trade._id} trade={trade} />
-              ))}
-            </div>
-          </section>
-        ) : (
+        {trades.length === 0 ? (
           <div className="empty-state glass-card">
             <div className="empty-illustration">
               <RefreshCw size={64} />
             </div>
-            <h2>
-              {activeTab === 'incoming' && 'No Incoming Trades'}
-              {activeTab === 'outgoing' && 'No Outgoing Trades'}
-              {activeTab === 'all' && 'No Trades Yet'}
-            </h2>
-            <p>
-              {activeTab === 'incoming' &&
-                'You haven\'t received any trade proposals yet. Keep your books listed and wait for offers!'}
-              {activeTab === 'outgoing' &&
-                'You haven\'t proposed any trades yet. Browse books and start trading!'}
-              {activeTab === 'all' &&
-                'Start trading by browsing available books and proposing exchanges.'}
-            </p>
+            <h2>No Trades Yet</h2>
+            <p>Start trading by browsing available books and proposing exchanges.</p>
             <Link to="/browse" className="btn-get-started">
               <Search size={18} />
               Browse Books
             </Link>
           </div>
+        ) : (
+          <>
+            <section className="trades-tabs glass-card">
+              <button
+                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Trades
+                <span className="tab-count">{trades.length}</span>
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'incoming' ? 'active' : ''}`}
+                onClick={() => setActiveTab('incoming')}
+              >
+                Incoming
+                <span className="tab-count">{incomingCount}</span>
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'outgoing' ? 'active' : ''}`}
+                onClick={() => setActiveTab('outgoing')}
+              >
+                Outgoing
+                <span className="tab-count">{outgoingCount}</span>
+              </button>
+            </section>
+
+            <section className="trades-section">
+              {filteredTrades.length > 0 ? (
+                <div className="trades-grid">
+                  {filteredTrades.map((trade) => (
+                    <TradeCard key={trade._id} trade={trade} />
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state glass-card">
+                  <div className="empty-illustration">
+                    <RefreshCw size={64} />
+                  </div>
+                  <h2>No Trades Found</h2>
+                  <p>Try switching tabs or clearing filters to see more trades.</p>
+                  <button
+                    className="btn-get-started"
+                    onClick={() => {
+                      setActiveTab('all');
+                    }}
+                  >
+                    Reset Filters
+                  </button>
+                </div>
+              )}
+            </section>
+          </>
         )}
       </div>
     </div>

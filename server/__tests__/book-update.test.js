@@ -4,9 +4,13 @@ require('dotenv').config({ path: __dirname + '/../.env.test' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../server');
-const User = require('../models/User');
 const Book = require('../models/Book');
-const { generateToken } = require('../utils/jwt');
+const {
+  clearDatabase,
+  createTestUser,
+  generateAuthToken,
+  createTestBook
+} = require('./test-utils');
 
 describe('Book Update Tests (Task 140)', () => {
   let bookOwner, nonOwner, ownerToken, nonOwnerToken, testBook;
@@ -20,11 +24,10 @@ describe('Book Update Tests (Task 140)', () => {
 
   beforeEach(async () => {
     // Clear database
-    await User.deleteMany({});
-    await Book.deleteMany({});
+    await clearDatabase();
 
     // Create book owner
-    bookOwner = await User.create({
+    bookOwner = await createTestUser({
       name: 'Book Owner',
       email: 'owner@example.com',
       password: 'password123',
@@ -32,7 +35,7 @@ describe('Book Update Tests (Task 140)', () => {
     });
 
     // Create non-owner user
-    nonOwner = await User.create({
+    nonOwner = await createTestUser({
       name: 'Non Owner',
       email: 'nonowner@example.com',
       password: 'password123',
@@ -40,12 +43,11 @@ describe('Book Update Tests (Task 140)', () => {
     });
 
     // Generate auth tokens
-    ownerToken = generateToken(bookOwner._id);
-    nonOwnerToken = generateToken(nonOwner._id);
+    ownerToken = generateAuthToken(bookOwner._id);
+    nonOwnerToken = generateAuthToken(nonOwner._id);
 
     // Create a test book owned by bookOwner
-    testBook = await Book.create({
-      owner: bookOwner._id,
+    testBook = await createTestBook(bookOwner._id, {
       title: 'Original Title',
       author: 'Original Author',
       condition: 'Good',
@@ -60,8 +62,7 @@ describe('Book Update Tests (Task 140)', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Book.deleteMany({});
+    await clearDatabase();
   });
 
   afterAll(async () => {

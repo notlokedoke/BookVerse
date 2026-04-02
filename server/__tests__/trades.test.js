@@ -1,11 +1,15 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../server');
-const User = require('../models/User');
 const Book = require('../models/Book');
 const Trade = require('../models/Trade');
 const Notification = require('../models/Notification');
-const { generateToken } = require('../utils/jwt');
+const {
+  clearDatabase,
+  createTestUser,
+  generateAuthToken,
+  createTestBook
+} = require('./test-utils');
 
 describe('Trades API - Propose Trade', () => {
   let user1, user2, user1Token, user2Token;
@@ -20,20 +24,17 @@ describe('Trades API - Propose Trade', () => {
 
   beforeEach(async () => {
     // Clear database
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
 
     // Create test users
-    user1 = await User.create({
+    user1 = await createTestUser({
       name: 'User One',
       email: 'user1@example.com',
       password: 'password123',
       city: 'New York'
     });
 
-    user2 = await User.create({
+    user2 = await createTestUser({
       name: 'User Two',
       email: 'user2@example.com',
       password: 'password123',
@@ -41,12 +42,11 @@ describe('Trades API - Propose Trade', () => {
     });
 
     // Generate tokens
-    user1Token = generateToken(user1._id);
-    user2Token = generateToken(user2._id);
+    user1Token = generateAuthToken(user1._id);
+    user2Token = generateAuthToken(user2._id);
 
     // Create test books
-    user1Book = await Book.create({
-      owner: user1._id,
+    user1Book = await createTestBook(user1._id, {
       title: 'User 1 Book',
       author: 'Author One',
       genre: 'Fiction',
@@ -55,8 +55,7 @@ describe('Trades API - Propose Trade', () => {
       isAvailable: true
     });
 
-    user2Book = await Book.create({
-      owner: user2._id,
+    user2Book = await createTestBook(user2._id, {
       title: 'User 2 Book',
       author: 'Author Two',
       genre: 'Science',
@@ -67,10 +66,7 @@ describe('Trades API - Propose Trade', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
   });
 
   afterAll(async () => {
@@ -354,8 +350,7 @@ describe('Trades API - Propose Trade', () => {
       });
 
       // Create another book for user2
-      const user2Book2 = await Book.create({
-        owner: user2._id,
+      const user2Book2 = await createTestBook(user2._id, {
         title: 'User 2 Book 2',
         author: 'Author Two',
         genre: 'Mystery',
@@ -376,15 +371,14 @@ describe('Trades API - Propose Trade', () => {
       });
 
       // Create a third user and book for testing filtering
-      const user3 = await User.create({
+      const user3 = await createTestUser({
         name: 'User Three',
         email: 'user3@example.com',
         password: 'password123',
         city: 'Chicago'
       });
 
-      const user3Book = await Book.create({
-        owner: user3._id,
+      const user3Book = await createTestBook(user3._id, {
         title: 'User 3 Book',
         author: 'Author Three',
         genre: 'History',
@@ -503,13 +497,13 @@ describe('Trades API - Propose Trade', () => {
 
     test('should return empty array when user has no trades', async () => {
       // Create a new user with no trades
-      const user4 = await User.create({
+      const user4 = await createTestUser({
         name: 'User Four',
         email: 'user4@example.com',
         password: 'password123',
         city: 'Boston'
       });
-      const user4Token = generateToken(user4._id);
+      const user4Token = generateAuthToken(user4._id);
 
       const response = await request(app)
         .get('/api/trades')
@@ -572,20 +566,17 @@ describe('Trades API - Accept/Decline Trade', () => {
 
   beforeEach(async () => {
     // Clear database
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
 
     // Create test users
-    user1 = await User.create({
+    user1 = await createTestUser({
       name: 'User One',
       email: 'user1@example.com',
       password: 'password123',
       city: 'New York'
     });
 
-    user2 = await User.create({
+    user2 = await createTestUser({
       name: 'User Two',
       email: 'user2@example.com',
       password: 'password123',
@@ -593,12 +584,11 @@ describe('Trades API - Accept/Decline Trade', () => {
     });
 
     // Generate tokens
-    user1Token = generateToken(user1._id);
-    user2Token = generateToken(user2._id);
+    user1Token = generateAuthToken(user1._id);
+    user2Token = generateAuthToken(user2._id);
 
     // Create test books
-    user1Book = await Book.create({
-      owner: user1._id,
+    user1Book = await createTestBook(user1._id, {
       title: 'User 1 Book',
       author: 'Author One',
       genre: 'Fiction',
@@ -607,8 +597,7 @@ describe('Trades API - Accept/Decline Trade', () => {
       isAvailable: true
     });
 
-    user2Book = await Book.create({
-      owner: user2._id,
+    user2Book = await createTestBook(user2._id, {
       title: 'User 2 Book',
       author: 'Author Two',
       genre: 'Science',
@@ -629,10 +618,7 @@ describe('Trades API - Accept/Decline Trade', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
   });
 
   afterAll(async () => {
@@ -943,20 +929,17 @@ describe('Trades API - Complete Trade', () => {
 
   beforeEach(async () => {
     // Clear database
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
 
     // Create test users
-    user1 = await User.create({
+    user1 = await createTestUser({
       name: 'User One',
       email: 'user1@example.com',
       password: 'password123',
       city: 'New York'
     });
 
-    user2 = await User.create({
+    user2 = await createTestUser({
       name: 'User Two',
       email: 'user2@example.com',
       password: 'password123',
@@ -964,12 +947,11 @@ describe('Trades API - Complete Trade', () => {
     });
 
     // Generate tokens
-    user1Token = generateToken(user1._id);
-    user2Token = generateToken(user2._id);
+    user1Token = generateAuthToken(user1._id);
+    user2Token = generateAuthToken(user2._id);
 
     // Create test books
-    user1Book = await Book.create({
-      owner: user1._id,
+    user1Book = await createTestBook(user1._id, {
       title: 'User 1 Book',
       author: 'Author One',
       genre: 'Fiction',
@@ -978,8 +960,7 @@ describe('Trades API - Complete Trade', () => {
       isAvailable: true
     });
 
-    user2Book = await Book.create({
-      owner: user2._id,
+    user2Book = await createTestBook(user2._id, {
       title: 'User 2 Book',
       author: 'Author Two',
       genre: 'Science',
@@ -1001,10 +982,7 @@ describe('Trades API - Complete Trade', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Book.deleteMany({});
-    await Trade.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
   });
 
   afterAll(async () => {
@@ -1131,13 +1109,13 @@ describe('Trades API - Complete Trade', () => {
 
     test('should reject complete request from non-participant (Req 11.3)', async () => {
       // Create a third user who is not part of the trade
-      const user3 = await User.create({
+      const user3 = await createTestUser({
         name: 'User Three',
         email: 'user3@example.com',
         password: 'password123',
         city: 'Chicago'
       });
-      const user3Token = generateToken(user3._id);
+      const user3Token = generateAuthToken(user3._id);
 
       const response = await request(app)
         .put(`/api/trades/${acceptedTrade._id}/complete`)
@@ -1247,8 +1225,7 @@ describe('Trades API - Complete Trade', () => {
         respondedAt: new Date()
       });
 
-      const user2Book2 = await Book.create({
-        owner: user2._id,
+      const user2Book2 = await createTestBook(user2._id, {
         title: 'User 2 Book 2',
         author: 'Author Two',
         genre: 'Mystery',

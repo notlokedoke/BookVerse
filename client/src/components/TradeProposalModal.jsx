@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { BookOpen } from 'lucide-react';
 import './TradeProposalModal.css';
 
 const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
   const { user } = useAuth();
+  const toast = useToast();
   const [userBooks, setUserBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState('');
   const [loading, setLoading] = useState(false);
@@ -102,6 +104,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
 
       if (response.ok && data.success) {
         setSuccess(true);
+        toast.success('Trade proposal sent successfully!');
         setTimeout(() => {
           handleClose();
         }, 2000);
@@ -109,10 +112,13 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
         // Handle all validation error cases
         const errorMessage = getErrorMessage(data.error, response.status);
         setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
       console.error('Error proposing trade:', err);
-      setError('Unable to connect to server. Please try again.');
+      const errorMsg = 'Unable to connect to server. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }

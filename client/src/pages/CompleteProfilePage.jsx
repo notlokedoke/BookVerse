@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import CitySelector from '../components/common/CitySelector';
 import './CompleteProfilePage.css';
@@ -9,6 +10,7 @@ const CompleteProfilePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { updateUser, setToken } = useAuth();
+  const toast = useToast();
 
   const [city, setCity] = useState('');
   const [error, setError] = useState('');
@@ -174,6 +176,7 @@ const CompleteProfilePage = () => {
       if (response.data.success) {
         updateUser(response.data.data);
         setToken(token);
+        toast.success('Profile completed successfully!');
         navigate('/dashboard');
       }
     } catch (err) {
@@ -184,13 +187,17 @@ const CompleteProfilePage = () => {
       if (err.response?.status === 401 ||
         err.response?.data?.error?.code === 'INVALID_TOKEN' ||
         err.response?.data?.error?.code === 'NO_TOKEN') {
-        setError('Your session has expired. Please sign in again.');
+        const errorMsg = 'Your session has expired. Please sign in again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setTimeout(() => {
           localStorage.removeItem('token');
           navigate('/login');
         }, 2000);
       } else {
-        setError(err.response?.data?.error?.message || 'Failed to update profile');
+        const errorMsg = err.response?.data?.error?.message || 'Failed to update profile';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);
@@ -241,6 +248,7 @@ const CompleteProfilePage = () => {
       if (response.data.success) {
         updateUser(response.data.data);
         setToken(token);
+        toast.info('Profile setup skipped. You can add your location later in settings.');
         navigate('/dashboard');
       }
     } catch (err) {
@@ -249,13 +257,17 @@ const CompleteProfilePage = () => {
 
       // Check if it's a token error
       if (err.response?.status === 401) {
-        setError('Your session has expired. Please sign in again.');
+        const errorMsg = 'Your session has expired. Please sign in again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
         setTimeout(() => {
           localStorage.removeItem('token');
           navigate('/login');
         }, 2000);
       } else {
-        setError('Failed to proceed. Please try again.');
+        const errorMsg = 'Failed to proceed. Please try again.';
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { BookOpen } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 import CitySelector from './common/CitySelector';
 import './SignUp.css';
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -159,6 +161,8 @@ const SignUp = () => {
 
       if (response.data.success) {
         setSuccessMessage('Registration successful! Please check your email to verify your account.');
+        toast.success('Registration successful! Check your email to verify your account.');
+        
         // Clear form
         setFormData({
           name: '',
@@ -184,6 +188,7 @@ const SignUp = () => {
           // Handle specific error codes
           if (errorData.error.code === 'EMAIL_EXISTS') {
             setErrors({ email: 'An account with this email already exists' });
+            toast.error('An account with this email already exists');
           } else if (errorData.error.code === 'VALIDATION_ERROR') {
             // Handle validation errors from server
             if (errorData.error.details && Array.isArray(errorData.error.details)) {
@@ -194,21 +199,30 @@ const SignUp = () => {
                 }
               });
               setErrors(serverErrors);
+              toast.error('Please fix the errors in the form');
             } else {
               setErrors({ general: errorData.error.message });
+              toast.error(errorData.error.message);
             }
           } else {
-            setErrors({ general: errorData.error.message || 'Registration failed. Please try again.' });
+            const errorMsg = errorData.error.message || 'Registration failed. Please try again.';
+            setErrors({ general: errorMsg });
+            toast.error(errorMsg);
           }
         } else {
           setErrors({ general: 'Registration failed. Please try again.' });
+          toast.error('Registration failed. Please try again.');
         }
       } else if (error.request) {
         // Request made but no response
-        setErrors({ general: 'Unable to connect to server. Please check your connection.' });
+        const errorMsg = 'Unable to connect to server. Please check your connection.';
+        setErrors({ general: errorMsg });
+        toast.error(errorMsg);
       } else {
         // Something else happened
-        setErrors({ general: 'An unexpected error occurred. Please try again.' });
+        const errorMsg = 'An unexpected error occurred. Please try again.';
+        setErrors({ general: errorMsg });
+        toast.error(errorMsg);
       }
     } finally {
       setIsSubmitting(false);

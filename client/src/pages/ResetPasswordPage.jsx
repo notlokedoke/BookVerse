@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
 function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -62,13 +64,15 @@ function ResetPasswordPage() {
         password
       });
       
-      alert(response.data.message);
-      navigate('/login');
+      toast.success('Password reset successfully! You can now log in with your new password.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
-      setError(
-        error.response?.data?.error?.message || 
-        'Failed to reset password. The link may have expired.'
-      );
+      const errorMsg = error.response?.data?.error?.message || 
+        'Failed to reset password. The link may have expired.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

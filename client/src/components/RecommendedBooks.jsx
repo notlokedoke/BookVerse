@@ -8,6 +8,7 @@ function RecommendedBooks({ limit = 6 }) {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isColdStart, setIsColdStart] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,6 +34,7 @@ function RecommendedBooks({ limit = 6 }) {
 
       if (response.data.success) {
         setRecommendations(response.data.data.recommendations);
+        setIsColdStart(response.data.data.isColdStart || false);
       }
     } catch (err) {
       console.error('Error fetching recommendations:', err);
@@ -73,10 +75,21 @@ function RecommendedBooks({ limit = 6 }) {
       <div className="recommended-books">
         <h2 className="recommended-books__title">Recommended for You</h2>
         <div className="recommended-books__empty">
-          <p>No recommendations yet. Add books to your wishlist to get personalized suggestions!</p>
-          <button onClick={() => navigate('/wishlist')} className="btn btn--primary">
-            Go to Wishlist
-          </button>
+          {isColdStart ? (
+            <>
+              <p>Start by exploring trending books and adding items to your wishlist for personalized recommendations!</p>
+              <button onClick={() => navigate('/browse')} className="btn btn--primary">
+                Browse Books
+              </button>
+            </>
+          ) : (
+            <>
+              <p>No recommendations yet. Add books to your wishlist to get personalized suggestions!</p>
+              <button onClick={() => navigate('/wishlist')} className="btn btn--primary">
+                Go to Wishlist
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -97,7 +110,7 @@ function RecommendedBooks({ limit = 6 }) {
       <div className="recommended-books__grid">
         {recommendations.map((book) => (
           <div key={book._id} className="recommended-books__item">
-            <BookCard book={book} />
+            <BookCard book={book} showOwner={true} />
             {book.recommendationReason && (
               <div className="recommended-books__reason">
                 <span className="recommended-books__reason-icon">✨</span>

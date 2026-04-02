@@ -1,5 +1,24 @@
 const mongoose = require('mongoose');
 
+// Helper to conditionally log (suppress in test mode)
+const log = (...args) => {
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(...args);
+  }
+};
+
+const logError = (...args) => {
+  if (process.env.NODE_ENV !== 'test') {
+    console.error(...args);
+  }
+};
+
+const logWarn = (...args) => {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn(...args);
+  }
+};
+
 /**
  * Connect to MongoDB with retry logic
  * @param {number} retries - Number of retry attempts (default: 5)
@@ -18,43 +37,43 @@ const connectDB = async (retries = 5, delay = 5000) => {
   while (attempt < retries) {
     try {
       attempt++;
-      console.log(`Attempting to connect to MongoDB (Attempt ${attempt}/${retries})...`);
+      log(`Attempting to connect to MongoDB (Attempt ${attempt}/${retries})...`);
       
       const conn = await mongoose.connect(process.env.MONGODB_URI, options);
       
-      console.log(`MongoDB Connected: ${conn.connection.host}`);
-      console.log(`Database Name: ${conn.connection.name}`);
+      log(`MongoDB Connected: ${conn.connection.host}`);
+      log(`Database Name: ${conn.connection.name}`);
       
       // Connection event listeners
       mongoose.connection.on('error', (err) => {
-        console.error(`MongoDB connection error: ${err}`);
+        logError(`MongoDB connection error: ${err}`);
       });
 
       mongoose.connection.on('disconnected', () => {
-        console.warn('MongoDB disconnected. Attempting to reconnect...');
+        logWarn('MongoDB disconnected. Attempting to reconnect...');
       });
 
       mongoose.connection.on('reconnected', () => {
-        console.log('MongoDB reconnected successfully');
+        log('MongoDB reconnected successfully');
       });
 
       // Graceful shutdown
       process.on('SIGINT', async () => {
         await mongoose.connection.close();
-        console.log('MongoDB connection closed due to application termination');
+        log('MongoDB connection closed due to application termination');
         process.exit(0);
       });
 
       return conn;
     } catch (error) {
-      console.error(`MongoDB connection attempt ${attempt} failed:`, error.message);
+      logError(`MongoDB connection attempt ${attempt} failed:`, error.message);
       
       if (attempt >= retries) {
-        console.error('Max retry attempts reached. Could not connect to MongoDB.');
+        logError('Max retry attempts reached. Could not connect to MongoDB.');
         throw new Error(`Failed to connect to MongoDB after ${retries} attempts: ${error.message}`);
       }
       
-      console.log(`Retrying in ${delay / 1000} seconds...`);
+      log(`Retrying in ${delay / 1000} seconds...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

@@ -3,6 +3,7 @@ const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const { getRecommendations, buildUserProfile } = require('../utils/recommendations');
 const { applyBookOwnerPrivacyToArray } = require('../utils/privacy');
+const Wishlist = require('../models/Wishlist');
 
 /**
  * @route   GET /api/recommendations
@@ -14,6 +15,10 @@ router.get('/', authenticateToken, async (req, res) => {
     const { limit = 10 } = req.query;
     const limitNum = Math.min(50, Math.max(1, parseInt(limit))); // Max 50, min 1
 
+    // Check if user has wishlist items
+    const wishlist = await Wishlist.find({ user: req.userId });
+    const hasWishlist = wishlist.length > 0;
+
     // Generate recommendations
     const recommendations = await getRecommendations(req.userId, limitNum);
 
@@ -24,7 +29,8 @@ router.get('/', authenticateToken, async (req, res) => {
       success: true,
       data: {
         recommendations: recommendationsWithPrivacy,
-        count: recommendationsWithPrivacy.length
+        count: recommendationsWithPrivacy.length,
+        isColdStart: !hasWishlist
       },
       message: 'Recommendations generated successfully'
     });
@@ -32,7 +38,7 @@ router.get('/', authenticateToken, async (req, res) => {
     console.error('Recommendation error:', error);
     res.status(500).json({
       success: false,
-      error: { 
+      error: {
         message: 'Failed to generate recommendations',
         code: 'RECOMMENDATION_ERROR'
       }

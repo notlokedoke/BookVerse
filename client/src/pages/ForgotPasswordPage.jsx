@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 
 function ForgotPasswordPage() {
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -16,11 +18,12 @@ function ForgotPasswordPage() {
     try {
       const response = await axios.post('/api/auth/forgot-password', { email });
       setSubmitted(true);
+      toast.success('Password reset email sent! Check your inbox.');
     } catch (error) {
-      setError(
-        error.response?.data?.error?.message || 
-        'Failed to send reset email. Please try again.'
-      );
+      const errorMsg = error.response?.data?.error?.message || 
+        'Failed to send reset email. Please try again.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

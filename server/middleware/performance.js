@@ -100,20 +100,28 @@ const apiPerformanceMonitor = (req, res, next) => {
  */
 const monitorDatabaseConnection = () => {
   mongoose.connection.on('connected', () => {
-    console.log('✅ MongoDB connected successfully');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('✅ MongoDB connected successfully');
+    }
   });
 
   mongoose.connection.on('error', (err) => {
-    console.error('❌ MongoDB connection error:', err);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('❌ MongoDB connection error:', err);
+    }
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.warn('⚠️ MongoDB disconnected');
+    if (process.env.NODE_ENV !== 'test') {
+      console.warn('⚠️ MongoDB disconnected');
+    }
   });
 
   // Monitor connection pool
   mongoose.connection.on('fullsetup', () => {
-    console.log('📊 MongoDB replica set connection established');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('📊 MongoDB replica set connection established');
+    }
   });
 };
 

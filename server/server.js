@@ -290,7 +290,7 @@ const startServer = async () => {
       // Start background jobs (only in non-test environments)
       if (process.env.NODE_ENV !== 'test') {
         console.log('Starting background jobs...');
-        bookEnrichmentJob.startJob();
+        // bookEnrichmentJob.startJob(); // Disabled - uncomment to enable book enrichment
       }
     });
   } catch (error) {

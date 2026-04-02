@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
 const Message = require('../models/Message');
-const User = require('../models/User');
 const Trade = require('../models/Trade');
-const Book = require('../models/Book');
+const {
+  clearDatabase,
+  createTestUser,
+  createTestBook,
+  createTestTrade
+} = require('./test-utils');
 
 describe('Message Model', () => {
   let testUser1, testUser2, testBook1, testBook2, testTrade;
@@ -18,20 +22,17 @@ describe('Message Model', () => {
 
   beforeEach(async () => {
     // Clear collections
-    await Message.deleteMany({});
-    await Trade.deleteMany({});
-    await Book.deleteMany({});
-    await User.deleteMany({});
+    await clearDatabase();
 
     // Create test users
-    testUser1 = await User.create({
+    testUser1 = await createTestUser({
       name: 'Test User 1',
       email: 'testuser1@example.com',
       password: 'password123',
       city: 'New York'
     });
 
-    testUser2 = await User.create({
+    testUser2 = await createTestUser({
       name: 'Test User 2',
       email: 'testuser2@example.com',
       password: 'password123',
@@ -39,8 +40,7 @@ describe('Message Model', () => {
     });
 
     // Create test books
-    testBook1 = await Book.create({
-      owner: testUser1._id,
+    testBook1 = await createTestBook(testUser1._id, {
       title: 'Test Book 1',
       author: 'Author 1',
       condition: 'Good',
@@ -48,8 +48,7 @@ describe('Message Model', () => {
       imageUrl: 'http://example.com/image1.jpg'
     });
 
-    testBook2 = await Book.create({
-      owner: testUser2._id,
+    testBook2 = await createTestBook(testUser2._id, {
       title: 'Test Book 2',
       author: 'Author 2',
       condition: 'Like New',
@@ -58,13 +57,13 @@ describe('Message Model', () => {
     });
 
     // Create test trade
-    testTrade = await Trade.create({
-      proposer: testUser1._id,
-      receiver: testUser2._id,
-      requestedBook: testBook2._id,
-      offeredBook: testBook1._id,
-      status: 'accepted'
-    });
+    testTrade = await createTestTrade(
+      testUser1._id,
+      testUser2._id,
+      testBook2._id,
+      testBook1._id,
+      { status: 'accepted' }
+    );
   });
 
   afterAll(async () => {
@@ -319,7 +318,7 @@ describe('Message Model', () => {
 // API Endpoint Tests
 const request = require('supertest');
 const app = require('../server');
-const { generateToken } = require('../utils/jwt');
+const { generateAuthToken } = require('./test-utils');
 const Notification = require('../models/Notification');
 
 describe('Messages API - Send Message', () => {
@@ -339,21 +338,17 @@ describe('Messages API - Send Message', () => {
 
   beforeEach(async () => {
     // Clear collections
-    await Message.deleteMany({});
-    await Trade.deleteMany({});
-    await Book.deleteMany({});
-    await User.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
 
     // Create test users
-    user1 = await User.create({
+    user1 = await createTestUser({
       name: 'Test User 1',
       email: 'testuser1@example.com',
       password: 'password123',
       city: 'New York'
     });
 
-    user2 = await User.create({
+    user2 = await createTestUser({
       name: 'Test User 2',
       email: 'testuser2@example.com',
       password: 'password123',
@@ -361,12 +356,11 @@ describe('Messages API - Send Message', () => {
     });
 
     // Generate tokens
-    user1Token = generateToken(user1._id);
-    user2Token = generateToken(user2._id);
+    user1Token = generateAuthToken(user1._id);
+    user2Token = generateAuthToken(user2._id);
 
     // Create test books
-    book1 = await Book.create({
-      owner: user1._id,
+    book1 = await createTestBook(user1._id, {
       title: 'Test Book 1',
       author: 'Author 1',
       condition: 'Good',
@@ -374,8 +368,7 @@ describe('Messages API - Send Message', () => {
       imageUrl: 'http://example.com/image1.jpg'
     });
 
-    book2 = await Book.create({
-      owner: user2._id,
+    book2 = await createTestBook(user2._id, {
       title: 'Test Book 2',
       author: 'Author 2',
       condition: 'Like New',
@@ -384,13 +377,13 @@ describe('Messages API - Send Message', () => {
     });
 
     // Create accepted trade
-    trade = await Trade.create({
-      proposer: user1._id,
-      receiver: user2._id,
-      requestedBook: book2._id,
-      offeredBook: book1._id,
-      status: 'accepted'
-    });
+    trade = await createTestTrade(
+      user1._id,
+      user2._id,
+      book2._id,
+      book1._id,
+      { status: 'accepted' }
+    );
   });
 
   describe('POST /api/messages', () => {
@@ -802,10 +795,6 @@ describe('Messages API - Send Message', () => {
 
   afterAll(async () => {
     // Clean up
-    await Message.deleteMany({});
-    await Trade.deleteMany({});
-    await Book.deleteMany({});
-    await User.deleteMany({});
-    await Notification.deleteMany({});
+    await clearDatabase();
   });
 });

@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 /* ===================================
-   Trades Page — Material Design
-   Clean surfaces, elevation, green theme
-   =================================== */
+  Trades Page — Split Dashboard
+  Bold surfaces, split workflow, green theme
+  =================================== */
 
 /* CSS Custom Properties */
 :root {
@@ -23,7 +25,10 @@
 
 .trades-page {
   min-height: 100vh;
-  background: var(--color-neutral-100);
+  background: radial-gradient(1200px 800px at 10% -10%, #e8faf4 0%, transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, #eef7ff 0%, transparent 55%),
+    var(--color-neutral-100);
+  font-family: 'Space Grotesk', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .trades-container {
@@ -277,12 +282,11 @@
   color: var(--text-primary);
   overflow: hidden;
   transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: none;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   width: 100%;
   text-align: left;
   font-family: inherit;
   box-shadow: var(--elevation-1);
-  border-left: 4px solid transparent;
 }
 
 .stat-card.clickable {
@@ -298,25 +302,13 @@
   box-shadow: var(--elevation-3);
 }
 
-.stat-card.gradient-pink {
-  border-left-color: var(--primary);
-}
-
-.stat-card.gradient-blue {
-  border-left-color: var(--accent);
-}
-
-.stat-card.gradient-amber {
-  border-left-color: #F39C12;
-}
-
-.stat-card.gradient-purple {
-  border-left-color: var(--secondary);
-}
-
-.stat-card.gradient-green {
-  border-left-color: var(--primary);
-}
+ .stat-card.gradient-pink,
+ .stat-card.gradient-blue,
+ .stat-card.gradient-amber,
+ .stat-card.gradient-purple,
+ .stat-card.gradient-green {
+  border-left-color: transparent;
+ }
 
 .stat-icon-container {
   width: 48px;
@@ -326,23 +318,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--primary-light);
-  color: var(--primary-dark);
-}
-
-.stat-card.gradient-blue .stat-icon-container {
-  background: #E8F6F3;
-  color: var(--accent-dark);
-}
-
-.stat-card.gradient-amber .stat-icon-container {
-  background: #FEF5E7;
-  color: #E67E22;
-}
-
-.stat-card.gradient-purple .stat-icon-container {
-  background: #EBF0F5;
-  color: var(--secondary);
+  background: #F3F4F6;
+  color: #6B7280;
 }
 
 .stat-content {
@@ -642,14 +619,6 @@
 
   .trades-stats {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .trades-tabs {
-    flex-direction: column;
-  }
-
-  .tab-button {
-    justify-content: space-between;
   }
 
   .trades-grid {

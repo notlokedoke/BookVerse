@@ -4,9 +4,13 @@ require('dotenv').config({ path: __dirname + '/../.env.test' });
 const request = require('supertest');
 const mongoose = require('mongoose');
 const app = require('../server');
-const User = require('../models/User');
 const Book = require('../models/Book');
-const { generateToken } = require('../utils/jwt');
+const {
+  clearDatabase,
+  createTestUser,
+  generateAuthToken,
+  createTestBook
+} = require('./test-utils');
 
 describe('Book Deletion Tests (Task 141)', () => {
   let bookOwner, nonOwner, ownerToken, nonOwnerToken, testBook;
@@ -20,48 +24,40 @@ describe('Book Deletion Tests (Task 141)', () => {
 
   beforeEach(async () => {
     // Clear database
-    await User.deleteMany({});
-    await Book.deleteMany({});
+    await clearDatabase();
 
     // Create book owner
-    bookOwner = await User.create({
+    bookOwner = await createTestUser({
       name: 'Book Owner',
       email: 'owner@example.com',
-      password: 'password123',
       city: 'Owner City'
     });
 
     // Create non-owner user
-    nonOwner = await User.create({
+    nonOwner = await createTestUser({
       name: 'Non Owner',
       email: 'nonowner@example.com',
-      password: 'password123',
       city: 'Non Owner City'
     });
 
     // Generate auth tokens
-    ownerToken = generateToken(bookOwner._id);
-    nonOwnerToken = generateToken(nonOwner._id);
+    ownerToken = generateAuthToken(bookOwner._id);
+    nonOwnerToken = generateAuthToken(nonOwner._id);
 
     // Create a test book owned by bookOwner
-    testBook = await Book.create({
-      owner: bookOwner._id,
+    testBook = await createTestBook(bookOwner._id, {
       title: 'Test Book for Deletion',
       author: 'Test Author',
-      condition: 'Good',
       genre: ['Fiction', 'Drama'],
       isbn: '9780123456789',
       description: 'A book that will be deleted',
       publicationYear: 2020,
-      publisher: 'Test Publisher',
-      imageUrl: 'https://example.com/test.jpg',
-      isAvailable: true
+      publisher: 'Test Publisher'
     });
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Book.deleteMany({});
+    await clearDatabase();
   });
 
   afterAll(async () => {
@@ -138,14 +134,10 @@ describe('Book Deletion Tests (Task 141)', () => {
 
     test('should delete book and verify owner has one less book', async () => {
       // Create another book for the owner
-      await Book.create({
-        owner: bookOwner._id,
+      await createTestBook(bookOwner._id, {
         title: 'Second Book',
         author: 'Test Author',
-        condition: 'Good',
-        genre: ['Fiction'],
-        imageUrl: 'https://example.com/second.jpg',
-        isAvailable: true
+        genre: ['Fiction']
       });
 
       // Verify owner has 2 books
@@ -210,14 +202,10 @@ describe('Book Deletion Tests (Task 141)', () => {
 
     test('should prevent non-owner from deleting multiple books', async () => {
       // Create another book for the owner
-      const secondBook = await Book.create({
-        owner: bookOwner._id,
+      const secondBook = await createTestBook(bookOwner._id, {
         title: 'Second Book',
         author: 'Test Author',
-        condition: 'Good',
-        genre: ['Fiction'],
-        imageUrl: 'https://example.com/second.jpg',
-        isAvailable: true
+        genre: ['Fiction']
       });
 
       // Attempt to delete first book as non-owner
@@ -265,14 +253,10 @@ describe('Book Deletion Tests (Task 141)', () => {
   describe('Edge cases', () => {
     test('should handle deletion of book with minimal data', async () => {
       // Create a book with only required fields
-      const minimalBook = await Book.create({
-        owner: bookOwner._id,
+      const minimalBook = await createTestBook(bookOwner._id, {
         title: 'Minimal Book',
         author: 'Minimal Author',
-        condition: 'Good',
-        genre: ['Fiction'],
-        imageUrl: 'https://example.com/minimal.jpg',
-        isAvailable: true
+        genre: ['Fiction']
       });
 
       const response = await request(app)
@@ -289,8 +273,7 @@ describe('Book Deletion Tests (Task 141)', () => {
 
     test('should handle deletion of book with all optional fields', async () => {
       // Create a book with all fields populated
-      const completeBook = await Book.create({
-        owner: bookOwner._id,
+      const completeBook = await createTestBook(bookOwner._id, {
         title: 'Complete Book',
         author: 'Complete Author',
         condition: 'Like New',
@@ -299,11 +282,9 @@ describe('Book Deletion Tests (Task 141)', () => {
         description: 'A complete book with all fields',
         publicationYear: 2023,
         publisher: 'Complete Publisher',
-        imageUrl: 'https://example.com/complete.jpg',
         frontImageUrl: 'https://example.com/front.jpg',
         backImageUrl: 'https://example.com/back.jpg',
-        googleBooksImageUrl: 'https://books.google.com/complete.jpg',
-        isAvailable: true
+        googleBooksImageUrl: 'https://books.google.com/complete.jpg'
       });
 
       const response = await request(app)

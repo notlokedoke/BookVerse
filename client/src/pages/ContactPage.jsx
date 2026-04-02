@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MessageCircle, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import './ContactPage.css';
 
 const ContactPage = () => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -76,6 +78,7 @@ const ContactPage = () => {
       if (response.data.success) {
         // Show success message
         setIsSubmitted(true);
+        toast.success('Message sent successfully! We\'ll get back to you soon.');
         
         // Reset form
         setFormData({
@@ -93,11 +96,14 @@ const ContactPage = () => {
     } catch (error) {
       console.error('Contact form submission error:', error);
       
+      let errorMsg;
       if (error.response?.data?.error?.message) {
-        setApiError(error.response.data.error.message);
+        errorMsg = error.response.data.error.message;
       } else {
-        setApiError('Failed to submit contact form. Please try again later.');
+        errorMsg = 'Failed to submit contact form. Please try again later.';
       }
+      setApiError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }

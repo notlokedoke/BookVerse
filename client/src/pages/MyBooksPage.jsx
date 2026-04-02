@@ -131,7 +131,10 @@ const MyBooksPage = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
+        toast.error('Authentication required');
         setError('Authentication required');
+        setShowDeleteConfirm(false);
+        setDeletingBook(null);
         return;
       }
 
@@ -145,24 +148,31 @@ const MyBooksPage = () => {
       );
 
       if (response.data.success) {
-        toast.success('Book listing deleted successfully');
-
-        // Close confirmation dialog
+        // Close confirmation dialog first
         setShowDeleteConfirm(false);
         setDeletingBook(null);
+        
+        // Show success toast
+        toast.success('Book listing deleted successfully');
 
         // Refetch books to update pagination
         const currentPage = parseInt(searchParams.get('page')) || 1;
         await fetchUserBooks(currentPage);
       } else {
-        setError('Failed to delete book');
+        const errorMsg = 'Failed to delete book';
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setShowDeleteConfirm(false);
+        setDeletingBook(null);
       }
     } catch (err) {
       console.error('Error deleting book:', err);
-      setError(
-        err.response?.data?.error?.message ||
-        'An error occurred while deleting the book'
-      );
+      const errorMsg = err.response?.data?.error?.message ||
+        'An error occurred while deleting the book';
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setShowDeleteConfirm(false);
+      setDeletingBook(null);
     }
   };
 

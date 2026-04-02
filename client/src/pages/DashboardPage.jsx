@@ -332,31 +332,87 @@ const DashboardPage = () => {
               <h3><Activity size={18} /> Trading Analytics</h3>
             </div>
             <div className="analytics-stats">
+              {/* Success Rate */}
               <div className="analytics-stat">
                 <span className="analytics-label">Success Rate</span>
+                {stats.completedTrades === 0 && allTrades.filter(t => t.status === 'declined').length === 0 ? (
+                  <div className="analytics-empty-state">
+                    <span className="empty-icon">🎯</span>
+                    <span className="empty-text">Complete your first trade!</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="analytics-value">
+                      <span className="big-number">{successRate}%</span>
+                      {successRate >= 80 && (
+                        <span className="trend positive">
+                          <ArrowUpRight size={14} />
+                        </span>
+                      )}
+                      {successRate > 0 && successRate < 80 && (
+                        <span className="trend neutral">
+                          <ArrowRight size={14} />
+                        </span>
+                      )}
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className={`progress-fill ${successRate >= 80 ? 'success' : successRate >= 50 ? 'warning' : 'low'}`} 
+                        style={{ width: `${successRate}%` }}
+                      ></div>
+                    </div>
+                    <span className="analytics-subtext">
+                      {stats.completedTrades} completed, {allTrades.filter(t => t.status === 'declined').length} declined
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Active Trades */}
+              <div className="analytics-stat">
+                <span className="analytics-label">Active Trades</span>
                 <div className="analytics-value">
-                  <span className="big-number">{successRate}%</span>
-                  {successRate > 0 && (
-                    <span className="trend positive">
-                      <ArrowUpRight size={14} />
+                  <span className="big-number">{stats.activeTrades + stats.pendingRequests}</span>
+                  {stats.pendingRequests > 0 && (
+                    <span className="analytics-badge">{stats.pendingRequests} pending</span>
+                  )}
+                </div>
+                {stats.activeTrades + stats.pendingRequests === 0 && (
+                  <span className="analytics-subtext">No active trades</span>
+                )}
+              </div>
+
+              {/* Total Completed */}
+              <div className="analytics-stat">
+                <span className="analytics-label">Total Completed</span>
+                <div className="analytics-value">
+                  <span className="big-number">{stats.completedTrades}</span>
+                  {stats.completedTrades > 0 && (
+                    <span className="analytics-badge success">
+                      <CheckCircle size={12} /> Done
                     </span>
                   )}
                 </div>
-                <div className="progress-bar">
-                  <div className="progress-fill success" style={{ width: `${successRate}%` }}></div>
-                </div>
+                {stats.completedTrades === 0 && (
+                  <span className="analytics-subtext">Start trading!</span>
+                )}
               </div>
+
+              {/* Books Listed */}
               <div className="analytics-stat">
-                <span className="analytics-label">Trades This Month</span>
-                <div className="analytics-value">
-                  <span className="big-number">{stats.completedTrades + stats.activeTrades}</span>
-                </div>
-              </div>
-              <div className="analytics-stat">
-                <span className="analytics-label">Books Available</span>
+                <span className="analytics-label">Books Listed</span>
                 <div className="analytics-value">
                   <span className="big-number">{stats.booksListed}</span>
                 </div>
+                {stats.booksListed === 0 ? (
+                  <Link to="/books/create" className="analytics-action-link">
+                    + Add your first book
+                  </Link>
+                ) : (
+                  <Link to="/my-books" className="analytics-action-link">
+                    View library →
+                  </Link>
+                )}
               </div>
             </div>
           </div>

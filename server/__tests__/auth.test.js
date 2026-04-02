@@ -14,6 +14,8 @@ describe('Auth Routes', () => {
     // Clean up and close connection
     await User.deleteMany({});
     await mongoose.connection.close();
+    // Give time for connections to close
+    await new Promise(resolve => setTimeout(resolve, 500));
   });
 
   beforeEach(async () => {
