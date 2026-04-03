@@ -931,3 +931,114 @@ router.put('/change-password', [
     });
   }
 });
+
+/**
+ * @route   DELETE /api/auth/account
+ * @desc    Delete user account and all associated data
+ * @access  Private
+ */
+router.delete('/account', [
+  authenticateToken,
+  sanitizeInput,
+  body('password')
+    .optional()
+    .notEmpty()
+    .withMessage('Password cannot be empty'),
+  body('confirmText')
+    .notEmpty()
+    .withMessage('Confirmation text is required')
+    .equals('DELETE')
+    .withMessage('Confirmation text must be "DELETE"')
+], async (req, res) => {
+  try {
+    const { password, confirmText } = req.body;
+
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: errors.array()[0].msg,
+          code: 'VALIDATION_ERROR'
+        }
+      });
+    }
+
+    // Get user with password field
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND'
+        }
+      });
+    }
+
+    // Verify password if user has one (not OAuth-only account)
+    if (user.password) {
+      if (!password) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Password is required to delete account',
+            code: 'PASSWORD_REQUIRED'
+          }
+        });
+      }
+
+      const isPasswordValid = await user.comparePassword(password);
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            message: 'Incorrect password',
+            code: 'INVALID_PASSWORD'
+          }
+        });
+      }
+    }
+
+    // Import models for cascade deletion
+    const Book = require('../models/Book');
+    const Trade = require('../models/Trade');
+    const Message = require('../models/Message');
+    const Wishlist = require('../models/Wishlist');
+    const Rating = require('../models/Rating');
+    const Notification = require('../models/Notification');
+
+    // Delete all user-related data
+    await Promise.all([
+      Book.deleteMany({ owner: user._id }),
+      Trade.deleteMany({ $or: [{ proposer: user._id }, { receiver: user._id }] }),
+      Message.deleteMany({ $or: [{ sender: user._id }, { receiver: user._id }] }),
+      Wishlist.deleteMany({ user: user._id }),
+      Rating.deleteMany({ $or: [{ rater: user._id }, { ratee: user._id }] }),
+      Notification.deleteMany({ user: user._id })
+    ]);
+
+    // Delete the user account
+    await User.findByIdAndDelete(user._id);
+
+    // Blacklist the current token
+    blacklistToken(req.token);
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully. All your data has been removed.'
+    });
+
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while deleting account',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
