@@ -124,32 +124,6 @@ const Navbar = () => {
     }
   };
 
-  // Handle mark all as read
-  const handleMarkAllAsRead = async () => {
-    // Optimistic update for immediate UI feedback
-    setNotifications(prevNotifications =>
-      prevNotifications.map(notif => ({ ...notif, isRead: true }))
-    );
-    setUnreadCount(0);
-
-    // Call API to persist the change
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put('/api/notifications/read-all', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (response.data.success) {
-        toast.success(`${response.data.count} notification${response.data.count !== 1 ? 's' : ''} marked as read`);
-      }
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      // Revert optimistic update on error
-      fetchNotifications();
-      toast.error('Failed to mark all notifications as read');
-    }
-  };
-
   // Handle clear all notifications
   const handleClearAll = async () => {
     if (!window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
@@ -271,7 +245,6 @@ const Navbar = () => {
                 unreadCount={unreadCount}
                 notifications={notifications}
                 onMarkAsRead={handleMarkAsRead}
-                onMarkAllAsRead={handleMarkAllAsRead}
                 onClearAll={handleClearAll}
                 onOpen={handleNotificationOpen}
               />

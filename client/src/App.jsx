@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
@@ -39,8 +39,9 @@ import './App.css'
 // Component to conditionally render navbar and footer
 const AppContent = () => {
   const location = useLocation()
-  const isAuthPage = location.pathname === '/login' || 
-                     location.pathname === '/register' || 
+  const { user } = useAuth()
+  const isAuthPage = location.pathname === '/login' ||
+                     location.pathname === '/register' ||
                      location.pathname === '/auth/callback' ||
                      location.pathname === '/complete-profile' ||
                      location.pathname === '/verify-email' ||
@@ -69,119 +70,119 @@ const AppContent = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/help" element={<HelpCenterPage />} />
-            
+
             {/* Protected routes */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/activity" 
+            <Route
+              path="/activity"
               element={
                 <ProtectedRoute>
                   <ActivityPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <UserProfilePage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile/:userId" 
+            <Route
+              path="/profile/:userId"
               element={
                 <ProtectedRoute>
                   <UserProfilePage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile/settings" 
+            <Route
+              path="/profile/settings"
               element={
                 <ProtectedRoute>
                   <ProfileSettingsPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/books/create" 
+            <Route
+              path="/books/create"
               element={
                 <ProtectedRoute>
                   <CreateBookPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/wishlist/create" 
+            <Route
+              path="/wishlist/create"
               element={
                 <ProtectedRoute>
                   <CreateWishlistPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/wishlist" 
+            <Route
+              path="/wishlist"
               element={
                 <ProtectedRoute>
                   <WishlistPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/wishlist/matches" 
+            <Route
+              path="/wishlist/matches"
               element={
                 <ProtectedRoute>
                   <WishlistMatchesPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/my-books" 
+            <Route
+              path="/my-books"
               element={
                 <ProtectedRoute>
                   <MyBooksPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/nearby" 
+            <Route
+              path="/nearby"
               element={
                 <ProtectedRoute>
                   <NearbyBooks />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/trades" 
+            <Route
+              path="/trades"
               element={
                 <ProtectedRoute>
                   <TradesPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/trades/:id" 
+            <Route
+              path="/trades/:id"
               element={
                 <ProtectedRoute>
                   <TradeDetailView />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route path="/books/:bookId" element={<BookDetailView />} />
-            
+
             {/* 404 Not Found - catch all unknown routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </div>
-      {!isAuthPage && <Footer />}
+      {!isAuthPage && !user && <Footer />}
     </div>
   )
 }

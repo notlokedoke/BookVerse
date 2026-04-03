@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import './NotificationBell.css';
 
-const NotificationBell = ({ unreadCount = 0, notifications = [], onMarkAsRead, onMarkAllAsRead, onClearAll, onOpen }) => {
+const NotificationBell = ({ unreadCount = 0, notifications = [], onMarkAsRead, onClearAll, onOpen }) => {
   const [isOpen, setIsOpen] = useState(false);
   const bellRef = useRef(null);
 
@@ -48,10 +48,9 @@ const NotificationBell = ({ unreadCount = 0, notifications = [], onMarkAsRead, o
         )}
       </button>
       {isOpen && (
-        <NotificationDropdown 
-          notifications={notifications} 
+        <NotificationDropdown
+          notifications={notifications}
           onMarkAsRead={onMarkAsRead}
-          onMarkAllAsRead={onMarkAllAsRead}
           onClearAll={onClearAll}
         />
       )}

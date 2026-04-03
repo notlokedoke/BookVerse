@@ -1,11 +1,9 @@
 import React from 'react';
 import NotificationItem from './NotificationItem';
-import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, Trash2 } from 'lucide-react';
 import './NotificationDropdown.css';
 
-const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllAsRead, onClearAll }) => {
-  const unreadNotifications = notifications.filter(n => !n.isRead);
-  const hasUnread = unreadNotifications.length > 0;
+const NotificationDropdown = ({ notifications, onMarkAsRead, onClearAll }) => {
   const hasNotifications = notifications.length > 0;
 
   return (
@@ -18,18 +16,8 @@ const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllAsRead, on
           )}
         </div>
         <div className="notification-header-actions">
-          {hasUnread && (
-            <button 
-              className="mark-all-read-btn"
-              onClick={onMarkAllAsRead}
-              title="Mark all as read"
-            >
-              <CheckCheck size={16} />
-              <span>Mark all read</span>
-            </button>
-          )}
           {hasNotifications && (
-            <button 
+            <button
               className="clear-all-btn"
               onClick={onClearAll}
               title="Clear all notifications"
