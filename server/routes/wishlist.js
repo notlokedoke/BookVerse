@@ -182,6 +182,37 @@ router.post('/', [
 });
 
 /**
+ * @route   GET /api/wishlist
+ * @desc    Get all wishlist items for authenticated user
+ * @access  Private (requires authentication)
+ */
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    // Fetch all wishlist items for authenticated user
+    // Sort by creation date descending (newest first)
+    const wishlistItems = await Wishlist.find({ user: req.userId })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: wishlistItems,
+      count: wishlistItems.length
+    });
+
+  } catch (error) {
+    console.error('Get wishlist error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while fetching wishlist',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   GET /api/wishlist/user/:userId
  * @desc    Get all wishlist items for specified user
  * @access  Public

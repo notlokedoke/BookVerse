@@ -18,7 +18,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import CreateBookPage from './pages/CreateBookPage'
 import CreateWishlistPage from './pages/CreateWishlistPage'
-import WishlistMatchesPage from './pages/WishlistMatchesPage'
+import WishlistPage from './pages/WishlistPage'
 import MyBooksPage from './pages/MyBooksPage'
 import TradesPage from './pages/TradesPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
@@ -116,7 +116,7 @@ const AppContent = () => {
               path="/wishlist" 
               element={
                 <ProtectedRoute>
-                  <WishlistMatchesPage />
+                  <WishlistPage />
                 </ProtectedRoute>
               } 
             />
