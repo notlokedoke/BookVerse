@@ -257,26 +257,23 @@ const BrowsePage = () => {
         </section>
 
         {/* Search & Filters Section */}
-        <section className="filters-section glass-card">
-          <div className="filters-header">
-            <div className="filters-title">
-              <Filter size={18} />
-              <span>Search & Filter</span>
-            </div>
+        <section className="filters-section-wrapper">
+          <h2 className="filters-section-heading">Filters</h2>
+          <div className="filters-section glass-card">
+            <SearchFilters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters}
+              resultsCount={pagination.totalBooks}
+              loading={loading}
+            />
             {hasActiveFilters && (
-              <button onClick={clearFilters} className="clear-filters-btn">
+              <button onClick={clearFilters} className="clear-filters-btn-bottom">
                 Clear All
               </button>
             )}
           </div>
-          <SearchFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            onClearFilters={clearFilters}
-            hasActiveFilters={hasActiveFilters}
-            resultsCount={pagination.totalBooks}
-            loading={loading}
-          />
         </section>
 
         {/* Book Grid */}

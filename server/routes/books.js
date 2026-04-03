@@ -566,7 +566,11 @@ router.get('/', async (req, res) => {
       query.title = new RegExp(title, 'i'); // Case-insensitive partial match
     }
     if (genre) {
-      query.genre = genre; // Match if genre is in the array (MongoDB handles this automatically)
+      // Handle multiple genres (comma-separated)
+      const genreArray = genre.split(',').map(g => g.trim()).filter(g => g);
+      if (genreArray.length > 0) {
+        query.genre = { $in: genreArray }; // Match if any of the genres is in the book's genre array
+      }
     }
     if (author) {
       query.author = new RegExp(author, 'i'); // Case-insensitive partial match

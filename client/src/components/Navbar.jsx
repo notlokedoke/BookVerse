@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   LayoutDashboard,
-  Shield
+  Shield,
+  Heart
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
@@ -168,6 +169,13 @@ const Navbar = () => {
                 <span>My Books</span>
               </Link>
               <Link
+                to="/wishlist"
+                className={`nav-link ${isActive('/wishlist') ? 'active' : ''}`}
+              >
+                <Heart size={18} />
+                <span>Wishlist</span>
+              </Link>
+              <Link
                 to="/trades"
                 className={`nav-link ${isActive('/trades') ? 'active' : ''}`}
               >
@@ -290,6 +298,10 @@ const Navbar = () => {
                   <Link to="/my-books" className="mobile-nav-link">
                     <Library size={20} />
                     My Books
+                  </Link>
+                  <Link to="/wishlist" className="mobile-nav-link">
+                    <Heart size={20} />
+                    Wishlist
                   </Link>
                   <Link to="/trades" className="mobile-nav-link">
                     <RefreshCw size={20} />
