@@ -10,8 +10,6 @@ const SCORING_WEIGHTS = {
   SIMILAR_AUTHOR: 30,          // Author shares wishlist genres
   GENRE_MATCH: 50,             // Same genre as wishlist item
   MULTIPLE_GENRE_BONUS: 20,    // Bonus per additional matching genre
-  SAME_CITY: 10,               // Same city as user
-  GOOD_CONDITION: 5,            // New or Like New condition
   HIGH_RATING: 5,               // Owner rating >= 4.5
   // Popularity weights
   POPULAR_GENRE: 15,            // Genre is popular system-wide
@@ -248,17 +246,6 @@ async function getColdStartRecommendations(userId, limit = 10) {
         score += SCORING_WEIGHTS.RECENT_ADDITION * (1 - ageInDays / 30);
       }
 
-      // City match
-      if (user?.city && book.owner?.city &&
-          user.city.toLowerCase() === book.owner.city.toLowerCase()) {
-        score += SCORING_WEIGHTS.SAME_CITY;
-      }
-
-      // Condition bonus
-      if (book.condition === 'Like New') {
-        score += SCORING_WEIGHTS.GOOD_CONDITION;
-      }
-
       // Owner rating bonus
       if (book.owner?.averageRating >= 4.5) {
         score += SCORING_WEIGHTS.HIGH_RATING;
@@ -370,21 +357,7 @@ function calculateWishlistScore(book, wishlistAuthors, authorWeights, wishlistGe
       score += SCORING_WEIGHTS.RECENT_ADDITION * (1 - ageInDays / 30);
     }
 
-    // 6. LOCATION PROXIMITY (weight: 10)
-    if (user && user.city && book.owner && book.owner.city) {
-      const sameCity = user.city.toLowerCase() === book.owner.city.toLowerCase();
-      if (sameCity) {
-        score += SCORING_WEIGHTS.SAME_CITY;
-      }
-    }
-
-    // 7. BOOK CONDITION (weight: 5)
-    const preferredConditions = ['Like New'];
-    if (preferredConditions.includes(book.condition)) {
-      score += SCORING_WEIGHTS.GOOD_CONDITION;
-    }
-
-    // 8. OWNER REPUTATION (weight: 5)
+    // 6. OWNER REPUTATION (weight: 5)
     if (book.owner && book.owner.averageRating >= 4.5) {
       score += SCORING_WEIGHTS.HIGH_RATING;
     }
