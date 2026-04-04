@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import axios from 'axios';
 import BookCard from './BookCard';
 import './NearbyBooks.css';
@@ -129,7 +130,13 @@ function NearbyBooks() {
     return (
       <div className="nearby-books-container">
         <div className="nearby-books-header">
-          <h1>Books from {userCity || 'Your City'}</h1>
+          <h1 className="nearby-books-title">
+            Books from{' '}
+            <Link to="/profile/settings" className="nearby-city-link">
+              <MapPin size={20} className="nearby-city-icon" />
+              {userCity || 'Your City'}
+            </Link>
+          </h1>
         </div>
         <div className="loading-state">
           <div className="loading-spinner">
@@ -148,7 +155,13 @@ function NearbyBooks() {
     return (
       <div className="nearby-books-container">
         <div className="nearby-books-header">
-          <h1>Books from {userCity || 'Your City'}</h1>
+          <h1 className="nearby-books-title">
+            Books from{' '}
+            <Link to="/profile/settings" className="nearby-city-link">
+              <MapPin size={20} className="nearby-city-icon" />
+              {userCity || 'Your City'}
+            </Link>
+          </h1>
         </div>
         <div className="error-state">
           <svg className="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +184,13 @@ function NearbyBooks() {
     return (
       <div className="nearby-books-container">
         <div className="nearby-books-header">
-          <h1>Books from {userCity || 'Your City'}</h1>
+          <h1 className="nearby-books-title">
+            Books from{' '}
+            <Link to="/profile/settings" className="nearby-city-link">
+              <MapPin size={20} className="nearby-city-icon" />
+              {userCity || 'Your City'}
+            </Link>
+          </h1>
         </div>
         <div className="empty-state">
           <svg className="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

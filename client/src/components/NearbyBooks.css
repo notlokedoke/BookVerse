@@ -24,6 +24,30 @@
   line-height: 1.2;
 }
 
+.nearby-city-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--color-primary, #4f46e5);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease, color 0.15s ease;
+  font-weight: 700;
+}
+
+.nearby-city-link:hover {
+  color: var(--color-primary-dark, #3730a3);
+  text-decoration-color: currentColor;
+}
+
+.nearby-city-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
 .user-location {
   display: inline-flex;
   align-items: center;
