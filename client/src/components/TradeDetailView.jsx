@@ -33,7 +33,6 @@ const TradeDetailView = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [userRating, setUserRating] = useState(null);
   const [ratingLoading, setRatingLoading] = useState(false);
-  const [showRatingForm, setShowRatingForm] = useState(false);
 
   useEffect(() => {
     fetchTradeDetails();
@@ -393,18 +392,13 @@ const TradeDetailView = () => {
                       {userRating.comment && <p className="mt-2 italic">"{userRating.comment}"</p>}
                     </div>
                   </div>
-                ) : showRatingForm ? (
-                  <RatingForm
-                    tradeId={trade._id}
-                    onSuccess={handleRatingSuccess}
-                    onCancel={() => setShowRatingForm(false)}
-                  />
                 ) : (
-                  <div>
+                  <div className="mt-4">
                     <p className="text-neutral-600 mb-6">How was your exchange with {otherUser?.name}?</p>
-                    <Button variant="primary" onClick={() => setShowRatingForm(true)}>
-                      Rate {otherUser?.name}
-                    </Button>
+                    <RatingForm
+                      tradeId={trade._id}
+                      onSuccess={handleRatingSuccess}
+                    />
                   </div>
                 )}
               </div>

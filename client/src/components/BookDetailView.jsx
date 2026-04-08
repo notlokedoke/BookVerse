@@ -188,66 +188,69 @@ const BookDetailView = () => {
       </div>
 
       <div className="book-detail-content">
-        {/* Book Image Section */}
-        <div className="book-image-section">
-          <div className="book-image-container">
-            <img
-              src={activeImage || book.imageUrl}
-              alt={`${book.title} by ${book.author}`}
-              className="book-detail-image"
-              onError={(e) => {
-                e.target.src = '/placeholder-book.png'; // Fallback image
-              }}
-            />
-            <div className={`condition-badge ${getConditionClass(book.condition)}`}>
-              {book.condition}
+        {/* Book Hero Section - Image + Title */}
+        <div className="book-hero-section">
+          <div className="book-image-section">
+            <div className="book-image-container">
+              <img
+                src={activeImage || book.imageUrl}
+                alt={`${book.title} by ${book.author}`}
+                className="book-detail-image"
+                onError={(e) => {
+                  e.target.src = '/placeholder-book.png';
+                }}
+              />
+              <div className={`condition-badge ${getConditionClass(book.condition)}`}>
+                {book.condition}
+              </div>
+            </div>
+
+            {/* Additional Images Gallery */}
+            <div className="additional-images-gallery">
+              {book.googleBooksImageUrl && (
+                <div 
+                  className={`gallery-item ${(activeImage || book.imageUrl) === book.googleBooksImageUrl ? 'active' : ''}`}
+                  onClick={() => setActiveImage(book.googleBooksImageUrl)}
+                >
+                  <img src={book.googleBooksImageUrl} alt={`${book.title} - Cover`} />
+                  <span className="gallery-label">Cover</span>
+                </div>
+              )}
+              
+              {book.frontImageUrl && (
+                <div 
+                  className={`gallery-item ${(activeImage === book.frontImageUrl) ? 'active' : ''}`}
+                  onClick={() => setActiveImage(book.frontImageUrl)}
+                >
+                  <img src={book.frontImageUrl} alt={`${book.title} - Front`} />
+                  <span className="gallery-label">Front</span>
+                </div>
+              )}
+              
+              {book.backImageUrl && (
+                <div 
+                  className={`gallery-item ${(activeImage === book.backImageUrl) ? 'active' : ''}`}
+                  onClick={() => setActiveImage(book.backImageUrl)}
+                >
+                  <img src={book.backImageUrl} alt={`${book.title} - Back`} />
+                  <span className="gallery-label">Back</span>
+                </div>
+              )}
+              
+              {/* Support for additional images if they exist */}
+              {book.additionalImages && book.additionalImages.map((imgUrl, index) => (
+                <div 
+                  key={`additional-${index}`}
+                  className={`gallery-item ${(activeImage === imgUrl) ? 'active' : ''}`}
+                  onClick={() => setActiveImage(imgUrl)}
+                >
+                  <img src={imgUrl} alt={`${book.title} - Image ${index + 1}`} />
+                  <span className="gallery-label">#{index + 1}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Additional Images Gallery */}
-          <div className="additional-images-gallery">
-            <div 
-              className={`gallery-item ${(activeImage || book.imageUrl) === book.imageUrl ? 'active' : ''}`}
-              onClick={() => setActiveImage(book.imageUrl)}
-            >
-              <img src={book.imageUrl} alt={`${book.title} - Primary`} />
-              <span className="gallery-label">Primary</span>
-            </div>
-            
-            {book.googleBooksImageUrl && (
-              <div 
-                className={`gallery-item ${(activeImage === book.googleBooksImageUrl) ? 'active' : ''}`}
-                onClick={() => setActiveImage(book.googleBooksImageUrl)}
-              >
-                <img src={book.googleBooksImageUrl} alt={`${book.title} - Google Books cover`} />
-                <span className="gallery-label">Cover</span>
-              </div>
-            )}
-            
-            {book.frontImageUrl && (
-              <div 
-                className={`gallery-item ${(activeImage === book.frontImageUrl) ? 'active' : ''}`}
-                onClick={() => setActiveImage(book.frontImageUrl)}
-              >
-                <img src={book.frontImageUrl} alt={`${book.title} - Front view`} />
-                <span className="gallery-label">Front</span>
-              </div>
-            )}
-            
-            {book.backImageUrl && (
-              <div 
-                className={`gallery-item ${(activeImage === book.backImageUrl) ? 'active' : ''}`}
-                onClick={() => setActiveImage(book.backImageUrl)}
-              >
-                <img src={book.backImageUrl} alt={`${book.title} - Back view`} />
-                <span className="gallery-label">Back</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Book Information Section */}
-        <div className="book-info-section">
           <div className="book-header">
             <h1 className="book-title">{book.title}</h1>
             <p className="book-author">by {book.author}</p>
@@ -264,9 +267,19 @@ const BookDetailView = () => {
                 <span className="isbn-tag">ISBN: {book.isbn}</span>
               )}
             </div>
-          </div>
 
-          {/* Book Details */}
+            {/* Description in Hero */}
+            {book.description && (
+              <div className="book-description-hero">
+                <h3>Description</h3>
+                <p>{book.description}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Book Information Cards */}
+        <div className="book-info-section">
           <div className="book-details-grid">
             <div className="detail-item">
               <label>Condition</label>
@@ -306,14 +319,6 @@ const BookDetailView = () => {
               </span>
             </div>
           </div>
-
-          {/* Description */}
-          {book.description && (
-            <div className="book-description">
-              <h3>Description</h3>
-              <p>{book.description}</p>
-            </div>
-          )}
 
           {/* Owner Information */}
           {book.owner && (

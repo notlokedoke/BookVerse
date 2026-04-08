@@ -9,6 +9,7 @@ import BookDetailView from './components/BookDetailView'
 import TradeDetailView from './components/TradeDetailView'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
+import ActivityPage from './pages/ActivityPage'
 import BrowsePage from './pages/BrowsePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/SignUpPage'
@@ -69,6 +70,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/activity" 
+              element={
+                <ProtectedRoute>
+                  <ActivityPage />
                 </ProtectedRoute>
               } 
             />
