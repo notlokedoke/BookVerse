@@ -1165,7 +1165,7 @@ describe('Trades API - Complete Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject complete request for non-existent trade', async () => {
