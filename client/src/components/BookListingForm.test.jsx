@@ -1,11 +1,10 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
-import BookListingForm from './BookListingForm';
-import { vi } from 'vitest';
 import axios from 'axios';
-
-// Mock axios
-vi.mock('axios');
+import BookListingForm from './BookListingForm';
+import { createMockFile } from '../test/testUtils';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -13,322 +12,698 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate
+    useNavigate: () => mockNavigate,
   };
 });
 
-const mockUseAuth = vi.fn();
-vi.mock('../context/AuthContext', () => ({
-  useAuth: () => mockUseAuth()
-}));
-
-const renderWithProviders = (component) => {
-  mockUseAuth.mockReturnValue({
-    user: { _id: '1', name: 'Test User' },
-    isAuthenticated: true
-  });
-
-  return render(
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      {component}
-    </BrowserRouter>
-  );
+// Mock AuthContext
+const mockUser = {
+  _id: '123',
+  name: 'Test User',
+  email: 'test@example.com',
 };
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: mockUser,
+    isAuthenticated: true,
+  }),
+}));
+
+// Mock axios
+vi.mock('axios');
+
 describe('BookListingForm', () => {
+  const renderBookListingForm = () =>
+    render(
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <BookListingForm />
+      </BrowserRouter>
+    );
+
   beforeEach(() => {
-    mockNavigate.mockClear();
-    axios.post.mockClear();
+    vi.clearAllMocks();
   });
 
-  test('renders form with all required fields', () => {
-    renderWithProviders(<BookListingForm />);
-    
-    expect(screen.getByLabelText(/book title/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/author/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/condition/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/genre/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/front photo/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/back photo/i)).toBeInTheDocument();
-  });
+  describe('Rendering', () => {
+    it('renders all required form fields', () => {
+      renderBookListingForm();
 
-  test('shows validation errors for empty required fields', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const submitButton = screen.getByRole('button', { name: /create listing/i });
-    fireEvent.click(submitButton);
+      expect(screen.getByLabelText(/book title/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^author/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^condition/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^genre/i)).toBeInTheDocument();
+      expect(screen.getByText(/book photos/i)).toBeInTheDocument();
+    });
 
-    await waitFor(() => {
-      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/author is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/condition is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/genre is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/at least one image is required/i)).toBeInTheDocument();
+    it('renders optional form fields', () => {
+      renderBookListingForm();
+
+      expect(screen.getByLabelText(/^isbn$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/publication year/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/publisher/i)).toBeInTheDocument();
+    });
+
+    it('renders submit and cancel buttons', () => {
+      renderBookListingForm();
+
+      expect(screen.getByRole('button', { name: /create listing/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    });
+
+    it('renders ISBN lookup button', () => {
+      renderBookListingForm();
+
+      expect(screen.getByRole('button', { name: /lookup/i })).toBeInTheDocument();
+    });
+
+    it('renders condition dropdown with all options', () => {
+      renderBookListingForm();
+
+      const conditionSelect = screen.getByLabelText(/^condition/i);
+      expect(conditionSelect).toBeInTheDocument();
+      
+      const options = Array.from(conditionSelect.options).map(opt => opt.value);
+      expect(options).toContain('New');
+      expect(options).toContain('Like New');
+      expect(options).toContain('Good');
+      expect(options).toContain('Fair');
+      expect(options).toContain('Poor');
+    });
+
+    it('renders genre dropdown with options', () => {
+      renderBookListingForm();
+
+      const genreSelect = screen.getByLabelText(/^genre/i);
+      expect(genreSelect).toBeInTheDocument();
+      
+      const options = Array.from(genreSelect.options).map(opt => opt.value);
+      expect(options).toContain('Fiction');
+      expect(options).toContain('Mystery');
+      expect(options).toContain('Science Fiction');
     });
   });
 
-  test('clears validation errors when user starts typing', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const submitButton = screen.getByRole('button', { name: /create listing/i });
-    fireEvent.click(submitButton);
+  describe('Form Validation', () => {
+    it('displays validation errors for empty required fields', async () => {
+      renderBookListingForm();
 
-    await waitFor(() => {
-      expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/author is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/condition is required/i)).toBeInTheDocument();
+        expect(screen.getByText(/genre is required/i)).toBeInTheDocument();
+      });
     });
 
-    const titleInput = screen.getByLabelText(/book title/i);
-    fireEvent.change(titleInput, { target: { value: 'Test Book' } });
+    it('displays validation error when no image is provided', async () => {
+      renderBookListingForm();
 
-    await waitFor(() => {
-      expect(screen.queryByText(/title is required/i)).not.toBeInTheDocument();
-    });
-  });
+      // Fill required fields but no image
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
 
-  test('validates ISBN format', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const isbnInput = screen.getByLabelText(/isbn/i);
-    fireEvent.change(isbnInput, { target: { value: 'invalid-isbn' } });
-    
-    const submitButton = screen.getByRole('button', { name: /create listing/i });
-    fireEvent.click(submitButton);
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
 
-    await waitFor(() => {
-      expect(screen.getByText(/please enter a valid isbn/i)).toBeInTheDocument();
-    });
-  });
-
-  test('validates publication year range', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const yearInput = screen.getByLabelText(/publication year/i);
-    fireEvent.change(yearInput, { target: { value: '999' } });
-    
-    const submitButton = screen.getByRole('button', { name: /create listing/i });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(/publication year must be between/i)).toBeInTheDocument();
-    });
-  });
-
-  test('validates image file type', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const fileInput = screen.getByLabelText(/front photo/i);
-    const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
-    
-    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/please select a valid image file/i)).toBeInTheDocument();
-    });
-  });
-
-  test('validates image file size', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const fileInput = screen.getByLabelText(/front photo/i);
-    // Create a file larger than 3MB
-    const largeFile = new File(['x'.repeat(4 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
-    
-    fireEvent.change(fileInput, { target: { files: [largeFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/image file must be less than 3mb/i)).toBeInTheDocument();
-    });
-  });
-
-  test('shows image preview when valid image is selected', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const fileInput = screen.getByLabelText(/front photo/i);
-    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
-    
-    // Mock FileReader
-    const mockFileReader = {
-      readAsDataURL: vi.fn(),
-      result: 'data:image/jpeg;base64,test',
-      onload: null
-    };
-    
-    global.FileReader = vi.fn(() => mockFileReader);
-    
-    fireEvent.change(fileInput, { target: { files: [validFile] } });
-    
-    // Simulate FileReader onload
-    act(() => {
-      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,test' } });
+      await waitFor(() => {
+        expect(screen.getByText(/at least one image is required/i)).toBeInTheDocument();
+      });
     });
 
-    await waitFor(() => {
-      const previewImage = screen.getByAltText(/front preview/i);
-      expect(previewImage).toBeInTheDocument();
-      expect(previewImage).toHaveAttribute('src', 'data:image/jpeg;base64,test');
+    it('validates ISBN format', async () => {
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: 'invalid-isbn' } });
+
+      // Fill other required fields
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/please enter a valid isbn/i)).toBeInTheDocument();
+      });
+    });
+
+    it('validates publication year range', async () => {
+      renderBookListingForm();
+
+      const yearInput = screen.getByLabelText(/publication year/i);
+      fireEvent.change(yearInput, { target: { value: '999' } });
+
+      // Fill other required fields
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/publication year must be between/i)).toBeInTheDocument();
+      });
+    });
+
+    it('clears field error when user starts typing', async () => {
+      renderBookListingForm();
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/title is required/i)).toBeInTheDocument();
+      });
+
+      const titleInput = screen.getByLabelText(/book title/i);
+      fireEvent.change(titleInput, { target: { value: 'Test Book' } });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/title is required/i)).not.toBeInTheDocument();
+      });
     });
   });
 
-  test('clears image error when valid image is selected', async () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const fileInput = screen.getByLabelText(/front photo/i);
-    
-    // First, trigger an error with invalid file
-    const invalidFile = new File(['test'], 'test.txt', { type: 'text/plain' });
-    fireEvent.change(fileInput, { target: { files: [invalidFile] } });
-
-    await waitFor(() => {
-      expect(screen.getByText(/please select a valid image file/i)).toBeInTheDocument();
-    });
-
-    // Then, select a valid file
-    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
-    fireEvent.change(fileInput, { target: { files: [validFile] } });
-
-    await waitFor(() => {
-      expect(screen.queryByText(/please select a valid image file/i)).not.toBeInTheDocument();
-    });
-  });
-
-  test('performs ISBN lookup and autofills form fields', async () => {
-    const mockBookData = {
-      success: true,
-      data: {
-        title: 'The Great Gatsby',
-        author: 'F. Scott Fitzgerald',
-        publisher: 'Scribner',
-        publicationYear: 1925,
-        description: 'A classic American novel'
-      }
-    };
-
-    axios.post.mockResolvedValueOnce({ data: mockBookData });
-
-    renderWithProviders(<BookListingForm />);
-    
-    const isbnInput = screen.getByLabelText(/isbn/i);
-    const lookupButton = screen.getByRole('button', { name: /lookup/i });
-
-    // Enter ISBN and click lookup
-    fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
-    fireEvent.click(lookupButton);
-
-    // Wait for the API call and form update
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('The Great Gatsby')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('F. Scott Fitzgerald')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('Scribner')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('1925')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('A classic American novel')).toBeInTheDocument();
-    });
-
-    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/books/isbn/9780743273565'));
-  });
-
-  test('shows error when ISBN lookup fails', async () => {
-    const mockError = {
-      response: {
-        data: {
-          error: {
-            message: 'No book found with this ISBN'
-          }
-        }
-      }
-    };
-
-    axios.post.mockRejectedValueOnce(mockError);
-
-    renderWithProviders(<BookListingForm />);
-    
-    const isbnInput = screen.getByLabelText(/isbn/i);
-    const lookupButton = screen.getByRole('button', { name: /lookup/i });
-
-    // Enter ISBN and click lookup
-    fireEvent.change(isbnInput, { target: { value: '9999999999999' } });
-    fireEvent.click(lookupButton);
-
-    // Wait for the error message
-    await waitFor(() => {
-      expect(screen.getByText('No book found with this ISBN')).toBeInTheDocument();
-    });
-
-    expect(axios.post).toHaveBeenCalledWith(expect.stringContaining('/api/books/isbn/9999999999999'));
-  });
-
-  test('disables lookup button when ISBN is empty', () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const lookupButton = screen.getByRole('button', { name: /lookup/i });
-    
-    expect(lookupButton).toBeDisabled();
-  });
-
-  test('enables lookup button when ISBN is entered', () => {
-    renderWithProviders(<BookListingForm />);
-    
-    const isbnInput = screen.getByLabelText(/isbn/i);
-    const lookupButton = screen.getByRole('button', { name: /lookup/i });
-
-    fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
-
-    expect(lookupButton).not.toBeDisabled();
-  });
-
-  test('shows success message and redirects after successful book creation', async () => {
-    const mockSuccessResponse = {
-      data: {
+  describe('ISBN Lookup Functionality', () => {
+    it('calls ISBN lookup API when lookup button is clicked', async () => {
+      const mockBookData = {
         success: true,
         data: {
-          _id: '507f1f77bcf86cd799439011',
+          title: 'The Great Gatsby',
+          author: 'F. Scott Fitzgerald',
+          publisher: 'Scribner',
+          publicationYear: 1925,
+          description: 'A classic American novel',
+          thumbnail: 'https://example.com/cover.jpg',
+        },
+      };
+
+      axios.post.mockResolvedValueOnce({ data: mockBookData });
+
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      await waitFor(() => {
+        expect(axios.post).toHaveBeenCalledWith(
+          expect.stringContaining('/api/books/isbn/9780743273565')
+        );
+      });
+    });
+
+    it('autofills form fields with ISBN lookup data', async () => {
+      const mockBookData = {
+        success: true,
+        data: {
+          title: 'The Great Gatsby',
+          author: 'F. Scott Fitzgerald',
+          publisher: 'Scribner',
+          publicationYear: 1925,
+          description: 'A classic American novel',
+          thumbnail: 'https://example.com/cover.jpg',
+        },
+      };
+
+      axios.post.mockResolvedValueOnce({ data: mockBookData });
+
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/book title/i)).toHaveValue('The Great Gatsby');
+        expect(screen.getByLabelText(/^author/i)).toHaveValue('F. Scott Fitzgerald');
+        expect(screen.getByLabelText(/publisher/i)).toHaveValue('Scribner');
+        expect(screen.getByLabelText(/publication year/i)).toHaveValue(1925);
+        expect(screen.getByLabelText(/description/i)).toHaveValue('A classic American novel');
+      });
+    });
+
+    it('autofills form fields and shows Google Books cover after ISBN lookup', async () => {
+      const mockBookData = {
+        success: true,
+        data: {
           title: 'Test Book',
           author: 'Test Author',
-          condition: 'Good',
-          genre: 'Fiction'
-        }
-      }
-    };
+          thumbnail: 'https://example.com/cover.jpg',
+        },
+      };
 
-    axios.post.mockResolvedValueOnce(mockSuccessResponse);
+      axios.post.mockResolvedValueOnce({ data: mockBookData });
 
-    renderWithProviders(<BookListingForm />);
-    
-    // Fill out the form with valid data
-    const titleInput = screen.getByLabelText(/book title/i);
-    const authorInput = screen.getByLabelText(/author/i);
-    const conditionSelect = screen.getByLabelText(/condition/i);
-    const genreSelect = screen.getByLabelText(/genre/i);
-    const fileInput = screen.getByLabelText(/front photo/i);
-    
-    fireEvent.change(titleInput, { target: { value: 'Test Book' } });
-    fireEvent.change(authorInput, { target: { value: 'Test Author' } });
-    fireEvent.change(conditionSelect, { target: { value: 'Good' } });
-    fireEvent.change(genreSelect, { target: { value: 'Fiction' } });
-    
-    // Create a valid image file
-    const validFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
-    fireEvent.change(fileInput, { target: { files: [validFile] } });
+      renderBookListingForm();
 
-    // Submit the form
-    const submitButton = screen.getByRole('button', { name: /create listing/i });
-    fireEvent.click(submitButton);
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
 
-    // Wait for success message to appear
-    await waitFor(() => {
-      expect(screen.getByText(/book listing created successfully! redirecting to your profile/i)).toBeInTheDocument();
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      // Wait for form fields to be populated
+      await waitFor(() => {
+        expect(screen.getByLabelText(/book title/i)).toHaveValue('Test Book');
+        expect(screen.getByLabelText(/^author/i)).toHaveValue('Test Author');
+      });
+
+      // Verify Google Books cover is shown
+      await waitFor(() => {
+        expect(screen.getByText(/cover image from google books will be used/i)).toBeInTheDocument();
+        const preview = screen.getByAltText(/google books cover/i);
+        expect(preview).toBeInTheDocument();
+        expect(preview).toHaveAttribute('src', 'https://example.com/cover.jpg');
+      });
     });
 
-    // Verify form is cleared
-    await waitFor(() => {
-      expect(titleInput.value).toBe('');
-      expect(authorInput.value).toBe('');
-      expect(conditionSelect.value).toBe('');
-      expect(genreSelect.value).toBe('');
+    it('displays error message when ISBN lookup fails', async () => {
+      axios.post.mockRejectedValueOnce({
+        request: {},
+      });
+
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '1234567890' } });
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/unable to connect to book lookup service/i)).toBeInTheDocument();
+      });
     });
 
-    // Wait for redirect (after 2 seconds)
-    await waitFor(() => {
+    it('disables lookup button when ISBN is empty', () => {
+      renderBookListingForm();
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      expect(lookupButton).toBeDisabled();
+    });
+
+    it('shows loading state during ISBN lookup', async () => {
+      axios.post.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ data: { success: true, data: {} } }), 100))
+      );
+
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /looking up/i })).toBeInTheDocument();
+      });
+    });
+
+    it('requires ISBN input before lookup', async () => {
+      renderBookListingForm();
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      
+      // Button should be disabled when ISBN is empty
+      expect(lookupButton).toBeDisabled();
+    });
+  });
+
+  describe('Image Upload Preview', () => {
+    it('displays front image preview after file selection', async () => {
+      renderBookListingForm();
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+
+      // Mock FileReader
+      const mockFileReader = {
+        readAsDataURL: vi.fn(),
+        onload: null,
+        result: 'data:image/jpeg;base64,mockbase64',
+      };
+      global.FileReader = vi.fn(() => mockFileReader);
+
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      // Trigger onload
+      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,mockbase64' } });
+
+      await waitFor(() => {
+        const preview = screen.getByAltText(/front preview/i);
+        expect(preview).toBeInTheDocument();
+        expect(preview).toHaveAttribute('src', 'data:image/jpeg;base64,mockbase64');
+      });
+    });
+
+    it('displays back image preview after file selection', async () => {
+      renderBookListingForm();
+
+      const file = createMockFile('back.jpg', 'image/jpeg', 1024);
+      const backImageInput = screen.getByLabelText(/back photo/i);
+
+      // Mock FileReader
+      const mockFileReader = {
+        readAsDataURL: vi.fn(),
+        onload: null,
+        result: 'data:image/jpeg;base64,mockbase64',
+      };
+      global.FileReader = vi.fn(() => mockFileReader);
+
+      fireEvent.change(backImageInput, { target: { files: [file] } });
+
+      // Trigger onload
+      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,mockbase64' } });
+
+      await waitFor(() => {
+        const preview = screen.getByAltText(/back preview/i);
+        expect(preview).toBeInTheDocument();
+        expect(preview).toHaveAttribute('src', 'data:image/jpeg;base64,mockbase64');
+      });
+    });
+
+    it('validates image file type', async () => {
+      renderBookListingForm();
+
+      const file = createMockFile('document.pdf', 'application/pdf', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/please select a valid image file/i)).toBeInTheDocument();
+      });
+    });
+
+    it('validates image file size (max 3MB)', async () => {
+      renderBookListingForm();
+
+      const file = createMockFile('large.jpg', 'image/jpeg', 4 * 1024 * 1024); // 4MB
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/image file must be less than 3mb/i)).toBeInTheDocument();
+      });
+    });
+
+    it('displays Google Books cover preview after ISBN lookup', async () => {
+      const mockBookData = {
+        success: true,
+        data: {
+          title: 'Test Book',
+          author: 'Test Author',
+          thumbnail: 'https://books.google.com/cover.jpg',
+        },
+      };
+
+      axios.post.mockResolvedValueOnce({ data: mockBookData });
+
+      renderBookListingForm();
+
+      const isbnInput = screen.getByLabelText(/^isbn$/i);
+      fireEvent.change(isbnInput, { target: { value: '9780743273565' } });
+
+      const lookupButton = screen.getByRole('button', { name: /lookup/i });
+      fireEvent.click(lookupButton);
+
+      await waitFor(() => {
+        // Check that the Google Books image is stored in form data
+        expect(screen.getByText(/cover image from google books will be used/i)).toBeInTheDocument();
+      });
+
+      // Verify the preview is shown
+      await waitFor(() => {
+        const preview = screen.getByAltText(/google books cover/i);
+        expect(preview).toBeInTheDocument();
+        expect(preview).toHaveAttribute('src', 'https://books.google.com/cover.jpg');
+      });
+    });
+
+    it('clears image error when valid file is selected', async () => {
+      renderBookListingForm();
+
+      // First, trigger validation error
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/at least one image is required/i)).toBeInTheDocument();
+      });
+
+      // Now upload a valid file
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+
+      const mockFileReader = {
+        readAsDataURL: vi.fn(),
+        onload: null,
+      };
+      global.FileReader = vi.fn(() => mockFileReader);
+
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      // Trigger onload to set the preview
+      mockFileReader.onload({ target: { result: 'data:image/jpeg;base64,mockbase64' } });
+
+      // Now submit again - the error should be gone because we have an image
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/at least one image is required/i)).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Form Submission', () => {
+    it('submits form with valid data', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            _id: '123',
+            title: 'Test Book',
+            author: 'Test Author',
+          },
+        },
+      });
+
+      renderBookListingForm();
+
+      // Fill required fields
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      // Upload image
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      
+      const mockFileReader = {
+        readAsDataURL: vi.fn(),
+        onload: null,
+      };
+      global.FileReader = vi.fn(() => mockFileReader);
+      
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(axios.post).toHaveBeenCalledWith(
+          expect.stringContaining('/api/books'),
+          expect.any(FormData),
+          expect.objectContaining({
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          })
+        );
+      });
+    });
+
+    it('displays success message after successful submission', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { _id: '123' },
+        },
+      });
+
+      renderBookListingForm();
+
+      // Fill and submit form
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      const mockFileReader = { readAsDataURL: vi.fn(), onload: null };
+      global.FileReader = vi.fn(() => mockFileReader);
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/book listing created successfully/i)).toBeInTheDocument();
+      });
+    });
+
+    it('redirects to profile page after successful submission', async () => {
+      axios.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { _id: '123' },
+        },
+      });
+
+      renderBookListingForm();
+
+      // Fill and submit form
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      const mockFileReader = { readAsDataURL: vi.fn(), onload: null };
+      global.FileReader = vi.fn(() => mockFileReader);
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockNavigate).toHaveBeenCalledWith('/profile');
+      }, { timeout: 3000 });
+    });
+
+    it('displays error message on submission failure', async () => {
+      axios.post.mockRejectedValueOnce({
+        response: {
+          data: {
+            error: {
+              message: 'Failed to create listing',
+            },
+          },
+        },
+      });
+
+      renderBookListingForm();
+
+      // Fill and submit form
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      const mockFileReader = { readAsDataURL: vi.fn(), onload: null };
+      global.FileReader = vi.fn(() => mockFileReader);
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/failed to create listing/i)).toBeInTheDocument();
+      });
+    });
+
+    it('disables submit button while submitting', async () => {
+      axios.post.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ data: { success: true, data: {} } }), 100))
+      );
+
+      renderBookListingForm();
+
+      // Fill form
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      const mockFileReader = { readAsDataURL: vi.fn(), onload: null };
+      global.FileReader = vi.fn(() => mockFileReader);
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(submitButton).toBeDisabled();
+        expect(submitButton).toHaveTextContent(/creating listing/i);
+      });
+    });
+
+    it('handles network errors gracefully', async () => {
+      axios.post.mockRejectedValueOnce({
+        request: {},
+      });
+
+      renderBookListingForm();
+
+      // Fill and submit form
+      fireEvent.change(screen.getByLabelText(/book title/i), { target: { value: 'Test Book' } });
+      fireEvent.change(screen.getByLabelText(/^author/i), { target: { value: 'Test Author' } });
+      fireEvent.change(screen.getByLabelText(/^condition/i), { target: { value: 'Good' } });
+      fireEvent.change(screen.getByLabelText(/^genre/i), { target: { value: 'Fiction' } });
+
+      const file = createMockFile('front.jpg', 'image/jpeg', 1024);
+      const frontImageInput = screen.getByLabelText(/front photo/i);
+      const mockFileReader = { readAsDataURL: vi.fn(), onload: null };
+      global.FileReader = vi.fn(() => mockFileReader);
+      fireEvent.change(frontImageInput, { target: { files: [file] } });
+
+      const submitButton = screen.getByRole('button', { name: /create listing/i });
+      fireEvent.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/unable to connect to server/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Cancel Button', () => {
+    it('navigates to profile page when cancel is clicked', () => {
+      renderBookListingForm();
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      fireEvent.click(cancelButton);
+
       expect(mockNavigate).toHaveBeenCalledWith('/profile');
-    }, { timeout: 3000 });
+    });
   });
 });
