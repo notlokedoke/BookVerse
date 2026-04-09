@@ -97,16 +97,18 @@
 }
 
 .genre-item:hover:not(.disabled) {
-  border-color: #3498db;
-  background: #f0f8ff;
+  border-color: var(--color-primary);
+  background: var(--color-primary-10);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+  box-shadow: 0 4px 12px var(--color-primary-20);
 }
 
 .genre-item.selected {
   font-weight: 600;
   color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  box-shadow: 0 4px 12px var(--color-primary-30);
 }
 
 .genre-item.disabled {
