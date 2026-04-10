@@ -1315,12 +1315,12 @@
 
 /* Wishlist Theme */
 .theme-wishlist {
-  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
-  color: white;
+  border-left-color: #ec4899;
 }
 
 .theme-wishlist .stat-icon-container {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
 }
 
 /* Wishlist Matches Section */
