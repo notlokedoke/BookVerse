@@ -608,11 +608,11 @@
   font-weight: 700;
   margin: 0;
   line-height: 1.2;
-  color: #000000;
+  color: var(--text-primary);
 }
 
 .stat-label {
-  color: #000000;
+  color: var(--text-secondary);
   font-size: 0.813rem;
   font-weight: 600;
   margin: 0;
