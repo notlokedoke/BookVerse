@@ -558,7 +558,7 @@
 }
 
 .stat-card.theme-accent {
-  border-left-color: var(--accent);
+  border-left-color: var(--primary-dark);
 }
 
 .stat-card.theme-secondary {
@@ -585,8 +585,8 @@
 }
 
 .stat-card.theme-accent .stat-icon-container {
-  background: #E8F6F3;
-  color: var(--accent-dark);
+  background: var(--primary-light);
+  color: var(--primary-dark);
 }
 
 .stat-card.theme-secondary .stat-icon-container {
