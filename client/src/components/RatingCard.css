@@ -47,7 +47,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2ECC71 0%, #059669 100%);
+  background: #2ECC71;
   color: white;
   display: flex;
   align-items: center;

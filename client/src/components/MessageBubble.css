@@ -46,7 +46,7 @@
 }
 
 .message-bubble.own {
-  background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+  background: #1ABC9C;
   color: white;
   border-bottom-right-radius: 0.375rem;
   margin-left: auto;

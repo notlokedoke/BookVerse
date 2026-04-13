@@ -81,20 +81,6 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
               {condition}
             </div>
 
-            {/* Quick Action Overlay - Only show for authenticated non-owners */}
-            {isAuthenticated && !isOwner && isAvailable && (
-              <div className="quick-action-overlay">
-                <button 
-                  className="quick-trade-btn"
-                  onClick={handleProposeTrade}
-                  title="Propose a trade for this book"
-                >
-                  <span className="trade-icon">🔄</span>
-                  Propose Trade
-                </button>
-              </div>
-            )}
-
             {/* Not Available Overlay */}
             {!isAvailable && (
               <div className="unavailable-overlay">
@@ -111,8 +97,26 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
             <p className="book-author" title={author}>
               by {author}
             </p>
+            {owner && (
+              <p className="book-owner-name" title={`Listed by ${owner.username}`}>
+                {owner.username}
+              </p>
+            )}
           </div>
         </Link>
+
+        {/* Propose Trade Button for Non-Owners */}
+        {isAuthenticated && !isOwner && isAvailable && (
+          <div className="book-actions">
+            <button 
+              className="propose-trade-btn"
+              onClick={handleProposeTrade}
+              title="Propose a trade for this book"
+            >
+              🔄 Propose Trade
+            </button>
+          </div>
+        )}
 
         {/* Edit and Delete Buttons for Owner */}
         {(showEditButton || showDeleteButton) && (onEdit || onDelete) && (

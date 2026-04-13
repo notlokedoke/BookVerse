@@ -3,41 +3,50 @@
 
 /* ============================================
    CSS Custom Properties (Design Tokens)
+   Material Design — Green Theme
    ============================================ */
 :root {
     /* Typography */
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-    /* Colors - Primary Palette */
-    --color-primary: #3B82F6;
-    --color-primary-hover: #2563EB;
-    --color-primary-light: #DBEAFE;
+    /* Colors - Primary Palette (Emerald Green) */
+    --color-primary: #2ECC71;
+    --color-primary-hover: #27AE60;
+    --color-primary-light: #E8F8F0;
+
+    /* Colors - Secondary (Slate Gray) */
+    --color-secondary: #2C3E50;
+    --color-secondary-light: #34495E;
+
+    /* Colors - Accent (Teal) */
+    --color-accent: #1ABC9C;
+    --color-accent-hover: #16A085;
 
     /* Colors - Status */
-    --color-success: #10B981;
-    --color-success-light: #D1FAE5;
-    --color-warning: #F59E0B;
-    --color-warning-light: #FEF3C7;
-    --color-error: #EF4444;
-    --color-error-light: #FEE2E2;
+    --color-success: #2ECC71;
+    --color-success-light: #E8F8F0;
+    --color-warning: #F39C12;
+    --color-warning-light: #FEF5E7;
+    --color-error: #E74C3C;
+    --color-error-light: #FDEDEC;
 
     /* Colors - Neutral */
-    --color-text: #111827;
-    --color-text-secondary: #374151;
-    --color-text-muted: #6B7280;
-    --color-text-light: #9CA3AF;
+    --color-text: #2C3E50;
+    --color-text-secondary: #34495E;
+    --color-text-muted: #7F8C8D;
+    --color-text-light: #95A5A6;
 
-    /* Colors - Backgrounds */
-    --bg-page: #FAFAFA;
+    /* Colors - Backgrounds (Material surfaces) */
+    --bg-page: #ECF0F1;
     --bg-card: #FFFFFF;
-    --bg-hover: #F3F4F6;
-    --bg-active: #E5E7EB;
+    --bg-hover: #F0F3F4;
+    --bg-active: #E5E8E8;
 
     /* Colors - Borders */
-    --border-color: #E5E7EB;
-    --border-color-dark: #D1D5DB;
+    --border-color: #E8ECEF;
+    --border-color-dark: #D5DBDB;
 
-    /* Spacing */
+    /* Spacing (8dp Material grid) */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
@@ -45,22 +54,23 @@
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
 
-    /* Border Radius */
-    --radius-sm: 6px;
+    /* Border Radius (Material Design) */
+    --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
     --radius-full: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* Material Elevation Shadows */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-md: 0 3px 6px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 20px rgba(0,0,0,0.10), 0 3px 6px rgba(0,0,0,0.08);
+    --shadow-xl: 0 15px 25px rgba(0,0,0,0.10), 0 5px 10px rgba(0,0,0,0.08);
 
     /* Transitions */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.2s ease;
-    --transition-slow: 0.3s ease;
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Container */
     --container-max-width: 1400px;
@@ -126,7 +136,7 @@ body {
 }
 
 /* ============================================
-   Stats Cards Pattern
+   Stats Cards Pattern — Material Design
    ============================================ */
 .stats-grid {
     display: grid;
@@ -138,36 +148,41 @@ body {
 .stat-card {
     background: var(--bg-card);
     padding: var(--spacing-lg);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border-left: 4px solid transparent;
-    transition: transform var(--transition-normal);
+    transition: box-shadow var(--transition-normal), transform var(--transition-normal);
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-.stat-card.blue {
+.stat-card.primary {
     border-left-color: var(--color-primary);
 }
 
-.stat-card.green {
-    border-left-color: var(--color-success);
+.stat-card.secondary {
+    border-left-color: var(--color-secondary);
 }
 
-.stat-card.orange {
+.stat-card.accent {
+    border-left-color: var(--color-accent);
+}
+
+.stat-card.warning {
     border-left-color: var(--color-warning);
 }
 
-.stat-card.red {
+.stat-card.error {
     border-left-color: var(--color-error);
 }
 
 .stat-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--color-text-light);
+    color: #000000;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: var(--spacing-sm);
@@ -176,7 +191,7 @@ body {
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--color-text);
+    color: #000000;
 }
 
 /* ============================================

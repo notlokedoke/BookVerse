@@ -97,7 +97,6 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  backdrop-filter: blur(8px);
   color: white;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -620,7 +619,7 @@
 }
 
 .auth-prompt {
-  background: linear-gradient(135deg, #2ECC71 0%, #2C3E50 100%);
+  background: #2ECC71;
   color: white;
   padding: 2rem;
   border-radius: 12px;
@@ -741,7 +740,6 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -758,10 +756,9 @@
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .modal-header {
