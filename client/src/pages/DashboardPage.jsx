@@ -371,30 +371,36 @@ const DashboardPage = () => {
               {/* Active Trades */}
               <div className="analytics-stat">
                 <span className="analytics-label">Active Trades</span>
-                <div className="analytics-value">
-                  <span className="big-number">{stats.activeTrades + stats.pendingRequests}</span>
-                  {stats.pendingRequests > 0 && (
-                    <span className="analytics-badge">{stats.pendingRequests} pending</span>
-                  )}
-                </div>
-                {stats.activeTrades + stats.pendingRequests === 0 && (
-                  <span className="analytics-subtext">No active trades</span>
+                {stats.activeTrades + stats.pendingRequests === 0 ? (
+                  <div className="analytics-empty-state">
+                    <span className="empty-icon">🔄</span>
+                    <span className="empty-text">No active trades</span>
+                  </div>
+                ) : (
+                  <div className="analytics-value">
+                    <span className="big-number">{stats.activeTrades + stats.pendingRequests}</span>
+                    {stats.pendingRequests > 0 && (
+                      <span className="analytics-badge">{stats.pendingRequests} pending</span>
+                    )}
+                  </div>
                 )}
               </div>
 
               {/* Total Completed */}
               <div className="analytics-stat">
                 <span className="analytics-label">Total Completed</span>
-                <div className="analytics-value">
-                  <span className="big-number">{stats.completedTrades}</span>
-                  {stats.completedTrades > 0 && (
+                {stats.completedTrades === 0 ? (
+                  <div className="analytics-empty-state">
+                    <span className="empty-icon">🏆</span>
+                    <span className="empty-text">Complete your first trade!</span>
+                  </div>
+                ) : (
+                  <div className="analytics-value">
+                    <span className="big-number">{stats.completedTrades}</span>
                     <span className="analytics-badge success">
                       <CheckCircle size={12} /> Done
                     </span>
-                  )}
-                </div>
-                {stats.completedTrades === 0 && (
-                  <span className="analytics-subtext">Start trading!</span>
+                  </div>
                 )}
               </div>
 
