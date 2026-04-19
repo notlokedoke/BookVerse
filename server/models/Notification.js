@@ -10,7 +10,19 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Notification type is required'],
     enum: {
-      values: ['trade_request', 'trade_accepted', 'trade_declined', 'trade_completed', 'new_message'],
+      values: [
+        'trade_request', 
+        'trade_accepted', 
+        'trade_declined', 
+        'trade_completed', 
+        'new_message',
+        'wishlist_match',
+        'wishlist_available',
+        'wishlist_trade_hint',
+        'local_book_listed',
+        'nearby_user_wants_book',
+        'local_activity_digest'
+      ],
       message: 'Invalid notification type'
     }
   },
@@ -21,6 +33,14 @@ const notificationSchema = new mongoose.Schema({
   relatedUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  relatedBook: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Book'
+  },
+  relatedWishlist: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Wishlist'
   },
   message: {
     type: String,

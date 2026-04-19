@@ -4,12 +4,12 @@
    =================================== */
 
 :root {
-  --primary: #2ECC71;
-  --primary-dark: #27AE60;
-  --primary-light: #E8F8F0;
-  --secondary: #2C3E50;
-  --accent: #1ABC9C;
-  --text-primary: #2C3E50;
+  --primary: var(--color-primary, #1ABC9C);
+  --primary-dark: var(--color-primary-dark, #16A085);
+  --primary-light: var(--color-primary-10, rgba(26, 188, 156, 0.1));
+  --secondary: var(--color-secondary);
+  --accent: var(--color-primary);
+  --text-primary: var(--color-secondary);
   --text-secondary: #7F8C8D;
   --text-muted: #95A5A6;
   --elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
@@ -19,7 +19,7 @@
 
 .landing-page {
   min-height: 100vh;
-  background: #ECF0F1;
+  background: var(--color-neutral-100);
 }
 
 /* ===================================

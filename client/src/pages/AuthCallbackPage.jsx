@@ -70,7 +70,7 @@ const AuthCallbackPage = () => {
         width: '48px',
         height: '48px',
         border: '4px solid #e5e7eb',
-        borderTopColor: '#2ECC71',
+        borderTopColor: '#1ABC9C',
         borderRadius: '50%',
         animation: 'spin 1s linear infinite'
       }}></div>

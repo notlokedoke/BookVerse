@@ -37,7 +37,7 @@
 
 .logo-icon {
   font-size: 1.5rem;
-  color: #2ECC71;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,7 +73,7 @@
 
 /* Left Side - Branding */
 .login-left {
-  background: #2ECC71;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -483,7 +483,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #2ECC71;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -564,7 +564,7 @@
 
 .login-btn {
   padding: 0.75rem 1rem;
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -781,7 +781,7 @@
 }
 
 .password-toggle:focus {
-  outline: 2px solid #2ECC71;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 

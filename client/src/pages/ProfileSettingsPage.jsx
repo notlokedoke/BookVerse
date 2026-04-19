@@ -314,7 +314,7 @@ const ProfileSettingsPage = () => {
     if (strength <= 2) return { strength, label: 'Weak', color: '#ef4444' };
     if (strength <= 3) return { strength, label: 'Fair', color: '#f59e0b' };
     if (strength <= 4) return { strength, label: 'Good', color: '#3b82f6' };
-    return { strength, label: 'Strong', color: '#2ECC71' };
+    return { strength, label: 'Strong', color: '#1ABC9C' };
   };
 
   const handlePasswordSubmit = async (e) => {

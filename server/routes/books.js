@@ -8,10 +8,80 @@ const { authenticateToken } = require('../middleware/auth');
 const { applyBookOwnerPrivacy, applyBookOwnerPrivacyToArray } = require('../utils/privacy');
 const { uploadSingleImage, uploadBookImages } = require('../middleware/upload');
 const { sanitizeInput, sanitizeString } = require('../utils/sanitize');
+const { bookLookup } = require('../utils/bookLookup');
+
+/**
+ * @route   GET /api/books/proxy-image
+ * @desc    Proxy external book cover images to avoid CORS issues
+ * @access  Public
+ */
+router.get('/proxy-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Image URL is required' }
+      });
+    }
+
+    // Validate that it's a book cover URL from trusted sources
+    const allowedDomains = [
+      'books.google.com',
+      'covers.openlibrary.org',
+      'books.googleusercontent.com'
+    ];
+
+    let imageUrl;
+    try {
+      imageUrl = new URL(url);
+    } catch (e) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid URL format' }
+      });
+    }
+
+    if (!allowedDomains.some(domain => imageUrl.hostname.includes(domain))) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Image source not allowed' }
+      });
+    }
+
+    // Fetch the image
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://www.google.com/'
+      }
+    });
+
+    // Set appropriate headers
+    res.set('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    res.set('Access-Control-Allow-Origin', '*'); // Allow CORS
+    res.send(response.data);
+
+  } catch (error) {
+    console.error('Image proxy error:', error.message);
+    
+    // Return a placeholder or error response
+    res.status(500).json({
+      success: false,
+      error: { message: 'Failed to fetch image' }
+    });
+  }
+});
 
 /**
  * @route   POST /api/books/isbn/:isbn
- * @desc    Lookup book data from Google Books API by ISBN
+ * @desc    Lookup book data using Open Library
  * @access  Public
  */
 router.post('/isbn/:isbn', async (req, res) => {
@@ -43,126 +113,28 @@ router.post('/isbn/:isbn', async (req, res) => {
       });
     }
 
-    // Check if Google Books API key is configured
-    if (!process.env.GOOGLE_BOOKS_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        error: {
-          message: 'Google Books API is not configured',
-          code: 'API_NOT_CONFIGURED'
-        }
+    // Use Open Library for book lookup
+    const result = await bookLookup(cleanIsbn);
+
+    if (result.success && result.data) {
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        message: 'Book data retrieved from Open Library'
       });
     }
 
-    // Query Google Books API
-    const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}&key=${process.env.GOOGLE_BOOKS_API_KEY}`;
-
-    const response = await axios.get(googleBooksUrl, {
-      timeout: 10000 // 10 second timeout
-    });
-
-    // Check if any books were found
-    if (!response.data.items || response.data.items.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'No book found with this ISBN',
-          code: 'BOOK_NOT_FOUND'
-        }
-      });
-    }
-
-    // Extract book information from the first result
-    const bookInfo = response.data.items[0].volumeInfo;
-
-    // Get the highest resolution image available from Google Books
-    // Priority: extraLarge > large > medium > small > thumbnail
-    let coverImage = null;
-    
-    if (bookInfo.imageLinks) {
-      coverImage = 
-        bookInfo.imageLinks.extraLarge ||
-        bookInfo.imageLinks.large ||
-        bookInfo.imageLinks.medium ||
-        bookInfo.imageLinks.small ||
-        bookInfo.imageLinks.thumbnail ||
-        null;
-      
-      // Remove edge effects and use HTTPS for better quality
-      if (coverImage) {
-        coverImage = coverImage
-          .replace('&edge=curl', '')  // Remove curl effect
-          .replace('zoom=1', 'zoom=2') // Increase zoom for better quality (1-5 scale)
-          .replace('http://', 'https://'); // Use HTTPS
+    // No book found
+    return res.status(404).json({
+      success: false,
+      error: {
+        message: result.message || 'No book found with this ISBN',
+        code: 'BOOK_NOT_FOUND'
       }
-    }
-
-    // Format the response data
-    const formattedBookData = {
-      title: bookInfo.title || '',
-      author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
-      publisher: bookInfo.publisher || '',
-      publicationYear: bookInfo.publishedDate ?
-        parseInt(bookInfo.publishedDate.split('-')[0]) : null,
-      isbn: cleanIsbn,
-      description: bookInfo.description || '',
-      pageCount: bookInfo.pageCount || null,
-      categories: bookInfo.categories || [],
-      thumbnail: coverImage
-    };
-
-    res.status(200).json({
-      success: true,
-      data: formattedBookData,
-      message: 'Book data retrieved successfully'
     });
 
   } catch (error) {
     console.error('ISBN lookup error:', error);
-
-    // Handle specific axios errors
-    if (error.code === 'ECONNABORTED') {
-      return res.status(408).json({
-        success: false,
-        error: {
-          message: 'Request timeout. Please try again.',
-          code: 'REQUEST_TIMEOUT'
-        }
-      });
-    }
-
-    if (error.response) {
-      // Google Books API returned an error
-      if (error.response.status === 403) {
-        return res.status(503).json({
-          success: false,
-          error: {
-            message: 'Google Books API quota exceeded or invalid API key',
-            code: 'API_QUOTA_EXCEEDED'
-          }
-        });
-      }
-
-      if (error.response.status === 400) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: 'Invalid request to Google Books API',
-            code: 'INVALID_API_REQUEST'
-          }
-        });
-      }
-    }
-
-    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
-      return res.status(503).json({
-        success: false,
-        error: {
-          message: 'Unable to connect to Google Books API. Please try again later.',
-          code: 'API_CONNECTION_ERROR'
-        }
-      });
-    }
 
     // Generic error
     res.status(500).json({
@@ -177,7 +149,7 @@ router.post('/isbn/:isbn', async (req, res) => {
 
 /**
  * @route   GET /api/books/search-external
- * @desc    Search for books using Google Books API globally
+ * @desc    Search for books using Open Library API globally
  * @access  Public
  */
 router.get('/search-external', async (req, res) => {
@@ -194,24 +166,18 @@ router.get('/search-external', async (req, res) => {
       });
     }
 
-    if (!process.env.GOOGLE_BOOKS_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        error: {
-          message: 'Google Books API is not configured',
-          code: 'API_NOT_CONFIGURED'
-        }
-      });
-    }
-
     const cleanQuery = q.trim();
-    const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(cleanQuery)}&key=${process.env.GOOGLE_BOOKS_API_KEY}&maxResults=10`;
+    // Add language filter for English books only
+    const openLibraryUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(cleanQuery)}&language=eng&limit=10`;
 
-    const response = await axios.get(googleBooksUrl, {
-      timeout: 10000
+    const response = await axios.get(openLibraryUrl, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'BookVerse/1.0 (Book Trading Platform)'
+      }
     });
 
-    if (!response.data.items || response.data.items.length === 0) {
+    if (!response.data.docs || response.data.docs.length === 0) {
       return res.status(200).json({
         success: true,
         data: [],
@@ -219,50 +185,46 @@ router.get('/search-external', async (req, res) => {
       });
     }
 
-    // Extract book information from the results
-    const books = response.data.items.map(item => {
-      const bookInfo = item.volumeInfo;
+    // Extract book information from Open Library results
+    const books = response.data.docs.map(doc => {
+      // Get ISBN (prefer ISBN-13, fallback to ISBN-10)
       let isbn = null;
-      if (bookInfo.industryIdentifiers) {
-        const isbn13 = bookInfo.industryIdentifiers.find(identifier => identifier.type === 'ISBN_13');
-        const isbn10 = bookInfo.industryIdentifiers.find(identifier => identifier.type === 'ISBN_10');
-        isbn = isbn13 ? isbn13.identifier : (isbn10 ? isbn10.identifier : null);
+      if (doc.isbn && doc.isbn.length > 0) {
+        const isbn13 = doc.isbn.find(i => i.length === 13);
+        const isbn10 = doc.isbn.find(i => i.length === 10);
+        isbn = isbn13 || isbn10 || doc.isbn[0];
       }
 
-      // Get the highest resolution image available
+      // Get cover image from Open Library
       let coverImage = null;
-      if (bookInfo.imageLinks) {
-        coverImage = 
-          bookInfo.imageLinks.extraLarge ||
-          bookInfo.imageLinks.large ||
-          bookInfo.imageLinks.medium ||
-          bookInfo.imageLinks.small ||
-          bookInfo.imageLinks.thumbnail ||
-          null;
-        
-        // Remove zoom parameter and edge effects to get higher quality
-        if (coverImage) {
-          coverImage = coverImage
-            .replace('&edge=curl', '')
-            .replace('zoom=1', 'zoom=0')
-            .replace('http://', 'https://');
-        }
+      if (doc.cover_i) {
+        // Use Open Library's cover API - Large size (L)
+        coverImage = `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`;
+      } else if (isbn) {
+        // Fallback to ISBN-based cover
+        coverImage = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
       }
+
+      // Get author names
+      const author = doc.author_name ? doc.author_name.join(', ') : '';
+
+      // Get publication year
+      const publishedDate = doc.first_publish_year ? doc.first_publish_year.toString() : null;
 
       return {
-        id: item.id,
-        title: bookInfo.title || '',
-        author: bookInfo.authors ? bookInfo.authors.join(', ') : '',
+        id: doc.key || doc.cover_edition_key || `ol-${Date.now()}-${Math.random()}`,
+        title: doc.title || '',
+        author: author,
         isbn: isbn,
         thumbnail: coverImage,
-        publishedDate: bookInfo.publishedDate || null
+        publishedDate: publishedDate
       };
     });
 
     res.status(200).json({
       success: true,
       data: books,
-      message: 'Books retrieved successfully'
+      message: 'Books retrieved successfully from Open Library'
     });
 
   } catch (error) {
@@ -278,12 +240,12 @@ router.get('/search-external', async (req, res) => {
       });
     }
 
-    if (error.response && error.response.status === 403) {
+    if (error.response && error.response.status === 429) {
       return res.status(503).json({
         success: false,
         error: {
-          message: 'Google Books API quota exceeded or invalid API key',
-          code: 'API_QUOTA_EXCEEDED'
+          message: 'Too many requests to Open Library. Please try again in a moment.',
+          code: 'RATE_LIMIT_EXCEEDED'
         }
       });
     }
@@ -348,8 +310,6 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
   body('description')
     .optional({ checkFalsy: true })
     .trim()
-    .isLength({ max: 2000 })
-    .withMessage('Description must not exceed 2000 characters')
     .customSanitizer(sanitizeString),
   body('publicationYear')
     .optional({ checkFalsy: true })
@@ -364,11 +324,19 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
   body('googleBooksImageUrl')
     .optional({ checkFalsy: true })
     .trim()
-    .isURL()
-    .withMessage('Google Books image URL must be a valid URL')
+    .custom((value) => {
+      if (!value) return true;
+      
+      // Simple validation - just check if it looks like a URL
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        return true;
+      }
+      throw new Error('Google Books image URL must be a valid URL');
+    })
 ], (req, res, next) => {
   // Check for validation errors
   const errors = validationResult(req);
+  
   if (!errors.isEmpty()) {
     const firstError = errors.array()[0];
     
@@ -417,8 +385,8 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
     // Sanitize each genre
     const sanitizedGenres = genresArray.map(g => sanitizeString(g.trim()));
 
-    // Determine primary image URL (prefer front, then Google Books, then back)
-    const imageUrl = req.frontImageUrl || googleBooksImageUrl || req.backImageUrl;
+    // Determine primary image URL (prefer Google Books cover, then front upload, then back)
+    const imageUrl = googleBooksImageUrl || req.frontImageUrl || req.backImageUrl;
 
     // Create new book listing with sanitized data
     const bookData = {
@@ -448,6 +416,62 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
 
     // Apply privacy settings to owner information
     const bookWithPrivacy = applyBookOwnerPrivacy(book);
+
+    // Check for wishlist matches and notify users (Phase 2)
+    try {
+      const Wishlist = require('../models/Wishlist');
+      const Notification = require('../models/Notification');
+      
+      // Helper function to escape regex special characters
+      const escapeRegex = (string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      };
+
+      // Find matching wishlist items
+      const matchQuery = {
+        user: { $ne: req.userId } // Don't notify the book owner
+      };
+
+      // Build OR conditions for matching
+      const orConditions = [];
+      
+      // Exact ISBN match (highest priority)
+      if (isbn && isbn.trim()) {
+        orConditions.push({ isbn: isbn.trim() });
+      }
+      
+      // Title + Author match
+      orConditions.push({
+        title: new RegExp(`^${escapeRegex(title.trim())}$`, 'i'),
+        author: new RegExp(`^${escapeRegex(author.trim())}$`, 'i')
+      });
+
+      if (orConditions.length > 0) {
+        matchQuery.$or = orConditions;
+        
+        const wishlistMatches = await Wishlist.find(matchQuery);
+
+        // Create notifications for users with matching wishlist items
+        for (const wishlistItem of wishlistMatches) {
+          await Notification.create({
+            recipient: wishlistItem.user,
+            type: 'wishlist_match',
+            relatedUser: req.userId,
+            relatedBook: book._id,
+            relatedWishlist: wishlistItem._id,
+            message: `Great news! "${book.title}" from your wishlist is now available for trade!`
+          });
+        }
+
+        console.log(`Created ${wishlistMatches.length} wishlist match notifications for book: ${book.title}`);
+      }
+    } catch (notificationError) {
+      // Log error but don't fail the book creation
+      console.error('Failed to create wishlist match notifications:', notificationError);
+    }
+
+    // Location-based notifications removed - keeping it simple
+    // Users will get general wishlist match notifications instead
 
     res.status(201).json({
       success: true,
@@ -545,6 +569,10 @@ router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 20, city, genre, author, title } = req.query;
 
+    // Validate pagination parameters
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
+
     // Build query object
     const query = { isAvailable: true };
 
@@ -564,7 +592,7 @@ router.get('/', async (req, res) => {
     }
 
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
 
     // Base aggregation pipeline
     let pipeline = [
@@ -606,7 +634,7 @@ router.get('/', async (req, res) => {
     pipeline.push(
       { $sort: { createdAt: -1 } },
       { $skip: skip },
-      { $limit: parseInt(limit) }
+      { $limit: limitNum }
     );
 
     // Execute aggregation
@@ -621,16 +649,19 @@ router.get('/', async (req, res) => {
     // Apply privacy settings to all books
     const booksWithPrivacy = applyBookOwnerPrivacyToArray(books);
 
+    // Set cache headers for better performance
+    res.set('Cache-Control', 'public, max-age=30'); // Cache for 30 seconds
+
     res.status(200).json({
       success: true,
       data: {
         books: booksWithPrivacy,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: pageNum,
+          totalPages: Math.ceil(total / limitNum),
           totalBooks: total,
           hasNextPage: skip + books.length < total,
-          hasPrevPage: parseInt(page) > 1
+          hasPrevPage: pageNum > 1
         }
       }
     });
@@ -655,7 +686,7 @@ router.get('/', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 20, includeUnavailable = 'false' } = req.query;
 
     // Validate user ID format
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -668,39 +699,47 @@ router.get('/user/:userId', async (req, res) => {
       });
     }
 
+    // Validate pagination parameters
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit))); // Max 100 per page
+
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query
+    const query = { owner: userId };
+    if (includeUnavailable !== 'true') {
+      query.isAvailable = true;
+    }
 
     // Find books owned by the user and populate owner information
-    const books = await Book.find({
-      owner: userId,
-      isAvailable: true
-    })
+    const books = await Book.find(query)
       .populate('owner', '-password')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(limitNum)
+      .lean() // Use lean for better performance
       .exec();
 
     // Get total count for pagination
-    const total = await Book.countDocuments({
-      owner: userId,
-      isAvailable: true
-    });
+    const total = await Book.countDocuments(query);
 
     // Apply privacy settings to all books
     const booksWithPrivacy = applyBookOwnerPrivacyToArray(books);
+
+    // Set cache headers for better performance
+    res.set('Cache-Control', 'public, max-age=60'); // Cache for 1 minute
 
     res.status(200).json({
       success: true,
       data: {
         books: booksWithPrivacy,
         pagination: {
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(total / parseInt(limit)),
+          currentPage: pageNum,
+          totalPages: Math.ceil(total / limitNum),
           totalBooks: total,
           hasNextPage: skip + books.length < total,
-          hasPrevPage: parseInt(page) > 1
+          hasPrevPage: pageNum > 1
         }
       }
     });
@@ -846,18 +885,21 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
     // Update image URLs if new images were uploaded or provided
     if (req.frontImageUrl) {
       updateData.frontImageUrl = req.frontImageUrl;
-      // Update primary imageUrl if front image is uploaded
-      updateData.imageUrl = req.frontImageUrl;
     }
     if (req.backImageUrl) {
       updateData.backImageUrl = req.backImageUrl;
     }
     if (googleBooksImageUrl !== undefined) {
       updateData.googleBooksImageUrl = googleBooksImageUrl || null;
-      // If no front image but Google Books image is provided, use it as primary
-      if (!req.frontImageUrl && googleBooksImageUrl) {
-        updateData.imageUrl = googleBooksImageUrl;
-      }
+    }
+    
+    // Determine primary imageUrl: prefer Google Books cover, then front, then back
+    if (googleBooksImageUrl) {
+      updateData.imageUrl = googleBooksImageUrl;
+    } else if (req.frontImageUrl) {
+      updateData.imageUrl = req.frontImageUrl;
+    } else if (req.backImageUrl && !book.frontImageUrl && !book.googleBooksImageUrl) {
+      updateData.imageUrl = req.backImageUrl;
     }
 
     // Update the book

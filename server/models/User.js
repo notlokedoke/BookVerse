@@ -42,6 +42,16 @@ const userSchema = new mongoose.Schema({
     },
     trim: true
   },
+  coordinates: {
+    lat: {
+      type: Number,
+      default: null
+    },
+    lng: {
+      type: Number,
+      default: null
+    }
+  },
   emailVerified: {
     type: Boolean,
     default: false
@@ -107,6 +117,9 @@ userSchema.index({ city: 1 });
 
 // Create compound index for privacy-aware city searches
 userSchema.index({ city: 1, 'privacySettings.showCity': 1 });
+
+// Create 2dsphere index for geospatial queries
+userSchema.index({ 'coordinates.lat': 1, 'coordinates.lng': 1 });
 
 // Create index on averageRating for sorting
 userSchema.index({ averageRating: -1 });

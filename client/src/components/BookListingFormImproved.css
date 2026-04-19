@@ -102,7 +102,7 @@
 }
 
 /* Page Header */
-.page-header {
+.book-listing-improved .page-header {
   max-width: 800px;
   margin: 0 auto 3rem;
   display: flex;
@@ -111,7 +111,7 @@
   gap: 1.5rem;
 }
 
-.header-content h1 {
+.book-listing-improved .header-content h1 {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -124,14 +124,14 @@
   -webkit-text-fill-color: transparent;
 }
 
-.header-icon {
+.book-listing-improved .header-icon {
   width: 36px;
   height: 36px;
   color: var(--primary);
   filter: drop-shadow(0 4px 6px rgba(16, 185, 129, 0.2));
 }
 
-.header-content p {
+.book-listing-improved .header-content p {
   font-size: 1.125rem;
   color: var(--text-muted);
   font-weight: 400;
@@ -587,6 +587,9 @@
   background: var(--input-bg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .preview-item:hover {
@@ -598,8 +601,9 @@
 .preview-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: opacity 0.3s ease;
+  background: white;
 }
 
 .preview-item:hover img {
@@ -609,6 +613,40 @@
 .preview-item.google-books {
   border-color: #3b82f6;
   border-width: 2px;
+}
+
+.image-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.image-load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+  background: #f3f4f6;
+  border-radius: 8px;
 }
 
 .preview-badge {
@@ -802,13 +840,13 @@ kbd {
     border-radius: 1rem;
   }
 
-  .page-header {
+  .book-listing-improved .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .header-content h1 {
+  .book-listing-improved .header-content h1 {
     font-size: 1.75rem;
   }
 

@@ -168,9 +168,15 @@ const WishlistPage = () => {
             <div className="wishlist-grid">
               {wishlistItems.map((item) => {
                 const matchCount = getMatchCount(item._id);
+                const isFulfilled = !!item.fulfilledBy;
                 return (
-                  <div key={item._id} className="wishlist-card">
-                    {matchCount > 0 && (
+                  <div key={item._id} className={`wishlist-card ${isFulfilled ? 'fulfilled' : ''}`}>
+                    {isFulfilled && (
+                      <div className="fulfilled-badge">
+                        ✓ Fulfilled
+                      </div>
+                    )}
+                    {!isFulfilled && matchCount > 0 && (
                       <div className="match-badge">
                         {matchCount} {matchCount === 1 ? 'match' : 'matches'} found!
                       </div>

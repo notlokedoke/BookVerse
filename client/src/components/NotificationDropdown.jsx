@@ -1,15 +1,30 @@
 import React from 'react';
 import NotificationItem from './NotificationItem';
-import { Bell } from 'lucide-react';
+import { Bell, CheckCheck } from 'lucide-react';
 import './NotificationDropdown.css';
 
-const NotificationDropdown = ({ notifications, onMarkAsRead }) => {
+const NotificationDropdown = ({ notifications, onMarkAsRead, onMarkAllAsRead }) => {
+  const unreadNotifications = notifications.filter(n => !n.isRead);
+  const hasUnread = unreadNotifications.length > 0;
+
   return (
     <div className="notification-dropdown">
       <div className="notification-header">
-        <h3 className="notification-title">Notifications</h3>
-        {notifications.length > 0 && (
-          <span className="notification-count">{notifications.length}</span>
+        <div className="notification-header-left">
+          <h3 className="notification-title">Notifications</h3>
+          {notifications.length > 0 && (
+            <span className="notification-count">{notifications.length}</span>
+          )}
+        </div>
+        {hasUnread && (
+          <button 
+            className="mark-all-read-btn"
+            onClick={onMarkAllAsRead}
+            title="Mark all as read"
+          >
+            <CheckCheck size={16} />
+            <span>Mark all read</span>
+          </button>
         )}
       </div>
       <div className="notification-list">

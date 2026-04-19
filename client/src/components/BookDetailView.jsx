@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import TradeProposalModal from './TradeProposalModal';
 import EditBookModal from './EditBookModal';
+import WishlistButton from './WishlistButton';
 import { formatCityName } from '../utils/formatLocation';
 import './BookDetailView.css';
 
@@ -182,8 +183,11 @@ const BookDetailView = () => {
         <button 
           onClick={() => navigate(-1)}
           className="back-button"
+          aria-label="Go back"
         >
-          ← Back
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
         </button>
       </div>
 
@@ -193,7 +197,7 @@ const BookDetailView = () => {
           <div className="book-image-section">
             <div className="book-image-container">
               <img
-                src={activeImage || book.imageUrl}
+                src={activeImage || book.imageUrl || '/placeholder-book.png'}
                 alt={`${book.title} by ${book.author}`}
                 className="book-detail-image"
                 onError={(e) => {
@@ -205,14 +209,20 @@ const BookDetailView = () => {
               </div>
             </div>
 
-            {/* Additional Images Gallery */}
+            {/* Additional Images Gallery - Show Google Books cover first */}
             <div className="additional-images-gallery">
               {book.googleBooksImageUrl && (
                 <div 
                   className={`gallery-item ${(activeImage || book.imageUrl) === book.googleBooksImageUrl ? 'active' : ''}`}
                   onClick={() => setActiveImage(book.googleBooksImageUrl)}
                 >
-                  <img src={book.googleBooksImageUrl} alt={`${book.title} - Cover`} />
+                  <img 
+                    src={book.googleBooksImageUrl} 
+                    alt={`${book.title} - Cover`}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
                   <span className="gallery-label">Cover</span>
                 </div>
               )}
@@ -222,8 +232,14 @@ const BookDetailView = () => {
                   className={`gallery-item ${(activeImage === book.frontImageUrl) ? 'active' : ''}`}
                   onClick={() => setActiveImage(book.frontImageUrl)}
                 >
-                  <img src={book.frontImageUrl} alt={`${book.title} - Front`} />
-                  <span className="gallery-label">Front</span>
+                  <img 
+                    src={book.frontImageUrl} 
+                    alt={`${book.title} - Front`}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <span className="gallery-label">Actual Front</span>
                 </div>
               )}
               
@@ -232,8 +248,14 @@ const BookDetailView = () => {
                   className={`gallery-item ${(activeImage === book.backImageUrl) ? 'active' : ''}`}
                   onClick={() => setActiveImage(book.backImageUrl)}
                 >
-                  <img src={book.backImageUrl} alt={`${book.title} - Back`} />
-                  <span className="gallery-label">Back</span>
+                  <img 
+                    src={book.backImageUrl} 
+                    alt={`${book.title} - Back`}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <span className="gallery-label">Actual Back</span>
                 </div>
               )}
               
@@ -398,13 +420,16 @@ const BookDetailView = () => {
               </div>
             ) : (
               <div className="visitor-actions">
-                <button 
-                  className="propose-trade-button"
-                  disabled={!book.isAvailable}
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  {book.isAvailable ? 'Propose Trade' : 'Not Available'}
-                </button>
+                {book.isAvailable ? (
+                  <button 
+                    className="propose-trade-button"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    Propose Trade
+                  </button>
+                ) : (
+                  <WishlistButton book={book} compact={false} showLabel={true} />
+                )}
                 {book.owner && (
                   <Link 
                     to={`/profile/${book.owner._id}`}

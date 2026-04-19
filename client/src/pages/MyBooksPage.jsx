@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import BookCard from '../components/BookCard';
@@ -12,6 +12,8 @@ import './MyBooksPage.css';
 const MyBooksPage = () => {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,37 +21,80 @@ const MyBooksPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [deletingBook, setDeletingBook] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalBooks: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
+
+  const fetchUserBooks = async (page = 1) => {
+    if (!user?._id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=20`
+      );
+
+      if (response.data.success) {
+        setBooks(response.data.data.books || []);
+        setPagination(response.data.data.pagination);
+      } else {
+        setError('Failed to fetch your books');
+      }
+    } catch (err) {
+      console.error('Error fetching user books:', err);
+      setError(
+        err.response?.data?.error?.message ||
+        'An error occurred while fetching your books'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUserBooks = async () => {
-      if (!user?._id) return;
+    // Get page from URL query parameter, default to 1
+    const pageFromUrl = parseInt(searchParams.get('page')) || 1;
+    fetchUserBooks(pageFromUrl);
+  }, [user, searchParams]);
 
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}`
-        );
-
-        if (response.data.success) {
-          setBooks(response.data.data.books || []);
-        } else {
-          setError('Failed to fetch your books');
+  // Preload next page images for faster navigation
+  useEffect(() => {
+    if (pagination.hasNextPage && books.length > 0) {
+      // Preload images from next page in the background
+      const nextPage = pagination.currentPage + 1;
+      const preloadNextPage = async () => {
+        try {
+          const response = await axios.get(
+            `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${nextPage}&limit=20`
+          );
+          
+          if (response.data.success) {
+            const nextBooks = response.data.data.books || [];
+            // Preload images by creating Image objects
+            nextBooks.forEach(book => {
+              if (book.imageUrl && book.imageUrl.includes('covers.openlibrary.org')) {
+                const img = new Image();
+                img.src = book.imageUrl;
+              }
+            });
+          }
+        } catch (err) {
+          // Silently fail - this is just optimization
+          console.log('Preload failed (non-critical):', err.message);
         }
-      } catch (err) {
-        console.error('Error fetching user books:', err);
-        setError(
-          err.response?.data?.error?.message ||
-          'An error occurred while fetching your books'
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserBooks();
-  }, [user]);
+      };
+      
+      // Preload after a short delay to not interfere with current page
+      const timeoutId = setTimeout(preloadNextPage, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [pagination, books, user]);
 
   // Handle edit book
   const handleEditBook = (book) => {
@@ -128,20 +173,67 @@ const MyBooksPage = () => {
     setEditingBook(null);
   };
 
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      // Update URL with new page number
+      navigate(`/my-books?page=${newPage}`);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Generate page numbers for pagination
+  const generatePageNumbers = () => {
+    const pages = [];
+    const { currentPage, totalPages } = pagination;
+    
+    if (totalPages <= 1) return pages;
+    
+    // Always show first page
+    pages.push(1);
+    
+    // Calculate range around current page
+    let startPage = Math.max(2, currentPage - 2);
+    let endPage = Math.min(totalPages - 1, currentPage + 2);
+    
+    // Add ellipsis after first page if needed
+    if (startPage > 2) {
+      pages.push('...');
+    }
+    
+    // Add pages around current page
+    for (let i = startPage; i <= endPage; i++) {
+      if (i !== 1 && i !== totalPages) {
+        pages.push(i);
+      }
+    }
+    
+    // Add ellipsis before last page if needed
+    if (endPage < totalPages - 1) {
+      pages.push('...');
+    }
+    
+    // Always show last page (if different from first)
+    if (totalPages > 1) {
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+
   // Skeleton loading state
   if (loading) {
     return (
       <div className="my-books-page">
         <div className="my-books-container">
           <div className="my-books-skeleton">
-            <div className="skeleton-banner"></div>
             <div className="skeleton-header"></div>
             <div className="skeleton-stats">
               <div className="skeleton-stat-card"></div>
               <div className="skeleton-stat-card"></div>
             </div>
             <div className="skeleton-grid">
-              {[...Array(6)].map((_, i) => (
+              {[...Array(Math.min(20, pagination.totalBooks || 6))].map((_, i) => (
                 <div key={i} className="skeleton-card"></div>
               ))}
             </div>
@@ -195,17 +287,8 @@ const MyBooksPage = () => {
               <BookOpen size={24} />
             </div>
             <div className="stat-content">
-              <p className="stat-value">{books.length}</p>
+              <p className="stat-value">{pagination.totalBooks}</p>
               <p className="stat-label">Books Listed</p>
-            </div>
-          </div>
-          <div className="stat-card gradient-green">
-            <div className="stat-icon-container">
-              <TrendingUp size={24} />
-            </div>
-            <div className="stat-content">
-              <p className="stat-value">{books.filter(b => b.isAvailable).length}</p>
-              <p className="stat-label">Available</p>
             </div>
           </div>
         </section>
@@ -226,6 +309,56 @@ const MyBooksPage = () => {
                 />
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="pagination">
+                <div className="pagination-info">
+                  Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalBooks} total books)
+                </div>
+                
+                <div className="pagination-controls">
+                  {/* Previous Button */}
+                  <button
+                    className={`pagination-btn ${!pagination.hasPrevPage ? 'disabled' : ''}`}
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrevPage}
+                    title="Previous page"
+                  >
+                    ← Previous
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="page-numbers">
+                    {generatePageNumbers().map((page, index) => (
+                      <React.Fragment key={index}>
+                        {page === '...' ? (
+                          <span className="pagination-ellipsis">...</span>
+                        ) : (
+                          <button
+                            className={`page-number ${page === pagination.currentPage ? 'active' : ''}`}
+                            onClick={() => handlePageChange(page)}
+                            title={`Go to page ${page}`}
+                          >
+                            {page}
+                          </button>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    className={`pagination-btn ${!pagination.hasNextPage ? 'disabled' : ''}`}
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage}
+                    title="Next page"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         ) : (
           <div className="empty-state glass-card">

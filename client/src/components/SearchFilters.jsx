@@ -1,13 +1,7 @@
 import React from 'react';
 import { Search, MapPin, BookOpen, User, X } from 'lucide-react';
+import GenreFilter from './GenreFilter';
 import './SearchFilters.css';
-
-const genreOptions = [
-  'Fiction', 'Non-Fiction', 'Mystery', 'Romance', 'Science Fiction',
-  'Fantasy', 'Biography', 'History', 'Self-Help', 'Business',
-  'Technology', 'Health', 'Travel', 'Cooking', 'Art',
-  'Poetry', 'Drama', 'Children', 'Young Adult', 'Classic', 'Other'
-];
 
 const SearchFilters = ({
   filters,
@@ -17,21 +11,6 @@ const SearchFilters = ({
   resultsCount,
   loading
 }) => {
-  // Parse genres from string to array
-  const selectedGenres = filters.genre ? filters.genre.split(',') : [];
-
-  const handleGenreToggle = (genre) => {
-    let newGenres;
-    if (selectedGenres.includes(genre)) {
-      // Remove genre
-      newGenres = selectedGenres.filter(g => g !== genre);
-    } else {
-      // Add genre
-      newGenres = [...selectedGenres, genre];
-    }
-    // Convert array back to comma-separated string
-    onFilterChange('genre', newGenres.join(','));
-  };
 
   return (
     <div className="search-filters-bar">
@@ -88,20 +67,12 @@ const SearchFilters = ({
         )}
       </div>
 
-      {/* Filters Heading and Genre Multi-Select */}
-      <div className="genre-dropdown-panel">
-        <div className="genre-tags-container">
-          {genreOptions.map(genre => (
-            <button
-              key={genre}
-              type="button"
-              className={`genre-tag ${selectedGenres.includes(genre) ? 'selected' : ''}`}
-              onClick={() => handleGenreToggle(genre)}
-            >
-              {genre}
-            </button>
-          ))}
-        </div>
+      {/* Genre Filter Section */}
+      <div className="genre-filter-panel">
+        <GenreFilter
+          selectedGenre={filters.genre}
+          onChange={(genre) => onFilterChange('genre', genre)}
+        />
       </div>
 
       {/* Results Summary */}

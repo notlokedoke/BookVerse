@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { MessageCircle } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import { Spinner } from './ui';
@@ -24,7 +25,9 @@ const ChatBox = ({ tradeId, otherUserName }) => {
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   // Check if user is at the bottom of the scroll
@@ -210,6 +213,40 @@ const ChatBox = ({ tradeId, otherUserName }) => {
     }
   };
 
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      const response = await fetch(`${apiUrl}/api/messages/${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Remove the deleted message from the list
+        setMessages(prevMessages => prevMessages.filter(msg => msg._id !== messageId));
+        toast.success('Message deleted');
+      } else {
+        toast.error(data.error?.message || 'Failed to delete message');
+        throw new Error(data.error?.message || 'Failed to delete message');
+      }
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      toast.error('Unable to delete message. Please try again.');
+      throw err;
+    }
+  };
+
   // Determine which book user is offering and receiving
   const getTradeContext = () => {
     if (!tradeDetails || !user) return null;
@@ -259,69 +296,12 @@ const ChatBox = ({ tradeId, otherUserName }) => {
       {/* Trade Context Sidebar */}
       <aside className="trade-context-sidebar">
         <div className="trade-context-header">
-          <div className="trade-icon">📚</div>
-          <h3 className="trade-context-title">Trade Details</h3>
+          <MessageCircle size={20} strokeWidth={2} className="trade-icon-svg" />
+          <h3 className="trade-context-title">Messaging</h3>
         </div>
 
         {tradeContext && (
           <div className="trade-context-content">
-            {/* Status Badge */}
-            <div className={`trade-status-badge status-${tradeContext.status}`}>
-              {tradeContext.status === 'accepted' && '✓ Accepted'}
-              {tradeContext.status === 'proposed' && '⏳ Proposed'}
-              {tradeContext.status === 'completed' && '✓✓ Completed'}
-              {tradeContext.status === 'declined' && '✗ Declined'}
-            </div>
-
-            {/* You Offer Section */}
-            <div className="trade-section">
-              <h4 className="trade-section-title">📤 You Offer</h4>
-              <div className="trade-book-card">
-                {tradeContext.offeredBook.coverImage && (
-                  <img 
-                    src={tradeContext.offeredBook.coverImage} 
-                    alt={tradeContext.offeredBook.title}
-                    className="trade-book-cover"
-                  />
-                )}
-                <div className="trade-book-info">
-                  <p className="trade-book-title">{tradeContext.offeredBook.title}</p>
-                  <p className="trade-book-author">{tradeContext.offeredBook.author}</p>
-                  {tradeContext.offeredBook.condition && (
-                    <span className="trade-book-condition">
-                      {tradeContext.offeredBook.condition}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Exchange Icon */}
-            <div className="trade-exchange-icon">⇅</div>
-
-            {/* You Receive Section */}
-            <div className="trade-section">
-              <h4 className="trade-section-title">📥 You Receive</h4>
-              <div className="trade-book-card">
-                {tradeContext.receivedBook.coverImage && (
-                  <img 
-                    src={tradeContext.receivedBook.coverImage} 
-                    alt={tradeContext.receivedBook.title}
-                    className="trade-book-cover"
-                  />
-                )}
-                <div className="trade-book-info">
-                  <p className="trade-book-title">{tradeContext.receivedBook.title}</p>
-                  <p className="trade-book-author">{tradeContext.receivedBook.author}</p>
-                  {tradeContext.receivedBook.condition && (
-                    <span className="trade-book-condition">
-                      {tradeContext.receivedBook.condition}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Trading Partner */}
             <div className="trade-section">
               <h4 className="trade-section-title">👤 Trading With</h4>
@@ -390,6 +370,7 @@ const ChatBox = ({ tradeId, otherUserName }) => {
                     isOwnMessage={message.sender._id === user?._id || message.sender === user?._id}
                     senderName={message.sender?.name || otherUserName}
                     showAvatar={showAvatar}
+                    onDelete={handleDeleteMessage}
                   />
                 );
               })}

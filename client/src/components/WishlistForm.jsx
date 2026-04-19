@@ -13,6 +13,8 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [notes, setNotes] = useState('');
+  const [priority, setPriority] = useState(3);
+  const [isPublic, setIsPublic] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +70,8 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
   const handleClearSelection = () => {
     setSelectedBook(null);
     setNotes('');
+    setPriority(3);
+    setIsPublic(false);
     setErrors({});
   };
 
@@ -101,6 +105,10 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       if (selectedBook.thumbnail) {
         dataToSend.imageUrl = selectedBook.thumbnail;
       }
+      
+      // Add priority and public visibility
+      dataToSend.priority = priority;
+      dataToSend.isPublic = isPublic;
 
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const response = await axios.post(`${apiUrl}/api/wishlist`, dataToSend);
@@ -119,7 +127,22 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
         const errorData = error.response.data;
         if (errorData.error) {
           if (errorData.error.code === 'DUPLICATE_WISHLIST_ITEM') {
-            setErrors({ general: errorData.error.message });
+            // Show a more helpful message for duplicates
+            toast.info('This book is already in your wishlist!');
+            
+            // Set a special error flag to hide the error banner
+            setErrors({ general: 'DUPLICATE_HANDLED' });
+            
+            // Redirect to wishlist page after a brief delay
+            setTimeout(() => {
+              if (onSuccess) {
+                // If onSuccess is provided, call it (will redirect to profile/wishlist)
+                onSuccess();
+              } else {
+                // Otherwise, redirect directly to wishlist page
+                window.location.href = '/wishlist';
+              }
+            }, 1500);
           } else {
             setErrors({ general: errorData.error.message || 'Failed to add book to wishlist.' });
           }
@@ -142,7 +165,7 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       </div>
 
       <div className="wishlist-form-content">
-        {errors.general && (
+        {errors.general && errors.general !== 'DUPLICATE_HANDLED' && (
           <div className="error-message">
             {errors.general}
           </div>
@@ -248,6 +271,34 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
               <small>Add any specific preferences or conditions for acceptable trades.</small>
             </div>
 
+            <div className="form-group priority-group">
+              <label htmlFor="priority">Priority Level</label>
+              <div className="priority-selector">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`priority-btn ${priority === level ? 'active' : ''}`}
+                    onClick={() => setPriority(level)}
+                    disabled={isSubmitting}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <small>1 = Low priority, 5 = High priority (urgent)</small>
+            </div>
+
+            <div className="form-group checkbox-group">
+              <label className="checkbox-label" onClick={() => !isSubmitting && setIsPublic(!isPublic)}>
+                <div className={`custom-checkbox ${isPublic ? 'checked' : ''} ${isSubmitting ? 'disabled' : ''}`}>
+                  {isPublic && <Check size={16} strokeWidth={3} />}
+                </div>
+                <span>Make this wishlist item public</span>
+              </label>
+              <small>Other users can see this on your profile and may proactively offer trades</small>
+            </div>
+
             <div className="form-actions">
               <button
                 type="button"
@@ -262,7 +313,7 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
                 className="add-btn"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Adding...' : 'Save to Wishlist'}
+                {isSubmitting ? 'Adding...' : 'Add to Wishlist'}
               </button>
             </div>
           </form>

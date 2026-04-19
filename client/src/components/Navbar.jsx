@@ -16,7 +16,8 @@ import {
   X,
   LayoutDashboard,
   Shield,
-  Heart
+  Heart,
+  MapPin
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
@@ -123,6 +124,32 @@ const Navbar = () => {
     }
   };
 
+  // Handle mark all as read
+  const handleMarkAllAsRead = async () => {
+    // Optimistic update for immediate UI feedback
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notif => ({ ...notif, isRead: true }))
+    );
+    setUnreadCount(0);
+
+    // Call API to persist the change
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put('/api/notifications/read-all', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        toast.success(`${response.data.count} notification${response.data.count !== 1 ? 's' : ''} marked as read`);
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      // Revert optimistic update on error
+      fetchNotifications();
+      toast.error('Failed to mark all notifications as read');
+    }
+  };
+
   // Handle notification dropdown open
   const handleNotificationOpen = () => {
     // Refresh notifications when dropdown opens
@@ -160,6 +187,13 @@ const Navbar = () => {
               >
                 <Search size={18} />
                 <span>Browse</span>
+              </Link>
+              <Link
+                to="/nearby"
+                className={`nav-link ${isActive('/nearby') ? 'active' : ''}`}
+              >
+                <MapPin size={18} />
+                <span>Local</span>
               </Link>
               <Link
                 to="/my-books"
@@ -206,6 +240,7 @@ const Navbar = () => {
                 unreadCount={unreadCount}
                 notifications={notifications}
                 onMarkAsRead={handleMarkAsRead}
+                onMarkAllAsRead={handleMarkAllAsRead}
                 onOpen={handleNotificationOpen}
               />
               <div className="user-menu">
@@ -294,6 +329,10 @@ const Navbar = () => {
                   <Link to="/browse" className="mobile-nav-link">
                     <Search size={20} />
                     Browse
+                  </Link>
+                  <Link to="/nearby" className="mobile-nav-link">
+                    <MapPin size={20} />
+                    Local
                   </Link>
                   <Link to="/my-books" className="mobile-nav-link">
                     <Library size={20} />

@@ -349,6 +349,34 @@ router.put('/:id/accept', [
     trade.respondedAt = new Date();
     await trade.save();
 
+    // Track wishlist fulfillment (Phase 2)
+    try {
+      const Wishlist = require('../models/Wishlist');
+      
+      // Check if requested book matches any wishlist item for the proposer
+      const wishlistItem = await Wishlist.findOne({
+        user: trade.proposer._id,
+        $or: [
+          { isbn: trade.requestedBook.isbn },
+          { 
+            title: new RegExp(`^${trade.requestedBook.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+            author: new RegExp(`^${trade.requestedBook.author.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+          }
+        ],
+        fulfilledBy: null // Only update if not already fulfilled
+      });
+
+      if (wishlistItem) {
+        wishlistItem.fulfilledBy = trade._id;
+        wishlistItem.fulfilledAt = new Date();
+        await wishlistItem.save();
+        console.log(`Wishlist item fulfilled: ${wishlistItem.title} for user ${trade.proposer._id}`);
+      }
+    } catch (wishlistError) {
+      // Log error but don't fail the trade acceptance
+      console.error('Failed to track wishlist fulfillment:', wishlistError);
+    }
+
     // Create notification for the proposer (Req 9.3)
     try {
       const notification = new Notification({

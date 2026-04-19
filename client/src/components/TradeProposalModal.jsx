@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { BookOpen } from 'lucide-react';
 import './TradeProposalModal.css';
 
 const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
@@ -228,7 +229,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                   ) : (
                     <div className="book-card-compact placeholder">
                       <div className="placeholder-content">
-                        <span className="placeholder-icon">📚</span>
+                        <BookOpen size={32} className="placeholder-icon" />
                         <p>Select a book below</p>
                       </div>
                     </div>

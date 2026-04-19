@@ -164,9 +164,9 @@
 }
 
 .genre-tag.selected {
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
-  border-color: #2ECC71;
+  border-color: var(--color-primary);
 }
 
 .genre-tag.selected:hover:not(:disabled) {
@@ -211,7 +211,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #2ECC71;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
@@ -348,7 +348,7 @@
 }
 
 .update-btn {
-  background: #2ECC71;
+  background: var(--color-primary);
   color: white;
 }
 

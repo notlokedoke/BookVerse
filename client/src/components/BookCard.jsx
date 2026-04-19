@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TradeProposalModal from './TradeProposalModal';
+import WishlistButton from './WishlistButton';
+import { ArrowLeftRight } from 'lucide-react';
 import { formatCityName } from '../utils/formatLocation';
 import './BookCard.css';
 
 const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
   const { isAuthenticated, user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
   if (!book) {
     return null;
@@ -24,6 +28,23 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
     createdAt,
     isAvailable
   } = book;
+
+  // Open Library images work directly - no proxy needed!
+  const getImageUrl = (url) => {
+    return url || '/placeholder-book.svg';
+  };
+
+  // Handle image load
+  const handleImageLoad = (e) => {
+    setImageLoaded(true);
+  };
+
+  // Handle image error
+  const handleImageError = (e) => {
+    setImageError(true);
+    setImageLoaded(true); // Stop showing skeleton
+    e.target.src = '/placeholder-book.svg';
+  };
 
   // Check if current user is the owner
   const isOwner = user && owner && user._id === owner._id;
@@ -70,16 +91,27 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
           {/* Book Image */}
           <div className="book-image-container">
             <img
-              src={imageUrl}
+              src={getImageUrl(imageUrl)}
               alt={`${title} by ${author}`}
               className="book-image"
-              onError={(e) => {
-                e.target.src = '/placeholder-book.png'; // Fallback image
-              }}
+              decoding="async"
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              style={{ opacity: imageLoaded ? 1 : 0 }}
             />
+            {!imageLoaded && !imageError && (
+              <div className="book-image-skeleton"></div>
+            )}
             <div className={`condition-badge ${getConditionClass(condition)}`}>
               {condition}
             </div>
+
+            {/* In Library Badge for Owner's Books */}
+            {isOwner && (
+              <div className="in-library-badge">
+                In Library
+              </div>
+            )}
 
             {/* Not Available Overlay */}
             {!isAvailable && (
@@ -105,7 +137,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
           </div>
         </Link>
 
-        {/* Propose Trade Button for Non-Owners */}
+        {/* Propose Trade Button for Available Books */}
         {isAuthenticated && !isOwner && isAvailable && (
           <div className="book-actions">
             <button 
@@ -113,8 +145,16 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
               onClick={handleProposeTrade}
               title="Propose a trade for this book"
             >
-              🔄 Propose Trade
+              <ArrowLeftRight size={16} />
+              Propose Trade
             </button>
+          </div>
+        )}
+
+        {/* Wishlist Button Only for Unavailable Books */}
+        {isAuthenticated && !isOwner && !isAvailable && (
+          <div className="book-actions">
+            <WishlistButton book={book} compact={false} showLabel={true} />
           </div>
         )}
 

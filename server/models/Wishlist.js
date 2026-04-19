@@ -27,6 +27,34 @@ const wishlistSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
     trim: true
+  },
+  // Track if this was added from a book listing (vs manual entry)
+  sourceBook: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Book',
+    default: null
+  },
+  // Track fulfillment
+  fulfilledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Trade',
+    default: null
+  },
+  fulfilledAt: {
+    type: Date,
+    default: null
+  },
+  // Priority level (1-5, where 5 is highest)
+  priority: {
+    type: Number,
+    min: 1,
+    max: 5,
+    default: 3
+  },
+  // Public visibility
+  isPublic: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

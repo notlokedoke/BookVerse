@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import GenreSelector from './GenreSelector';
 import './EditBookModal.css';
 
 const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
@@ -24,31 +25,6 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
 
   // Condition options based on Book model enum
   const conditionOptions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
-
-  // Common genre options
-  const genreOptions = [
-    'Fiction',
-    'Non-Fiction',
-    'Mystery',
-    'Romance',
-    'Science Fiction',
-    'Fantasy',
-    'Biography',
-    'History',
-    'Self-Help',
-    'Business',
-    'Technology',
-    'Health',
-    'Travel',
-    'Cooking',
-    'Art',
-    'Poetry',
-    'Drama',
-    'Children',
-    'Young Adult',
-    'Classic',
-    'Other'
-  ];
 
   // Populate form with book data when modal opens
   useEffect(() => {
@@ -99,11 +75,11 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
         return;
       }
 
-      // Validate file size (3MB max)
-      if (file.size > 3 * 1024 * 1024) {
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
         setErrors({
           ...errors,
-          image: 'Image file must be less than 3MB'
+          image: 'Image file must be less than 10MB'
         });
         return;
       }
@@ -435,37 +411,16 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
 
             <div className="form-group">
               <label htmlFor="edit-genres">Genres *</label>
-              <div className="genre-multi-select">
-                {genreOptions.map(genreOption => (
-                  <button
-                    key={genreOption}
-                    type="button"
-                    className={`genre-tag ${genres.includes(genreOption) ? 'selected' : ''}`}
-                    onClick={() => {
-                      const newGenres = genres.includes(genreOption)
-                        ? genres.filter(g => g !== genreOption)
-                        : [...genres, genreOption];
-                      setFormData({ ...formData, genres: newGenres });
-                      if (errors.genres && newGenres.length > 0) {
-                        setErrors({ ...errors, genres: '' });
-                      }
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    {genreOption}
-                    {genres.includes(genreOption) && (
-                      <svg className="check-icon-small" fill="currentColor" viewBox="0 0 20 20" width="16" height="16">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {genres.length > 0 && (
-                <div className="selected-genres-summary">
-                  Selected: {genres.join(', ')}
-                </div>
-              )}
+              <GenreSelector
+                selectedGenres={genres}
+                onChange={(newGenres) => {
+                  setFormData({ ...formData, genres: newGenres });
+                  if (errors.genres && newGenres.length > 0) {
+                    setErrors({ ...errors, genres: '' });
+                  }
+                }}
+                maxSelections={5}
+              />
               {errors.genres && <span className="field-error">{errors.genres}</span>}
             </div>
 
@@ -480,7 +435,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
                 className={errors.image ? 'error' : ''}
                 disabled={isSubmitting}
               />
-              <small>Upload a new photo to replace the current one (max 3MB)</small>
+              <small>Upload a new photo to replace the current one (max 10MB)</small>
               {errors.image && <span className="field-error">{errors.image}</span>}
               
               {imagePreview && (

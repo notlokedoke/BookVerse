@@ -306,12 +306,10 @@ const TradesPage = () => {
               {activeTab === 'all' &&
                 'Start trading by browsing available books and proposing exchanges.'}
             </p>
-            {activeTab !== 'incoming' && (
-              <Link to="/browse" className="btn-get-started">
-                <Search size={18} />
-                Browse Books
-              </Link>
-            )}
+            <Link to="/browse" className="btn-get-started">
+              <Search size={18} />
+              Browse Books
+            </Link>
           </div>
         )}
       </div>
