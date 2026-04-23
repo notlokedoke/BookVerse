@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import FloatingActionButton from '../components/FloatingActionButton';
 import RecommendedBooks from '../components/RecommendedBooks';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './DashboardPage.css';
 
 const DashboardPage = () => {
@@ -516,7 +517,7 @@ const DashboardPage = () => {
                           className="wishlist-match-book"
                         >
                           <img
-                            src={book.imageUrl || '/placeholder-book.png'}
+                            src={getBookImageUrl(book.imageUrl)}
                             alt={book.title}
                           />
                           <div className="wishlist-match-book-info">
@@ -582,7 +583,7 @@ const DashboardPage = () => {
                     <div className="pending-books">
                       <div className="pending-book">
                         <img
-                          src={trade.requestedBook?.imageUrl || '/placeholder-book.png'}
+                          src={getBookImageUrl(trade.requestedBook?.imageUrl)}
                           alt={trade.requestedBook?.author ? `${trade.requestedBook.title} by ${trade.requestedBook.author}` : trade.requestedBook?.title}
                         />
                         <div className="pending-book-info">
@@ -595,7 +596,7 @@ const DashboardPage = () => {
                       </div>
                       <div className="pending-book">
                         <img
-                          src={trade.offeredBook?.imageUrl || '/placeholder-book.png'}
+                          src={getBookImageUrl(trade.offeredBook?.imageUrl)}
                           alt={trade.offeredBook?.author ? `${trade.offeredBook.title} by ${trade.offeredBook.author}` : trade.offeredBook?.title}
                         />
                         <div className="pending-book-info">
@@ -653,9 +654,9 @@ const DashboardPage = () => {
                         </div>
                       </div>
                       <div className="trade-books-preview">
-                        <img src={myBook?.imageUrl} alt={myBook?.author ? `${myBook.title} by ${myBook.author}` : myBook?.title} className="trade-book-img" />
+                        <img src={getBookImageUrl(myBook?.imageUrl)} alt={myBook?.author ? `${myBook.title} by ${myBook.author}` : myBook?.title} className="trade-book-img" onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }} />
                         <span className="trade-swap-icon">⇄</span>
-                        <img src={theirBook?.imageUrl} alt={theirBook?.author ? `${theirBook.title} by ${theirBook.author}` : theirBook?.title} className="trade-book-img" />
+                        <img src={getBookImageUrl(theirBook?.imageUrl)} alt={theirBook?.author ? `${theirBook.title} by ${theirBook.author}` : theirBook?.title} className="trade-book-img" onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }} />
                       </div>
                       <Link to="/trades" className="trade-view-btn">
                         View Details

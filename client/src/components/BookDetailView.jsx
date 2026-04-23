@@ -7,6 +7,7 @@ import TradeProposalModal from './TradeProposalModal';
 import EditBookModal from './EditBookModal';
 import WishlistButton from './WishlistButton';
 import { formatCityName } from '../utils/formatLocation';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './BookDetailView.css';
 
 const BookDetailView = () => {
@@ -197,11 +198,12 @@ const BookDetailView = () => {
           <div className="book-image-section">
             <div className="book-image-container">
               <img
-                src={activeImage || book.imageUrl || '/placeholder-book.png'}
+                src={getBookImageUrl(activeImage || book.imageUrl)}
                 alt={`${book.title} by ${book.author}`}
                 className="book-detail-image"
                 onError={(e) => {
-                  e.target.src = '/placeholder-book.png';
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder-book.svg';
                 }}
               />
               <div className={`condition-badge ${getConditionClass(book.condition)}`}>
@@ -212,14 +214,15 @@ const BookDetailView = () => {
             {/* Additional Images Gallery - Show Google Books cover first */}
             <div className="additional-images-gallery">
               {book.googleBooksImageUrl && (
-                <div 
+                <div
                   className={`gallery-item ${(activeImage || book.imageUrl) === book.googleBooksImageUrl ? 'active' : ''}`}
                   onClick={() => setActiveImage(book.googleBooksImageUrl)}
                 >
-                  <img 
-                    src={book.googleBooksImageUrl} 
+                  <img
+                    src={getBookImageUrl(book.googleBooksImageUrl)}
                     alt={`${book.title} - Cover`}
                     onError={(e) => {
+                      e.target.onerror = null;
                       e.target.style.display = 'none';
                     }}
                   />

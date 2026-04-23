@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { fetchDescriptionFromGoogleBooks } = require('./bookEnrichment');
 
 /**
  * Keep Google/Open Library URLs mostly intact with safe normalization only.
@@ -229,7 +230,38 @@ async function lookupGoogleBooks(isbn) {
 }
 
 /**
- * Lookup book data from Open Library API (PRIMARY AND ONLY SOURCE)
+ * Verify that Open Library has a real cover for this ISBN.
+ *
+ * Why this is needed: without `?default=false`, the covers endpoint serves a
+ * 1x1 transparent placeholder when no real cover exists, so a plain HEAD/GET
+ * cannot tell "real cover" from "no cover".
+ *
+ * Why we don't follow redirects: OL serves real covers via a 302 to
+ * archive.org, which is slow/flaky on HEAD requests. Receiving the 302
+ * itself is sufficient confirmation that OL has the cover.
+ * @param {string} isbn
+ * @returns {Promise<string|null>} Clean OL cover URL if a real cover exists
+ */
+async function verifyOpenLibraryCover(isbn) {
+  const cleanIsbn = String(isbn).replace(/[-\s]/g, '');
+  const cleanUrl = `https://covers.openlibrary.org/b/isbn/${cleanIsbn}-L.jpg`;
+  const validationUrl = `${cleanUrl}?default=false`;
+
+  try {
+    await axios.head(validationUrl, {
+      timeout: 5000,
+      maxRedirects: 0,
+      validateStatus: (status) => status === 200 || status === 302
+    });
+    return cleanUrl;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Lookup book data from Open Library API.
+ * Covers are ALWAYS returned as Open Library URLs.
  * @param {string} isbn - Clean ISBN (10 or 13 digits)
  * @returns {Promise<Object>} Book data with success status
  */
@@ -249,28 +281,22 @@ async function lookupOpenLibrary(isbn) {
 
     const bookInfo = response.data[bookKey];
 
-    // Get cover image - Open Library provides multiple sizes
-    // Priority: large > medium > small
-    let coverImage = null;
-    if (bookInfo.cover) {
-      coverImage = bookInfo.cover.large || bookInfo.cover.medium || bookInfo.cover.small || null;
+    // Always prefer the verified direct OL cover URL by ISBN.
+    let coverImage = await verifyOpenLibraryCover(isbn);
+
+    // Fallback: use whatever cover the API returned, but only if it's an OL URL
+    if (!coverImage && bookInfo.cover) {
+      const apiCover =
+        bookInfo.cover.large || bookInfo.cover.medium || bookInfo.cover.small || null;
+      if (apiCover && apiCover.includes('covers.openlibrary.org')) {
+        coverImage = apiCover;
+      }
     }
 
-    // If no cover from API, try direct cover URL (often has better quality)
-    if (!coverImage) {
-      // Open Library provides direct cover access by ISBN
-      // Size options: S (small), M (medium), L (large)
-      const directCoverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
-      
-      // Verify the cover exists by making a HEAD request
-      try {
-        await axios.head(directCoverUrl, { timeout: 3000 });
-        coverImage = directCoverUrl;
-        console.log(`[Open Library] Using direct cover URL: ${directCoverUrl}`);
-      } catch (e) {
-        // Cover doesn't exist, leave as null
-        console.log(`[Open Library] No cover available for ISBN ${isbn}`);
-      }
+    if (coverImage) {
+      console.log(`[Open Library] Using cover URL: ${coverImage}`);
+    } else {
+      console.log(`[Open Library] No cover available for ISBN ${isbn}`);
     }
 
     // Extract authors
@@ -339,21 +365,42 @@ async function verifyImageUrl(url) {
 }
 
 /**
- * Book lookup using Open Library API only
+ * Book lookup: cover from Open Library, description from Open Library
+ * with Google Books as a fallback when OL has no description.
  * @param {string} isbn - Clean ISBN (10 or 13 digits)
  * @returns {Promise<Object>} Book data with success status
  */
 async function bookLookup(isbn) {
   console.log(`[ISBN Lookup] Looking up ISBN: ${isbn} using Open Library`);
-  
+
   const result = await lookupOpenLibrary(isbn);
-  
-  if (result.success) {
-    console.log(`[ISBN Lookup] ✓ Book found: ${result.data.title}`);
-  } else {
+
+  if (!result.success) {
     console.log(`[ISBN Lookup] ✗ Book not found`);
+    return result;
   }
-  
+
+  console.log(`[ISBN Lookup] ✓ Book found: ${result.data.title}`);
+
+  // If Open Library didn't return a description, fall back to Google Books
+  // for description ONLY (covers always stay Open Library).
+  if (!result.data.description || result.data.description.trim() === '') {
+    console.log(`[ISBN Lookup] ⓘ No description from Open Library, trying Google Books...`);
+    try {
+      const googleDescription = await fetchDescriptionFromGoogleBooks(
+        result.data.title,
+        result.data.author,
+        isbn
+      );
+      if (googleDescription) {
+        result.data.description = googleDescription;
+        result.data.descriptionSource = 'Google Books';
+      }
+    } catch (err) {
+      console.error('[ISBN Lookup] Google Books description fallback failed:', err.message);
+    }
+  }
+
   return result;
 }
 
@@ -384,5 +431,6 @@ module.exports = {
   lookupOpenLibrary,
   bookLookup,
   getCoverImage,
-  verifyImageUrl
+  verifyImageUrl,
+  verifyOpenLibraryCover
 };

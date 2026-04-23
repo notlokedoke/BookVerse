@@ -43,11 +43,11 @@ async function analyzeBooks() {
 
     // Count books with images (not placeholder)
     const booksWithImage = await Book.countDocuments({
-      imageUrl: { 
-        $exists: true, 
-        $ne: null, 
-        $ne: '', 
-        $ne: '/placeholder-book.svg' 
+      imageUrl: {
+        $exists: true,
+        $ne: null,
+        $ne: '',
+        $ne: '/placeholder-book.svg'
       }
     });
 
@@ -61,6 +61,15 @@ async function analyzeBooks() {
       ]
     });
 
+    // Count books whose cover is still hosted on Google (needs migration to OL)
+    const NON_OL_HOSTS = /books\.google\.com|books\.googleusercontent\.com/i;
+    const booksOnGoogleBooks = await Book.countDocuments({
+      $or: [
+        { imageUrl: { $regex: NON_OL_HOSTS } },
+        { googleBooksImageUrl: { $regex: NON_OL_HOSTS } }
+      ]
+    });
+
     // Print statistics
     console.log('='.repeat(60));
     console.log('\n📈 Description Statistics:\n');
@@ -70,6 +79,7 @@ async function analyzeBooks() {
     console.log('\n📸 Image Statistics:\n');
     console.log(`  ✓ Books WITH images: ${booksWithImage} (${Math.round(booksWithImage/totalBooks*100)}%)`);
     console.log(`  ✗ Books WITHOUT images: ${booksWithoutImage} (${Math.round(booksWithoutImage/totalBooks*100)}%)`);
+    console.log(`  ↻ Books with Google-hosted covers (need OL migration): ${booksOnGoogleBooks} (${totalBooks ? Math.round(booksOnGoogleBooks/totalBooks*100) : 0}%)`);
 
     console.log('\n' + '='.repeat(60));
 
@@ -126,11 +136,13 @@ async function analyzeBooks() {
       console.log(`  ✓ All books have descriptions!`);
     }
 
-    if (booksWithoutImage > 0) {
-      console.log(`  → ${booksWithoutImage} books still need images`);
+    if (booksWithoutImage > 0 || booksOnGoogleBooks > 0) {
+      const total = booksWithoutImage + booksOnGoogleBooks;
+      console.log(`  → ${total} books need an Open Library cover`);
+      console.log(`     (${booksWithoutImage} missing, ${booksOnGoogleBooks} hosted on Google)`);
       console.log(`    Run: npm run enrich:images`);
     } else {
-      console.log(`  ✓ All books have images!`);
+      console.log(`  ✓ All books have Open Library covers!`);
     }
 
     console.log('');

@@ -7,6 +7,7 @@ import EditBookModal from '../components/EditBookModal';
 import FloatingActionButton from '../components/FloatingActionButton';
 import { BookOpen, Plus, Library, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './MyBooksPage.css';
 
 const MyBooksPage = () => {
@@ -94,9 +95,9 @@ const MyBooksPage = () => {
             const nextBooks = response.data.data.books || [];
             // Preload images by creating Image objects
             nextBooks.forEach(book => {
-              if (book.imageUrl && book.imageUrl.includes('covers.openlibrary.org')) {
+              if (book.imageUrl) {
                 const img = new Image();
-                img.src = book.imageUrl;
+                img.src = getBookImageUrl(book.imageUrl);
               }
             });
           }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './WishlistMatchesPage.css';
 
 const WishlistMatchesPage = () => {
@@ -97,7 +98,7 @@ const WishlistMatchesPage = () => {
                 <div key={book._id} className="matched-book-card">
                   <Link to={`/browse?bookId=${book._id}`} className="book-link">
                     <img 
-                      src={book.imageUrl || '/placeholder-book.png'} 
+                      src={getBookImageUrl(book.imageUrl)} 
                       alt={book.author ? `${book.title} by ${book.author}` : book.title}
                       className="book-cover"
                     />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { BookOpen } from 'lucide-react';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './TradeProposalModal.css';
 
 const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
@@ -210,7 +211,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                   <div className="trade-label">They offer</div>
                   <div className="book-card-compact">
                     <img 
-                      src={requestedBook.imageUrl} 
+                      src={getBookImageUrl(requestedBook.imageUrl)} 
                       alt={requestedBook.title}
                       className="book-compact-image"
                     />
@@ -235,7 +236,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                         return book ? (
                           <>
                             <img 
-                              src={book.imageUrl} 
+                              src={getBookImageUrl(book.imageUrl)} 
                               alt={book.title}
                               className="book-compact-image"
                             />
@@ -282,7 +283,7 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                           onClick={() => setSelectedBook(selectedBook === book._id ? '' : book._id)}
                         >
                           <img 
-                            src={book.imageUrl} 
+                            src={getBookImageUrl(book.imageUrl)} 
                             alt={book.title}
                             className="book-grid-image"
                           />

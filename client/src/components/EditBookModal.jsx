@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import GenreSelector from './GenreSelector';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './EditBookModal.css';
 
 const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
@@ -440,7 +441,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
               
               {imagePreview && (
                 <div className="image-preview">
-                  <img src={imagePreview} alt="Book preview" />
+                  <img src={getBookImageUrl(imagePreview)} alt="Book preview" onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }} />
                 </div>
               )}
             </div>

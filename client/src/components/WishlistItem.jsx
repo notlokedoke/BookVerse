@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { BookOpen, Trash2 } from 'lucide-react';
+import { getBookImageUrl } from '../utils/imageUtils';
 import '../components/BookCard.css'; // Inheriting book card styles for uniformity
 import './WishlistItem.css';
 
@@ -62,11 +63,11 @@ const WishlistItem = ({ item, onRemove, isOwnProfile }) => {
       <div className="book-image-container">
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
+            src={getBookImageUrl(item.imageUrl)}
             alt={`${item.title} by ${item.author}`}
             className="book-image"
             onError={(e) => {
-              e.target.src = '/placeholder-book.png';
+              e.target.onerror = null; e.target.src = '/placeholder-book.svg';
             }}
           />
         ) : (

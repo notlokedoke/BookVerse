@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './TradeCard.css';
 
 const TradeCard = ({ trade }) => {
@@ -108,11 +109,11 @@ const TradeCard = ({ trade }) => {
               </div>
               <div className="book-preview">
                 <img
-                  src={userBook?.imageUrl}
+                  src={getBookImageUrl(userBook?.imageUrl)}
                   alt={userBook?.title}
                   className="book-thumbnail"
                   onError={(e) => {
-                    e.target.src = '/placeholder-book.png';
+                    e.target.onerror = null; e.target.src = '/placeholder-book.svg';
                   }}
                 />
                 <div className="book-details">
@@ -139,7 +140,7 @@ const TradeCard = ({ trade }) => {
                   alt={otherBook?.title}
                   className="book-thumbnail"
                   onError={(e) => {
-                    e.target.src = '/placeholder-book.png';
+                    e.target.onerror = null; e.target.src = '/placeholder-book.svg';
                   }}
                 />
                 <div className="book-details">

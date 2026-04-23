@@ -21,11 +21,16 @@ async function fetchDescriptionFromGoogleBooks(title, author, isbn = null) {
       query = `intitle:${title} inauthor:${author}`;
     }
 
+    const params = {
+      q: query,
+      maxResults: 1
+    };
+    if (process.env.GOOGLE_BOOKS_API_KEY) {
+      params.key = process.env.GOOGLE_BOOKS_API_KEY;
+    }
+
     const response = await axios.get('https://www.googleapis.com/books/v1/volumes', {
-      params: {
-        q: query,
-        maxResults: 1
-      },
+      params,
       timeout: 10000 // 10 second timeout
     });
 
@@ -88,20 +93,24 @@ async function fetchImageFromOpenLibrary(title, author, isbn = null) {
     // Try ISBN first (most accurate)
     if (isbn) {
       const isbnClean = isbn.replace(/[-\s]/g, '');
-      
-      // Try ISBN-13 first, then ISBN-10
+
       const coverUrl = `https://covers.openlibrary.org/b/isbn/${isbnClean}-L.jpg`;
-      
-      // Check if image exists
+      // ?default=false makes OL return 404 (not a 1x1 placeholder) when no
+      // real cover exists. We don't follow the 302 -> archive.org redirect
+      // for real covers because archive.org is unreliable on HEAD.
+      const validationUrl = `${coverUrl}?default=false`;
+
       try {
-        const response = await axios.head(coverUrl, { timeout: 5000 });
-        if (response.status === 200) {
-          imageUrl = coverUrl;
-          console.log(`✓ Found cover image for "${title}" from Open Library (ISBN)`);
-          return imageUrl;
-        }
+        await axios.head(validationUrl, {
+          timeout: 5000,
+          maxRedirects: 0,
+          validateStatus: (status) => status === 200 || status === 302
+        });
+        imageUrl = coverUrl;
+        console.log(`✓ Found cover image for "${title}" from Open Library (ISBN)`);
+        return imageUrl;
       } catch (err) {
-        // Image doesn't exist, continue to search
+        // No real cover for this ISBN, continue to title+author search
       }
     }
 
@@ -117,18 +126,29 @@ async function fetchImageFromOpenLibrary(title, author, isbn = null) {
 
     if (searchResponse.data.docs && searchResponse.data.docs.length > 0) {
       const book = searchResponse.data.docs[0];
-      
-      // Try to get cover from various ID types
+
+      // Try cover_i first - this comes from OL's internal cover ID, so it's reliable
       if (book.cover_i) {
         imageUrl = `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`;
         console.log(`✓ Found cover image for "${title}" from Open Library (search)`);
         return imageUrl;
       }
-      
+
+      // Try ISBN-based cover from search results, validated with ?default=false
       if (book.isbn && book.isbn.length > 0) {
-        imageUrl = `https://covers.openlibrary.org/b/isbn/${book.isbn[0]}-L.jpg`;
-        console.log(`✓ Found cover image for "${title}" from Open Library (search ISBN)`);
-        return imageUrl;
+        const candidateUrl = `https://covers.openlibrary.org/b/isbn/${book.isbn[0]}-L.jpg`;
+        try {
+          await axios.head(`${candidateUrl}?default=false`, {
+            timeout: 5000,
+            maxRedirects: 0,
+            validateStatus: (status) => status === 200 || status === 302
+          });
+          imageUrl = candidateUrl;
+          console.log(`✓ Found cover image for "${title}" from Open Library (search ISBN)`);
+          return imageUrl;
+        } catch (err) {
+          // No real cover, fall through
+        }
       }
     }
 

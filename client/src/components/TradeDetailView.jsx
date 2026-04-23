@@ -19,6 +19,7 @@ import {
   User,
   Shield
 } from 'lucide-react';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './TradeDetailView.css';
 
 const TradeDetailView = () => {
@@ -314,10 +315,10 @@ const TradeDetailView = () => {
                   <div className="book-card">
                     <div className="book-image-container">
                       <img
-                        src={trade.offeredBook?.imageUrl}
+                        src={getBookImageUrl(trade.offeredBook?.imageUrl)}
                         alt={trade.offeredBook?.author ? `${trade.offeredBook.title} by ${trade.offeredBook.author}` : trade.offeredBook?.title}
                         className="book-image"
-                        onError={(e) => { e.target.src = '/placeholder-book.png'; }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }}
                       />
                     </div>
                     <div className="book-info-section">
@@ -340,10 +341,10 @@ const TradeDetailView = () => {
                   <div className="book-card">
                     <div className="book-image-container">
                       <img
-                        src={trade.requestedBook?.imageUrl}
+                        src={getBookImageUrl(trade.requestedBook?.imageUrl)}
                         alt={trade.requestedBook?.author ? `${trade.requestedBook.title} by ${trade.requestedBook.author}` : trade.requestedBook?.title}
                         className="book-image"
-                        onError={(e) => { e.target.src = '/placeholder-book.png'; }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }}
                       />
                     </div>
                     <div className="book-info-section">

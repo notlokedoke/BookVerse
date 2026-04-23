@@ -5,6 +5,7 @@ import TradeProposalModal from './TradeProposalModal';
 import WishlistButton from './WishlistButton';
 import { ArrowLeftRight } from 'lucide-react';
 import { formatCityName } from '../utils/formatLocation';
+import { getBookImageUrl } from '../utils/imageUtils';
 import './BookCard.css';
 
 const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
@@ -12,7 +13,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
+
   if (!book) {
     return null;
   }
@@ -29,11 +30,6 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
     isAvailable
   } = book;
 
-  // Open Library images work directly - no proxy needed!
-  const getImageUrl = (url) => {
-    return url || '/placeholder-book.svg';
-  };
-
   // Handle image load
   const handleImageLoad = (e) => {
     setImageLoaded(true);
@@ -44,6 +40,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
     setImageError(true);
     setImageLoaded(true); // Stop showing skeleton
     e.target.src = '/placeholder-book.svg';
+    e.target.onerror = null;
   };
 
   // Check if current user is the owner
@@ -91,7 +88,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
           {/* Book Image */}
           <div className="book-image-container">
             <img
-              src={getImageUrl(imageUrl)}
+              src={getBookImageUrl(imageUrl)}
               alt={`${title} by ${author}`}
               className="book-image"
               decoding="async"

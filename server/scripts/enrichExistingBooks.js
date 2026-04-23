@@ -37,12 +37,21 @@ const fetchOptions = {
   fetchImage: !onlyDescriptions
 };
 
+// Books whose cover lives at any of these hosts must be migrated to Open Library.
+const NON_OL_COVER_HOSTS = /books\.google\.com|books\.googleusercontent\.com/i;
+
+function isNonOpenLibraryCover(url) {
+  if (!url) return false;
+  return NON_OL_COVER_HOSTS.test(url);
+}
+
 // Statistics
 const stats = {
   total: 0,
   processed: 0,
   descriptionsAdded: 0,
   imagesAdded: 0,
+  imagesMigrated: 0,
   failed: 0,
   skipped: 0,
   alreadyHadDescription: 0,
@@ -90,7 +99,11 @@ async function migrateBooks() {
           { imageUrl: { $exists: false } },
           { imageUrl: null },
           { imageUrl: '' },
-          { imageUrl: '/placeholder-book.svg' }
+          { imageUrl: '/placeholder-book.svg' },
+          // Books whose cover is still hosted on Google must be re-fetched from
+          // Open Library so every cover comes from a single source.
+          { imageUrl: { $regex: NON_OL_COVER_HOSTS } },
+          { googleBooksImageUrl: { $regex: NON_OL_COVER_HOSTS } }
         ]
       });
     }
@@ -113,7 +126,7 @@ async function migrateBooks() {
 
       // Fetch batch
       const books = await Book.find(query)
-        .select('title author isbn description imageUrl')
+        .select('title author isbn description imageUrl googleBooksImageUrl')
         .skip(skip)
         .limit(batchSize)
         .lean();
@@ -122,12 +135,21 @@ async function migrateBooks() {
       for (const book of books) {
         try {
           console.log(`\n  Processing: "${book.title}" by ${book.author}`);
-          
+
           // Check what needs to be fetched
-          const needsDescription = fetchOptions.fetchDescription && 
+          const needsDescription = fetchOptions.fetchDescription &&
             (!book.description || book.description.trim() === '');
-          const needsImage = fetchOptions.fetchImage && 
-            (!book.imageUrl || book.imageUrl === '/placeholder-book.svg');
+
+          const hasNonOlPrimary = isNonOpenLibraryCover(book.imageUrl);
+          const hasNonOlSecondary = isNonOpenLibraryCover(book.googleBooksImageUrl);
+          const missingPrimary = !book.imageUrl || book.imageUrl === '/placeholder-book.svg';
+
+          const needsImage = fetchOptions.fetchImage &&
+            (missingPrimary || hasNonOlPrimary || hasNonOlSecondary);
+
+          if (needsImage && (hasNonOlPrimary || hasNonOlSecondary)) {
+            console.log(`  ↻ Migrating Google Books cover to Open Library`);
+          }
 
           // Track what book already has
           if (!needsDescription && fetchOptions.fetchDescription) {
@@ -165,9 +187,23 @@ async function migrateBooks() {
           }
 
           if (needsImage && enrichmentData.imageUrl) {
-            updates.imageUrl = enrichmentData.imageUrl;
-            stats.imagesAdded++;
-            hasUpdates = true;
+            // Only overwrite the primary imageUrl if it was missing or was a
+            // Google-hosted cover. Leave user-uploaded (Cloudinary) covers alone.
+            if (missingPrimary || hasNonOlPrimary) {
+              updates.imageUrl = enrichmentData.imageUrl;
+              if (hasNonOlPrimary) {
+                stats.imagesMigrated++;
+              } else {
+                stats.imagesAdded++;
+              }
+              hasUpdates = true;
+            }
+            // Always rewrite googleBooksImageUrl when it points to Google so the
+            // BookDetailView gallery thumbnail also loads from Open Library.
+            if (hasNonOlSecondary) {
+              updates.googleBooksImageUrl = enrichmentData.imageUrl;
+              hasUpdates = true;
+            }
           } else if (needsImage && !enrichmentData.imageUrl) {
             stats.imageNotFound++;
             console.log(`  ⚠ Image not found in Open Library`);
@@ -214,6 +250,7 @@ async function migrateBooks() {
     console.log(`  Successfully processed: ${stats.processed}`);
     console.log(`  Descriptions added: ${stats.descriptionsAdded}`);
     console.log(`  Images added: ${stats.imagesAdded}`);
+    console.log(`  Google→Open Library covers migrated: ${stats.imagesMigrated}`);
     console.log(`  Skipped (already had all data): ${stats.skipped}`);
     console.log(`  Failed: ${stats.failed}`);
     console.log('');
