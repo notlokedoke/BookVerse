@@ -15,12 +15,7 @@
     "enrich:dry-run": "node scripts/enrichExistingBooks.js --dry-run",
     "enrich:descriptions": "node scripts/enrichExistingBooks.js --descriptions",
     "enrich:images": "node scripts/enrichExistingBooks.js --images",
-    "enrich:retry": "node scripts/retryDescriptions.js",
-    "enrich:retry-dry": "node scripts/retryDescriptions.js --dry-run",
-    "enrich:fix": "node scripts/fixWrongDescriptions.js",
-    "enrich:fix-dry": "node scripts/fixWrongDescriptions.js --dry-run",
-    "analyze:books": "node scripts/analyzeBooks.js",
-    "list:no-description": "node scripts/listBooksWithoutDescription.js"
+    "analyze:books": "node scripts/analyzeBooks.js"
   },
   "keywords": [
     "bookverse",
