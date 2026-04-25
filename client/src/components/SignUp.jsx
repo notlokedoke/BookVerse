@@ -390,7 +390,7 @@ const SignUp = () => {
                       disabled={isSubmitting}
                     />
                     <span className="checkmark"></span>
-                    I agree to the Terms of Service and Privacy Policy
+                    I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
                   </label>
                   {errors.terms && <span className="field-error">{errors.terms}</span>}
                 </div>

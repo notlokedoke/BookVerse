@@ -606,6 +606,19 @@
   cursor: not-allowed;
 }
 
+/* Links in checkbox label */
+.checkbox-label a {
+  color: #1ABC9C;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label a:hover {
+  color: #16a085;
+  text-decoration: underline;
+}
+
 /* Create Button */
 .create-btn {
   width: 100%;

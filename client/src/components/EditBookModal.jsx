@@ -24,7 +24,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
   const { title, author, condition, genres, isbn, description, publicationYear, publisher } = formData;
 
   // Condition options based on Book model enum
-  const conditionOptions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
+  const conditionOptions = ['Like New', 'Good', 'Fair', 'Poor'];
 
   // Populate form with book data when modal opens
   useEffect(() => {

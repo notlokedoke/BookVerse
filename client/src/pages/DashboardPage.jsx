@@ -42,7 +42,6 @@ const DashboardPage = () => {
   });
   const [pendingTrades, setPendingTrades] = useState([]);
   const [activeTrades, setActiveTrades] = useState([]);
-  const [recentBooks, setRecentBooks] = useState([]);
   const [allTrades, setAllTrades] = useState([]);
   const [userBooks, setUserBooks] = useState([]);
   const [wishlistStats, setWishlistStats] = useState({
@@ -183,10 +182,6 @@ const DashboardPage = () => {
       const books = booksRes.data.data?.books || [];
       setUserBooks(books);
 
-      // Fetch recent books from all users (for recommendations)
-      const allBooksRes = await axios.get('/api/books?limit=8');
-      const allBooks = allBooksRes.data.data?.books || [];
-
       // Fetch wishlist data
       const wishlistRes = await axios.get('/api/wishlist', config);
       const wishlistItems = wishlistRes.data.data || [];
@@ -215,7 +210,6 @@ const DashboardPage = () => {
 
       setPendingTrades(pending);
       setActiveTrades(active);
-      setRecentBooks(allBooks);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -612,50 +606,6 @@ const DashboardPage = () => {
           )}
         </div>
       </div>
-
-      {/* Personalized Recommendations */}
-      {recentBooks.length > 0 && (
-        <section className="recommendations-section">
-          <div className="section-header-wide">
-            <div>
-              <h2><Sparkles size={20} /> Discover New Books</h2>
-              <p className="section-subtitle">Books available for trade in your community</p>
-            </div>
-            <Link to="/browse" className="view-all-link">
-              Browse All <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="recommendations-grid">
-            {recentBooks.map(book => (
-              <Link
-                key={book._id}
-                to={`/browse?bookId=${book._id}`}
-                className="recommendation-card"
-              >
-                <div className="recommendation-image">
-                  <img
-                    src={book.imageUrl || '/placeholder-book.png'}
-                    alt={book.author ? `${book.title} by ${book.author}` : book.title}
-                  />
-                  <div className="recommendation-overlay">
-                    <button className="quick-action">
-                      <Heart size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="recommendation-info">
-                  <h3>{book.title}</h3>
-                  <p className="recommendation-author">{book.author}</p>
-                  <p className="recommendation-owner">
-                    <User size={12} />
-                    {book.owner?.name}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Personalized Recommendations */}
       {stats.booksListed > 0 && (

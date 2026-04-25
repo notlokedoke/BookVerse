@@ -143,21 +143,21 @@
 /* Delete Button */
 .delete-message-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
+  bottom: 4px;
+  right: 4px;
   background: rgba(239, 68, 68, 0.9);
   border: none;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.875rem;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 10;
+  color: white;
 }
 
 .delete-message-btn:hover {
@@ -205,11 +205,10 @@
   }
 
   .delete-message-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 0.75rem;
-    top: -6px;
-    right: -6px;
+    width: 22px;
+    height: 22px;
+    bottom: 3px;
+    right: 3px;
   }
 }
 

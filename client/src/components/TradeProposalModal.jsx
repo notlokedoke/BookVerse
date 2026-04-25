@@ -27,26 +27,42 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
       const apiUrl = import.meta.env.VITE_API_URL || '';
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`${apiUrl}/api/books/user/${user._id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      let allBooks = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+      
+      // Fetch all pages of books (max 100 per page)
+      while (hasMorePages) {
+        const response = await fetch(`${apiUrl}/api/books/user/${user._id}?limit=100&page=${currentPage}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Filter only available books (API already filters but double-check)
-          const availableBooks = (data.data.books || []).filter(book => book.isAvailable);
-          setUserBooks(availableBooks);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            // Filter only available books
+            const availableBooks = (data.data.books || []).filter(book => book.isAvailable);
+            allBooks = [...allBooks, ...availableBooks];
+            
+            // Check if there are more pages
+            hasMorePages = data.data.pagination?.hasNextPage || false;
+            currentPage++;
+          } else {
+            setError('Failed to load your books. Please try again.');
+            hasMorePages = false;
+          }
+        } else if (response.status === 401) {
+          setError('Your session has expired. Please log in again.');
+          hasMorePages = false;
         } else {
           setError('Failed to load your books. Please try again.');
+          hasMorePages = false;
         }
-      } else if (response.status === 401) {
-        setError('Your session has expired. Please log in again.');
-      } else {
-        setError('Failed to load your books. Please try again.');
       }
+      
+      setUserBooks(allBooks);
     } catch (err) {
       console.error('Error fetching user books:', err);
       setError('Unable to connect to server. Please check your connection and try again.');

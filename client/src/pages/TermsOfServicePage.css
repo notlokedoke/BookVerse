@@ -1,0 +1,356 @@
+/* Terms of Service Page Styles */
+
+.terms-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  padding: 2rem 1rem;
+}
+
+.terms-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 3rem;
+}
+
+/* Back Link */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  color: #2d3748;
+  gap: 0.75rem;
+}
+
+/* Header */
+.terms-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: #1ABC9C;
+  border-radius: 20px;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.terms-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 0.5rem 0;
+}
+
+.last-updated {
+  color: #718096;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+/* Table of Contents */
+.table-of-contents {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 3rem;
+  border-left: 4px solid #1ABC9C;
+}
+
+.table-of-contents h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1rem 0;
+}
+
+.table-of-contents ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.table-of-contents li {
+  margin: 0;
+}
+
+.table-of-contents a {
+  color: #4a5568;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+  display: block;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+.table-of-contents a:hover {
+  color: #1ABC9C;
+  background: white;
+  padding-left: 1rem;
+}
+
+/* Content Sections */
+.terms-content {
+  line-height: 1.8;
+  color: #2d3748;
+}
+
+.terms-content section {
+  margin-bottom: 3rem;
+  scroll-margin-top: 2rem;
+}
+
+.terms-content h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.terms-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 2rem 0 1rem 0;
+}
+
+.terms-content p {
+  margin: 0 0 1rem 0;
+  color: #4a5568;
+}
+
+.terms-content ul {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+}
+
+.terms-content li {
+  margin-bottom: 0.75rem;
+  color: #4a5568;
+}
+
+.terms-content li strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.terms-content a {
+  color: #1ABC9C;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.terms-content a:hover {
+  color: #16a085;
+  text-decoration: underline;
+}
+
+/* Conduct Grid */
+.conduct-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.conduct-card {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e2e8f0;
+}
+
+.conduct-card.do {
+  border-left: 4px solid #10b981;
+}
+
+.conduct-card.dont {
+  border-left: 4px solid #ef4444;
+}
+
+.conduct-card h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.conduct-card.do h3 {
+  color: #10b981;
+}
+
+.conduct-card.dont h3 {
+  color: #ef4444;
+}
+
+.conduct-card ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.conduct-card li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9375rem;
+}
+
+/* Disclaimer Box */
+.disclaimer-box {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+}
+
+.disclaimer-box h3 {
+  color: #92400e;
+  margin: 0 0 0.75rem 0;
+  font-size: 1.125rem;
+}
+
+.disclaimer-box p {
+  color: #78350f;
+  margin: 0;
+}
+
+/* Contact Info */
+.contact-info {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.contact-info p {
+  margin: 0.75rem 0;
+  font-size: 1rem;
+}
+
+/* Footer CTA */
+.terms-footer-cta {
+  text-align: center;
+  padding: 2.5rem 2rem;
+  background: #1ABC9C;
+  border-radius: 12px;
+  margin-top: 3rem;
+}
+
+.terms-footer-cta p {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+}
+
+.cta-button {
+  display: inline-block;
+  background: white;
+  color: #1ABC9C;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .terms-container {
+    padding: 2rem 1.5rem;
+  }
+
+  .terms-header h1 {
+    font-size: 2rem;
+  }
+
+  .header-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .table-of-contents {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .table-of-contents ul {
+    grid-template-columns: 1fr;
+  }
+
+  .terms-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .terms-content h3 {
+    font-size: 1.125rem;
+  }
+
+  .conduct-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .terms-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .terms-container {
+    padding: 1.5rem 1rem;
+    border-radius: 12px;
+  }
+
+  .terms-header {
+    margin-bottom: 2rem;
+  }
+
+  .terms-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .table-of-contents {
+    padding: 1rem;
+  }
+
+  .terms-content section {
+    margin-bottom: 2rem;
+  }
+
+  .terms-footer-cta {
+    padding: 2rem 1.5rem;
+  }
+
+  .terms-footer-cta p {
+    font-size: 1.125rem;
+  }
+}

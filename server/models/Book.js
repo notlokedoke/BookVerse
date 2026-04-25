@@ -20,8 +20,8 @@ const bookSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Condition is required'],
     enum: {
-      values: ['New', 'Like New', 'Good', 'Fair', 'Poor'],
-      message: 'Condition must be one of: New, Like New, Good, Fair, Poor'
+      values: ['Like New', 'Good', 'Fair', 'Poor'],
+      message: 'Condition must be one of: Like New, Good, Fair, Poor'
     }
   },
   genre: {

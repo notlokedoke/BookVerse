@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import './MessageBubble.css';
 
 const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true, onDelete }) => {
@@ -67,7 +68,7 @@ const MessageBubble = ({ message, isOwnMessage, senderName, showAvatar = true, o
             onClick={handleDelete}
             title="Delete message"
           >
-            🗑️
+            <Trash2 size={14} />
           </button>
         )}
       </div>

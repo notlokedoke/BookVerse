@@ -149,4 +149,33 @@ router.put('/read-all', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @route   DELETE /api/notifications/clear-all
+ * @desc    Delete all notifications for authenticated user
+ * @access  Private (requires authentication)
+ */
+router.delete('/clear-all', authenticateToken, async (req, res) => {
+  try {
+    // Delete all notifications for the authenticated user
+    const result = await Notification.deleteMany({ recipient: req.userId });
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications cleared',
+      count: result.deletedCount
+    });
+
+  } catch (error) {
+    console.error('Clear all notifications error:', error);
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while clearing notifications',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
 module.exports = router;

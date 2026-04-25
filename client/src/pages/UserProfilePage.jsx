@@ -4,16 +4,14 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import RatingDisplay from '../components/RatingDisplay';
 import RatingCard from '../components/RatingCard';
-import BookCard from '../components/BookCard';
 import WishlistItem from '../components/WishlistItem';
-import { MapPin, Calendar, Star, MessageCircle, BookOpen, Award, Plus, Heart } from 'lucide-react';
+import { MapPin, Calendar, Star, MessageCircle, Award, Heart, Plus } from 'lucide-react';
 import './UserProfilePage.css';
 
 const UserProfilePage = () => {
   const { userId } = useParams();
   const { user } = useAuth();
   const [profileUser, setProfileUser] = useState(null);
-  const [userBooks, setUserBooks] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,10 +32,6 @@ const UserProfilePage = () => {
       // Fetch user profile
       const userRes = await axios.get(`/api/users/${targetUserId}`, config);
       setProfileUser(userRes.data.data);
-
-      // Fetch user's books
-      const booksRes = await axios.get(`/api/books/user/${targetUserId}`);
-      setUserBooks(booksRes.data.data?.books || []);
 
       // Fetch wishlist (public for others, all for own profile)
       const wishlistEndpoint = isOwnProfile 
@@ -137,13 +131,6 @@ const UserProfilePage = () => {
               </div>
             </div>
             <div className="stat-card">
-              <BookOpen size={24} />
-              <div className="stat-content">
-                <span className="stat-value">{userBooks.length}</span>
-                <span className="stat-label">Books Listed</span>
-              </div>
-            </div>
-            <div className="stat-card">
               <MessageCircle size={24} />
               <div className="stat-content">
                 <span className="stat-value">95%</span>
@@ -188,39 +175,6 @@ const UserProfilePage = () => {
 
           {/* Main Content */}
           <main className="profile-main">
-            {/* Books Section */}
-            <section className="profile-section">
-              <div className="section-header-inline">
-                <h2 className="section-title">
-                  <BookOpen size={24} />
-                  Available Books
-                  <span className="count-badge">{userBooks.length}</span>
-                </h2>
-              </div>
-              
-              <div className="section-content">
-                {userBooks.length > 0 ? (
-                  <div className="books-grid-modern">
-                    {userBooks.map(book => (
-                      <BookCard key={book._id} book={book} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state-modern">
-                    <BookOpen size={48} />
-                    <h3>No books listed yet</h3>
-                    <p>{isOwnProfile ? 'Start building your library by adding your first book' : 'This user hasn\'t listed any books yet'}</p>
-                    {isOwnProfile && (
-                      <Link to="/books/create" className="btn-primary-modern">
-                        <Plus size={18} />
-                        Add Your First Book
-                      </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </section>
-
             {/* Reviews Section */}
             <section className="profile-section">
               <div className="section-header-inline">

@@ -20,12 +20,15 @@ import ProfileSettingsPage from './pages/ProfileSettingsPage'
 import CreateBookPage from './pages/CreateBookPage'
 import CreateWishlistPage from './pages/CreateWishlistPage'
 import WishlistPage from './pages/WishlistPage'
+import WishlistMatchesPage from './pages/WishlistMatchesPage'
 import MyBooksPage from './pages/MyBooksPage'
 import TradesPage from './pages/TradesPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import HelpCenterPage from './pages/HelpCenterPage'
@@ -61,6 +64,8 @@ const AppContent = () => {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/browse" element={<BrowsePage />} />
             <Route path="/safety" element={<SafetyGuidelinesPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/help" element={<HelpCenterPage />} />
@@ -131,6 +136,14 @@ const AppContent = () => {
               } 
             />
             <Route 
+              path="/wishlist/matches" 
+              element={
+                <ProtectedRoute>
+                  <WishlistMatchesPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/my-books" 
               element={
                 <ProtectedRoute>
@@ -168,6 +181,7 @@ const AppContent = () => {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
       </div>
+      {!isAuthPage && <Footer />}
     </div>
   )
 }

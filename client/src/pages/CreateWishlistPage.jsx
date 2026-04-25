@@ -6,13 +6,13 @@ const CreateWishlistPage = () => {
   const navigate = useNavigate();
 
   const handleSuccess = (wishlistItem) => {
-    // Redirect to profile page after successful creation
-    navigate('/profile');
+    // Redirect to wishlist page after successful creation
+    navigate('/wishlist');
   };
 
   const handleCancel = () => {
-    // Navigate back to profile page
-    navigate('/profile');
+    // Navigate back to wishlist page
+    navigate('/wishlist');
   };
 
   return (

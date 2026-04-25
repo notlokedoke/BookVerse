@@ -1,358 +1,198 @@
 const Book = require('../models/Book');
 const Wishlist = require('../models/Wishlist');
-const Trade = require('../models/Trade');
 const User = require('../models/User');
 
 /**
- * Signal weights for building user preference profile
+ * Scoring weights for wishlist-based recommendations
  */
-const SIGNAL_WEIGHTS = {
-  WISHLIST: 5,           // They want these books
-  RECEIVED_TRADES: 3,    // They traded for these
-  PROPOSED_TRADES: 3,    // They tried to get these
-  SEARCH_QUERIES: 2,     // They searched for these
-  OWNED_BOOKS: 1,        // WEAK - they're trading away!
-  GIVEN_AWAY: -1         // NEGATIVE - they didn't want them
+const SCORING_WEIGHTS = {
+  AUTHOR_MATCH: 100,           // Same author as wishlist item
+  GENRE_MATCH: 50,             // Same genre as wishlist item
+  MULTIPLE_GENRE_BONUS: 20,    // Bonus per additional matching genre
+  SAME_CITY: 10,               // Same city as user
+  GOOD_CONDITION: 5,           // New or Like New condition
+  HIGH_RATING: 5               // Owner rating >= 4.5
 };
 
 /**
- * Build user preference profile from various signals
+ * Extract preferences from user's wishlist
  * @param {String} userId - User ID
- * @returns {Object} User preference profile
+ * @returns {Object} Wishlist preferences (authors and genres)
  */
-async function buildUserProfile(userId) {
-  const profile = {
-    favoriteGenres: {},
-    favoriteAuthors: {},
-    wishlistBooks: [],
-    receivedBooks: [],
-    ownedBooks: []
-  };
-
+async function extractWishlistPreferences(userId) {
   try {
-    // STRONG SIGNAL: Wishlist (weight: 5x)
     const wishlist = await Wishlist.find({ user: userId });
-    profile.wishlistBooks = wishlist;
-    
-    wishlist.forEach(item => {
-      if (item.author) {
-        profile.favoriteAuthors[item.author] = 
-          (profile.favoriteAuthors[item.author] || 0) + SIGNAL_WEIGHTS.WISHLIST;
-      }
-      // Note: Wishlist items may not have genre info, so we skip genre extraction
-    });
 
-    // MEDIUM SIGNAL: Books received in trades (weight: 3x)
-    const receivedTrades = await Trade.find({ 
-      receiver: userId, 
-      status: 'completed' 
-    }).populate('offeredBook');
+    if (wishlist.length === 0) {
+      return {
+        authors: [],
+        genres: [],
+        wishlistItems: []
+      };
+    }
+
+    // Extract unique authors
+    const authors = [...new Set(
+      wishlist
+        .map(item => item.author)
+        .filter(author => author && author.trim())
+    )];
+
+    // Since wishlist items don't have genres, we'll infer genres from:
+    // 1. Books by the same authors in the database
+    // 2. This allows genre-based recommendations even without explicit genre data
+    const genreSet = new Set();
     
-    receivedTrades.forEach(trade => {
-      if (trade.offeredBook) {
-        const book = trade.offeredBook;
-        profile.receivedBooks.push(book);
-        
+    if (authors.length > 0) {
+      const booksByWishlistAuthors = await Book.find({
+        author: { $in: authors },
+        genre: { $exists: true, $ne: [] }
+      }).select('genre').lean();
+
+      booksByWishlistAuthors.forEach(book => {
         if (book.genre && Array.isArray(book.genre)) {
-          book.genre.forEach(g => {
-            profile.favoriteGenres[g] = 
-              (profile.favoriteGenres[g] || 0) + SIGNAL_WEIGHTS.RECEIVED_TRADES;
-          });
+          book.genre.forEach(g => genreSet.add(g));
         }
-        
-        if (book.author) {
-          profile.favoriteAuthors[book.author] = 
-            (profile.favoriteAuthors[book.author] || 0) + SIGNAL_WEIGHTS.RECEIVED_TRADES;
-        }
-      }
-    });
+      });
+    }
 
-    // MEDIUM SIGNAL: Books they proposed trades for (weight: 3x)
-    const proposedTrades = await Trade.find({ 
-      proposer: userId,
-      status: { $in: ['proposed', 'accepted', 'completed'] }
-    }).populate('requestedBook');
-    
-    proposedTrades.forEach(trade => {
-      if (trade.requestedBook) {
-        const book = trade.requestedBook;
-        
-        if (book.genre && Array.isArray(book.genre)) {
-          book.genre.forEach(g => {
-            profile.favoriteGenres[g] = 
-              (profile.favoriteGenres[g] || 0) + SIGNAL_WEIGHTS.PROPOSED_TRADES;
-          });
-        }
-        
-        if (book.author) {
-          profile.favoriteAuthors[book.author] = 
-            (profile.favoriteAuthors[book.author] || 0) + SIGNAL_WEIGHTS.PROPOSED_TRADES;
-        }
-      }
-    });
+    const genres = Array.from(genreSet);
 
-    // WEAK SIGNAL: Owned books (weight: 1x) - they're trading these away!
-    const ownedBooks = await Book.find({ owner: userId });
-    profile.ownedBooks = ownedBooks;
-    
-    ownedBooks.forEach(book => {
-      if (book.genre && Array.isArray(book.genre)) {
-        book.genre.forEach(g => {
-          profile.favoriteGenres[g] = 
-            (profile.favoriteGenres[g] || 0) + SIGNAL_WEIGHTS.OWNED_BOOKS;
-        });
-      }
-    });
-
-    // Convert to sorted arrays (top preferences first)
-    profile.favoriteGenres = Object.entries(profile.favoriteGenres)
-      .sort((a, b) => b[1] - a[1])
-      .map(([genre, score]) => ({ genre, score }));
-      
-    profile.favoriteAuthors = Object.entries(profile.favoriteAuthors)
-      .sort((a, b) => b[1] - a[1])
-      .map(([author, score]) => ({ author, score }));
-
-    return profile;
+    return {
+      authors,
+      genres,
+      wishlistItems: wishlist
+    };
   } catch (error) {
-    console.error('Error building user profile:', error);
+    console.error('Error extracting wishlist preferences:', error);
     throw error;
   }
 }
 
 /**
- * Calculate days since a date
- * @param {Date} date 
- * @returns {Number} Days since date
- */
-function getDaysSince(date) {
-  const now = new Date();
-  const diff = now - new Date(date);
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
-}
-
-/**
- * Calculate recommendation score for a book
- * @param {String} userId - User ID
+ * Calculate recommendation score for a book based on wishlist preferences
  * @param {Object} book - Book object (populated with owner)
- * @param {Object} userProfile - User preference profile
+ * @param {Array} wishlistAuthors - Array of authors from wishlist
+ * @param {Array} wishlistGenres - Array of genres from wishlist
+ * @param {Object} user - User object
  * @returns {Number} Recommendation score
  */
-async function calculateRecommendationScore(userId, book, userProfile) {
+function calculateWishlistScore(book, wishlistAuthors, wishlistGenres, user) {
   let score = 0;
 
   try {
-    // 1. WISHLIST MATCH (highest priority - weight: 100)
-    const wishlistMatch = await Wishlist.findOne({
-      user: userId,
-      $or: [
-        { 
-          title: { $regex: new RegExp(`^${escapeRegex(book.title)}$`, 'i') },
-          author: { $regex: new RegExp(`^${escapeRegex(book.author)}$`, 'i') }
-        },
-        ...(book.isbn ? [{ isbn: book.isbn }] : [])
-      ]
-    });
-    
-    if (wishlistMatch) {
-      score += 100;
+    // 1. AUTHOR MATCH (highest priority - weight: 100)
+    if (book.author && wishlistAuthors.includes(book.author)) {
+      score += SCORING_WEIGHTS.AUTHOR_MATCH;
     }
 
-    // 2. GENRE MATCH (weight: 50 for top genre, 30 for others)
-    if (book.genre && Array.isArray(book.genre) && userProfile.favoriteGenres.length > 0) {
+    // 2. GENRE MATCH (weight: 50 per genre)
+    let matchingGenresCount = 0;
+    if (book.genre && Array.isArray(book.genre)) {
       book.genre.forEach(bookGenre => {
-        const genreIndex = userProfile.favoriteGenres.findIndex(g => g.genre === bookGenre);
-        if (genreIndex === 0) {
-          score += 50; // Top favorite genre
-        } else if (genreIndex > 0 && genreIndex < 3) {
-          score += 30; // Top 3 favorite genres
-        } else if (genreIndex >= 3) {
-          score += 15; // Other favorite genres
+        if (wishlistGenres.includes(bookGenre)) {
+          score += SCORING_WEIGHTS.GENRE_MATCH;
+          matchingGenresCount++;
         }
       });
-    }
 
-    // 3. AUTHOR MATCH (weight: 40 for top author, 25 for others)
-    if (book.author && userProfile.favoriteAuthors.length > 0) {
-      const authorIndex = userProfile.favoriteAuthors.findIndex(a => a.author === book.author);
-      if (authorIndex === 0) {
-        score += 40; // Top favorite author
-      } else if (authorIndex > 0 && authorIndex < 3) {
-        score += 25; // Top 3 favorite authors
-      } else if (authorIndex >= 3) {
-        score += 10; // Other favorite authors
+      // Bonus for multiple genre matches
+      if (matchingGenresCount > 1) {
+        score += SCORING_WEIGHTS.MULTIPLE_GENRE_BONUS * (matchingGenresCount - 1);
       }
     }
 
-    // 4. LOCATION PROXIMITY (weight: up to 30)
-    const user = await User.findById(userId);
+    // 3. LOCATION PROXIMITY (weight: 10)
     if (user && user.city && book.owner && book.owner.city) {
       const sameCity = user.city.toLowerCase() === book.owner.city.toLowerCase();
       if (sameCity) {
-        score += 30; // Same city
-      }
-      // Note: For more sophisticated distance calculation, integrate with worldCities.js
-    }
-
-    // 5. RECENCY BOOST (weight: up to 15)
-    const daysSinceListed = getDaysSince(book.createdAt);
-    if (daysSinceListed <= 7) {
-      score += 15; // Listed in last week
-    } else if (daysSinceListed <= 30) {
-      score += 10; // Listed in last month
-    } else if (daysSinceListed <= 90) {
-      score += 5; // Listed in last 3 months
-    }
-
-    // 6. OWNER REPUTATION (weight: up to 10)
-    if (book.owner && book.owner.averageRating) {
-      if (book.owner.averageRating >= 4.5) {
-        score += 10;
-      } else if (book.owner.averageRating >= 4.0) {
-        score += 5;
-      } else if (book.owner.averageRating >= 3.5) {
-        score += 2;
+        score += SCORING_WEIGHTS.SAME_CITY;
       }
     }
 
-    // 7. CONDITION PREFERENCE (weight: 5)
-    const preferredConditions = ['New', 'Like New', 'Good'];
+    // 4. BOOK CONDITION (weight: 5)
+    const preferredConditions = ['New', 'Like New'];
     if (preferredConditions.includes(book.condition)) {
-      score += 5;
+      score += SCORING_WEIGHTS.GOOD_CONDITION;
     }
 
-    // 8. NEGATIVE SIGNAL: User owns similar book (weight: -20)
-    const ownsSimilar = userProfile.ownedBooks.some(ownedBook => 
-      ownedBook.author === book.author && 
-      ownedBook.genre && book.genre &&
-      ownedBook.genre.some(g => book.genre.includes(g))
-    );
-    if (ownsSimilar) {
-      score -= 20;
+    // 5. OWNER REPUTATION (weight: 5)
+    if (book.owner && book.owner.averageRating >= 4.5) {
+      score += SCORING_WEIGHTS.HIGH_RATING;
     }
 
     return score;
   } catch (error) {
-    console.error('Error calculating recommendation score:', error);
+    console.error('Error calculating wishlist score:', error);
     return 0;
   }
 }
 
 /**
- * Escape regex special characters
- * @param {String} string 
- * @returns {String} Escaped string
- */
-function escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * Generate explanation for recommendation
- * @param {Number} score - Recommendation score
+ * Generate explanation badge for recommendation
  * @param {Object} book - Book object
- * @param {Object} userProfile - User preference profile
- * @returns {String|null} Recommendation reason (null if no specific reason)
+ * @param {Array} wishlistAuthors - Array of authors from wishlist
+ * @param {Array} wishlistGenres - Array of genres from wishlist
+ * @returns {String|null} Recommendation reason badge
  */
-function generateRecommendationReason(score, book, userProfile) {
-  // Only show badges for truly meaningful recommendations
-  
-  if (score >= 100) {
-    return "Matches your wishlist!";
+function generateRecommendationBadge(book, wishlistAuthors, wishlistGenres) {
+  const authorMatch = book.author && wishlistAuthors.includes(book.author);
+  const matchingGenres = book.genre 
+    ? book.genre.filter(g => wishlistGenres.includes(g))
+    : [];
+
+  // Author + Genre match
+  if (authorMatch && matchingGenres.length > 0) {
+    return `By ${book.author}, in your wishlist`;
   }
-  
-  if (score >= 80) {
-    // Check if it's genre or author match
-    const topGenre = userProfile.favoriteGenres[0]?.genre;
-    if (topGenre && book.genre && book.genre.includes(topGenre)) {
-      return `You love ${topGenre} books`;
-    }
+
+  // Author match only
+  if (authorMatch) {
+    return `By ${book.author}, in your wishlist`;
   }
-  
-  if (score >= 60) {
-    const topAuthor = userProfile.favoriteAuthors[0]?.author;
-    if (topAuthor && book.author === topAuthor) {
-      return `By ${book.author}, one of your favorites`;
-    }
+
+  // Multiple genre matches
+  if (matchingGenres.length > 2) {
+    const genreList = matchingGenres.slice(0, 2).join(' & ');
+    return `Matches ${genreList} from your wishlist`;
   }
-  
-  // Don't show generic badges for mid-tier scores
-  // The recommendation algorithm still works, just no badge displayed
+
+  if (matchingGenres.length === 2) {
+    return `Matches ${matchingGenres.join(' & ')} from your wishlist`;
+  }
+
+  // Single genre match
+  if (matchingGenres.length === 1) {
+    return `You're interested in ${matchingGenres[0]}`;
+  }
+
   return null;
 }
 
 /**
- * Get trending books (recently listed with high engagement)
- * @param {String} userId - User ID
- * @param {Number} limit - Number of books to return
- * @returns {Array} Trending books
+ * Check if book is already in user's wishlist
+ * @param {Object} book - Book object
+ * @param {Array} wishlistItems - User's wishlist items
+ * @returns {Boolean} True if book is in wishlist
  */
-async function getTrendingBooks(userId, limit = 10) {
-  try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+function isBookInWishlist(book, wishlistItems) {
+  return wishlistItems.some(item => {
+    // Check by ISBN if available
+    if (book.isbn && item.isbn && book.isbn === item.isbn) {
+      return true;
+    }
 
-    const trendingBooks = await Book.find({
-      isAvailable: true,
-      owner: { $ne: userId },
-      createdAt: { $gte: sevenDaysAgo }
-    })
-    .populate('owner', 'city averageRating privacySettings')
-    .sort({ createdAt: -1 })
-    .limit(limit)
-    .lean();
-
-    return trendingBooks;
-  } catch (error) {
-    console.error('Error getting trending books:', error);
-    return [];
-  }
+    // Check by title and author (case-insensitive)
+    const titleMatch = book.title.toLowerCase().trim() === item.title.toLowerCase().trim();
+    const authorMatch = book.author.toLowerCase().trim() === item.author.toLowerCase().trim();
+    
+    return titleMatch && authorMatch;
+  });
 }
 
 /**
- * Get random discovery books
- * @param {String} userId - User ID
- * @param {Array} excludeIds - Book IDs to exclude
- * @param {Number} limit - Number of books to return
- * @returns {Array} Random books
- */
-async function getRandomBooks(userId, excludeIds = [], limit = 5) {
-  try {
-    const randomBooks = await Book.aggregate([
-      {
-        $match: {
-          isAvailable: true,
-          owner: { $ne: userId },
-          _id: { $nin: excludeIds }
-        }
-      },
-      { $sample: { size: limit } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'owner',
-          foreignField: '_id',
-          as: 'owner'
-        }
-      },
-      { $unwind: '$owner' },
-      {
-        $project: {
-          'owner.password': 0
-        }
-      }
-    ]);
-
-    return randomBooks;
-  } catch (error) {
-    console.error('Error getting random books:', error);
-    return [];
-  }
-}
-
-/**
- * Generate personalized recommendations for a user
- * Phase 1: Hybrid approach (Wishlist 50%, Content-Based 30%, Trending 15%, Random 5%)
+ * Generate wishlist-based recommendations for a user
+ * 100% Content-Based Filtering using wishlist preferences
  * 
  * @param {String} userId - User ID
  * @param {Number} limit - Total number of recommendations to return
@@ -360,92 +200,76 @@ async function getRandomBooks(userId, excludeIds = [], limit = 5) {
  */
 async function getRecommendations(userId, limit = 10) {
   try {
-    // Build user preference profile
-    const userProfile = await buildUserProfile(userId);
+    // Extract wishlist preferences
+    const { authors, genres, wishlistItems } = await extractWishlistPreferences(userId);
 
-    // Get available books (exclude user's own books)
-    const availableBooks = await Book.find({ 
+    // If no wishlist, return empty with message
+    if (authors.length === 0 && genres.length === 0) {
+      return [];
+    }
+
+    // Get user info for location-based scoring
+    const user = await User.findById(userId).select('city');
+
+    // Get user's owned books to exclude
+    const ownedBooks = await Book.find({ owner: userId }).select('_id');
+    const ownedBookIds = ownedBooks.map(book => book._id);
+
+    // Find available books matching wishlist authors or genres
+    const availableBooks = await Book.find({
       isAvailable: true,
-      owner: { $ne: userId }
+      owner: { $ne: userId },
+      _id: { $nin: ownedBookIds },
+      $or: [
+        { author: { $in: authors } },
+        { genre: { $in: genres } }
+      ]
     })
     .populate('owner', 'city averageRating privacySettings')
     .lean();
 
-    // Score each book
-    const scoredBooks = await Promise.all(
-      availableBooks.map(async (book) => ({
-        book,
-        score: await calculateRecommendationScore(userId, book, userProfile),
-        reason: null // Will be set later
-      }))
+    // Filter out books already in wishlist
+    const filteredBooks = availableBooks.filter(book => 
+      !isBookInWishlist(book, wishlistItems)
     );
 
-    // Sort by score
-    scoredBooks.sort((a, b) => b.score - a.score);
-
-    // Phase 1 Hybrid Distribution:
-    // 50% Wishlist/Content-Based (top scored)
-    // 15% Trending
-    // 5% Random Discovery
-
-    const contentBasedCount = Math.ceil(limit * 0.80); // 80% content-based (wishlist + preferences)
-    const trendingCount = Math.ceil(limit * 0.15);     // 15% trending
-    const randomCount = Math.max(1, limit - contentBasedCount - trendingCount); // 5% random
-
-    // Get top content-based recommendations
-    const contentBased = scoredBooks.slice(0, contentBasedCount);
-
-    // Get trending books
-    const trending = await getTrendingBooks(userId, trendingCount);
-    const trendingWithScore = trending.map(book => ({
-      book,
-      score: 20, // Base trending score
-      reason: null // Don't show badge for trending
+    // Score each book
+    const scoredBooks = filteredBooks.map(book => ({
+      ...book,
+      recommendationScore: calculateWishlistScore(book, authors, genres, user),
+      recommendationReason: generateRecommendationBadge(book, authors, genres)
     }));
 
-    // Get random discovery books (exclude already recommended)
-    const excludeIds = [
-      ...contentBased.map(item => item.book._id),
-      ...trendingWithScore.map(item => item.book._id)
-    ];
-    const random = await getRandomBooks(userId, excludeIds, randomCount);
-    const randomWithScore = random.map(book => ({
-      book,
-      score: 10, // Base random score
-      reason: null // Don't show badge for random
-    }));
+    // Sort by score (highest first)
+    scoredBooks.sort((a, b) => b.recommendationScore - a.recommendationScore);
 
-    // Combine all recommendations
-    let recommendations = [
-      ...contentBased,
-      ...trendingWithScore,
-      ...randomWithScore
-    ];
+    // Return top recommendations
+    return scoredBooks.slice(0, limit);
 
-    // Remove duplicates (by book ID)
-    const seen = new Set();
-    recommendations = recommendations.filter(item => {
-      const id = item.book._id.toString();
-      if (seen.has(id)) {
-        return false;
-      }
-      seen.add(id);
-      return true;
-    });
-
-    // Limit to requested count
-    recommendations = recommendations.slice(0, limit);
-
-    // Generate reasons for content-based recommendations
-    recommendations = recommendations.map(item => ({
-      ...item.book,
-      recommendationScore: item.score,
-      recommendationReason: item.reason || generateRecommendationReason(item.score, item.book, userProfile)
-    }));
-
-    return recommendations;
   } catch (error) {
     console.error('Error generating recommendations:', error);
+    throw error;
+  }
+}
+
+/**
+ * Build user preference profile (for debugging/transparency)
+ * @param {String} userId - User ID
+ * @returns {Object} User preference profile
+ */
+async function buildUserProfile(userId) {
+  try {
+    const { authors, genres, wishlistItems } = await extractWishlistPreferences(userId);
+
+    return {
+      favoriteAuthors: authors.map(author => ({ author, score: 5 })),
+      favoriteGenres: genres.map(genre => ({ genre, score: 5 })),
+      wishlistBooks: wishlistItems,
+      receivedBooks: [],
+      ownedBooks: []
+    };
+  } catch (error) {
+    console.error('Error building user profile:', error);
     throw error;
   }
 }
@@ -453,8 +277,8 @@ async function getRecommendations(userId, limit = 10) {
 module.exports = {
   getRecommendations,
   buildUserProfile,
-  calculateRecommendationScore,
-  getTrendingBooks,
-  getRandomBooks,
-  SIGNAL_WEIGHTS
+  extractWishlistPreferences,
+  calculateWishlistScore,
+  generateRecommendationBadge,
+  SCORING_WEIGHTS
 };

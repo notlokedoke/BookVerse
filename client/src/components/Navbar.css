@@ -514,3 +514,110 @@
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* ===================================
+   Responsive Design
+   =================================== */
+@media (max-width: 1024px) {
+  .navbar-container {
+    padding: 0 1.25rem;
+  }
+
+  .navbar-center {
+    gap: 0.125rem;
+  }
+
+  .nav-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    padding: 0 1rem;
+    height: 60px;
+  }
+
+  .logo-text {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar-container {
+    padding: 0 0.875rem;
+  }
+
+  .user-dropdown {
+    width: 200px;
+    right: -0.5rem;
+  }
+
+  .dropdown-header {
+    padding: 0.875rem;
+  }
+
+  .dropdown-name {
+    font-size: 0.875rem;
+  }
+
+  .dropdown-email {
+    font-size: 0.75rem;
+  }
+
+  .dropdown-item {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    height: 56px;
+    padding: 0 0.75rem;
+  }
+
+  .navbar-logo svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 0.875rem;
+  }
+
+  .mobile-menu-inner {
+    padding: 0.875rem 1rem 1.25rem;
+  }
+
+  .mobile-user-card {
+    padding: 0.875rem;
+  }
+
+  .mobile-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .mobile-name {
+    font-size: 0.875rem;
+  }
+
+  .mobile-email {
+    font-size: 0.75rem;
+  }
+
+  .mobile-nav-link {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .mobile-add-btn {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+}

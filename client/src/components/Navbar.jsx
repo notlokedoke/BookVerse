@@ -150,6 +150,37 @@ const Navbar = () => {
     }
   };
 
+  // Handle clear all notifications
+  const handleClearAll = async () => {
+    if (!window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+      return;
+    }
+
+    // Optimistic update for immediate UI feedback
+    const previousNotifications = notifications;
+    const previousUnreadCount = unreadCount;
+    setNotifications([]);
+    setUnreadCount(0);
+
+    // Call API to persist the change
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.delete('/api/notifications/clear-all', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        toast.success(`${response.data.count} notification${response.data.count !== 1 ? 's' : ''} cleared`);
+      }
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      // Revert optimistic update on error
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
+      toast.error('Failed to clear notifications');
+    }
+  };
+
   // Handle notification dropdown open
   const handleNotificationOpen = () => {
     // Refresh notifications when dropdown opens
@@ -241,6 +272,7 @@ const Navbar = () => {
                 notifications={notifications}
                 onMarkAsRead={handleMarkAsRead}
                 onMarkAllAsRead={handleMarkAllAsRead}
+                onClearAll={handleClearAll}
                 onOpen={handleNotificationOpen}
               />
               <div className="user-menu">

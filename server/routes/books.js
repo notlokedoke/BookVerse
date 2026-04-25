@@ -284,8 +284,8 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
   body('condition')
     .notEmpty()
     .withMessage('Condition is required')
-    .isIn(['New', 'Like New', 'Good', 'Fair', 'Poor'])
-    .withMessage('Condition must be one of: New, Like New, Good, Fair, Poor'),
+    .isIn(['Like New', 'Good', 'Fair', 'Poor'])
+    .withMessage('Condition must be one of: Like New, Good, Fair, Poor'),
   body('genres')
     .custom((value) => {
       // Parse JSON string if it's a string
@@ -846,12 +846,12 @@ router.put('/:id', authenticateToken, sanitizeInput, uploadBookImages(), async (
 
     // Validate condition if provided
     if (condition !== undefined) {
-      const validConditions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
+      const validConditions = ['Like New', 'Good', 'Fair', 'Poor'];
       if (!validConditions.includes(condition)) {
         return res.status(400).json({
           success: false,
           error: {
-            message: 'Condition must be one of: New, Like New, Good, Fair, Poor',
+            message: 'Condition must be one of: Like New, Good, Fair, Poor',
             code: 'INVALID_CONDITION'
           }
         });
