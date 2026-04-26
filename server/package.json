@@ -11,11 +11,6 @@
     "test:coverage": "node --no-warnings node_modules/.bin/jest --coverage --watchAll=false",
     "test:verbose": "node --no-warnings node_modules/.bin/jest --verbose --watchAll=false",
     "test:report": "node __tests__/generate-test-report.js",
-    "enrich": "node scripts/enrichExistingBooks.js",
-    "enrich:dry-run": "node scripts/enrichExistingBooks.js --dry-run",
-    "enrich:descriptions": "node scripts/enrichExistingBooks.js --descriptions",
-    "enrich:images": "node scripts/enrichExistingBooks.js --images",
-    "analyze:books": "node scripts/analyzeBooks.js"
   },
   "keywords": [
     "bookverse",
