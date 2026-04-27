@@ -48,3 +48,8 @@ pids
 # --- Uploads (if any) ---
 server/uploads/
 .kiro/
+
+# --- Test Artifacts ---
+server/__tests__/temp-*.png
+server/__tests__/temp-*.jpg
+server/__tests__/large-image.png
