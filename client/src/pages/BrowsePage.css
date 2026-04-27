@@ -566,3 +566,32 @@
     flex-direction: column;
   }
 }
+
+/* Force 5 books per row on Browse page (scoped so it doesn't affect TradeProposalModal) */
+.browse-page .book-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 1200px) {
+  .browse-page .book-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .browse-page .book-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .browse-page .book-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .browse-page .book-grid {
+    grid-template-columns: 1fr;
+  }
+}

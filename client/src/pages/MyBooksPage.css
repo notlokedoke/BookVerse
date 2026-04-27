@@ -344,7 +344,7 @@
 
 .books-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr)); /* Increased from 220px to 275px (25% wider) */
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.25rem;
 }
 
@@ -712,6 +712,18 @@
 /* ===================================
    Responsive Design
    =================================== */
+@media (max-width: 1200px) {
+  .books-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .books-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .my-books-container {
     padding: 1rem;

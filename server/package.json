@@ -10,7 +10,7 @@
     "test:watch": "node --no-warnings node_modules/.bin/jest --watch",
     "test:coverage": "node --no-warnings node_modules/.bin/jest --coverage --watchAll=false",
     "test:verbose": "node --no-warnings node_modules/.bin/jest --verbose --watchAll=false",
-    "test:report": "node __tests__/generate-test-report.js",
+    "test:report": "node __tests__/generate-test-report.js"
   },
   "keywords": [
     "bookverse",
