@@ -41,6 +41,16 @@ Complete documentation for the BookVerse backend API.
   - Automatic notifications on status changes
   - Wishlist fulfillment tracking
 
+#### Messages API
+- **[Messages Quick Reference](./MESSAGES_QUICK_REFERENCE.md)** - Quick start guide with code examples
+- **[Messages API](./MESSAGES_API.md)** - Complete messaging system endpoints documentation
+  - Send messages in trade chats
+  - Retrieve trade conversation history
+  - Mark messages as read with auto-read functionality
+  - Track unread message counts
+  - Delete own messages
+  - Trade-specific access control
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
