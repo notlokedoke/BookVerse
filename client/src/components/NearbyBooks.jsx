@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import axios from 'axios';
 import BookCard from './BookCard';
+import useDelayedFlag from '../hooks/useDelayedFlag';
+import { getCached, setCached } from '../utils/bookCache';
 import './NearbyBooks.css';
 
 /**
@@ -17,6 +19,7 @@ function NearbyBooks() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [userCity, setUserCity] = useState('');
+  const showLoading = useDelayedFlag(loading && books.length === 0, 150);
 
   useEffect(() => {
     fetchLocalBooks();
@@ -24,8 +27,18 @@ function NearbyBooks() {
 
   const fetchLocalBooks = async () => {
     try {
-      setLoading(true);
       setError(null);
+
+      const cacheKey = `nearby:page=${page}&limit=35`;
+      const cached = getCached(cacheKey);
+      if (cached) {
+        setBooks(cached.books);
+        setPagination(cached.pagination);
+        setUserCity(cached.city);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
 
       const response = await axios.get('/api/nearby/same-city', {
         params: {
@@ -54,6 +67,11 @@ function NearbyBooks() {
         setBooks(fetchedBooks);
         setPagination(paginationData);
         setUserCity(response.data.data.city);
+        setCached(cacheKey, {
+          books: fetchedBooks,
+          pagination: paginationData,
+          city: response.data.data.city,
+        });
       }
     } catch (err) {
       console.error('Error fetching local books:', err);
@@ -125,8 +143,8 @@ function NearbyBooks() {
     return pages;
   };
 
-  // Loading State
-  if (loading && books.length === 0) {
+  // Loading State — only render once delay elapsed to skip flash for fast responses
+  if (loading && books.length === 0 && showLoading) {
     return (
       <div className="nearby-books-container">
         <div className="nearby-books-header">
@@ -228,11 +246,12 @@ function NearbyBooks() {
 
       {/* Books Grid */}
       <div className="books-grid">
-        {books.map((book) => (
-          <BookCard 
-            key={book._id} 
-            book={book} 
+        {books.map((book, index) => (
+          <BookCard
+            key={book._id}
+            book={book}
             showOwner={true}
+            priority={index < 6}
           />
         ))}
       </div>

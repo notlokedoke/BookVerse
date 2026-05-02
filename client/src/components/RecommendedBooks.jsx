@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BookCard from './BookCard';
+import useDelayedFlag from '../hooks/useDelayedFlag';
+import { getCached, setCached } from '../utils/bookCache';
 import './RecommendedBooks.css';
 
 function RecommendedBooks({ limit = 6 }) {
@@ -10,6 +12,7 @@ function RecommendedBooks({ limit = 6 }) {
   const [error, setError] = useState(null);
   const [isColdStart, setIsColdStart] = useState(false);
   const navigate = useNavigate();
+  const showLoading = useDelayedFlag(loading && recommendations.length === 0, 150);
 
   useEffect(() => {
     fetchRecommendations();
@@ -17,13 +20,22 @@ function RecommendedBooks({ limit = 6 }) {
 
   const fetchRecommendations = async () => {
     try {
-      setLoading(true);
       setError(null);
 
       const token = localStorage.getItem('token');
       if (!token) {
         setLoading(false);
         return;
+      }
+
+      const cacheKey = `recommendations:limit=${limit}`;
+      const cached = getCached(cacheKey);
+      if (cached) {
+        setRecommendations(cached.recommendations);
+        setIsColdStart(cached.isColdStart);
+        setLoading(false);
+      } else {
+        setLoading(true);
       }
 
       const response = await axios.get(`/api/recommendations?limit=${limit}`, {
@@ -33,8 +45,11 @@ function RecommendedBooks({ limit = 6 }) {
       });
 
       if (response.data.success) {
-        setRecommendations(response.data.data.recommendations);
-        setIsColdStart(response.data.data.isColdStart || false);
+        const recs = response.data.data.recommendations;
+        const coldStart = response.data.data.isColdStart || false;
+        setRecommendations(recs);
+        setIsColdStart(coldStart);
+        setCached(cacheKey, { recommendations: recs, isColdStart: coldStart });
       }
     } catch (err) {
       console.error('Error fetching recommendations:', err);
@@ -44,7 +59,8 @@ function RecommendedBooks({ limit = 6 }) {
     }
   };
 
-  if (loading) {
+  if (loading && recommendations.length === 0) {
+    if (!showLoading) return null;
     return (
       <div className="recommended-books">
         <h2 className="recommended-books__title">Recommended for You</h2>
@@ -108,9 +124,9 @@ function RecommendedBooks({ limit = 6 }) {
       </div>
 
       <div className="recommended-books__grid">
-        {recommendations.map((book) => (
+        {recommendations.map((book, index) => (
           <div key={book._id} className="recommended-books__item">
-            <BookCard book={book} showOwner={true} />
+            <BookCard book={book} showOwner={true} priority={index < 5} />
             {book.recommendationReason && (
               <div className="recommended-books__reason">
                 <span className="recommended-books__reason-icon">✨</span>

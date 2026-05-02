@@ -8,6 +8,8 @@ import FloatingActionButton from '../components/FloatingActionButton';
 import { BookOpen, Plus, Library, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 import { getBookImageUrl } from '../utils/imageUtils';
+import useDelayedFlag from '../hooks/useDelayedFlag';
+import { getCached, setCached, invalidateCache } from '../utils/bookCache';
 import './MyBooksPage.css';
 
 const MyBooksPage = () => {
@@ -29,13 +31,23 @@ const MyBooksPage = () => {
     hasNextPage: false,
     hasPrevPage: false
   });
+  const showSkeleton = useDelayedFlag(loading && books.length === 0, 150);
 
   const fetchUserBooks = async (page = 1) => {
     if (!user?._id) return;
 
     try {
-      setLoading(true);
       setError(null);
+
+      const cacheKey = `mybooks:${user._id}:page=${page}`;
+      const cached = getCached(cacheKey);
+      if (cached) {
+        setBooks(cached.books);
+        setPagination(cached.pagination);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
 
       const response = await axios.get(
         `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=28`
@@ -60,6 +72,10 @@ const MyBooksPage = () => {
         
         setBooks(fetchedBooks);
         setPagination(paginationData);
+        setCached(`mybooks:${user._id}:page=${page}`, {
+          books: fetchedBooks,
+          pagination: paginationData,
+        });
       } else {
         setError('Failed to fetch your books');
       }
@@ -156,7 +172,8 @@ const MyBooksPage = () => {
         // Show success toast
         toast.success('Book listing deleted successfully');
 
-        // Refetch books to update pagination
+        // Invalidate cache so refetch returns fresh data
+        invalidateCache(`mybooks:${user._id}:`);
         const currentPage = parseInt(searchParams.get('page')) || 1;
         await fetchUserBooks(currentPage);
       } else {
@@ -247,8 +264,11 @@ const MyBooksPage = () => {
     return pages;
   };
 
-  // Skeleton loading state
-  if (loading) {
+  // Skeleton loading state — only after delay to skip flash on fast/cached responses
+  if (loading && books.length === 0 && !showSkeleton) {
+    return <div className="my-books-page" />;
+  }
+  if (loading && books.length === 0) {
     return (
       <div className="my-books-page">
         <div className="my-books-container">
@@ -323,7 +343,7 @@ const MyBooksPage = () => {
         {books.length > 0 ? (
           <section className="books-section">
             <div className="books-grid">
-              {books.map((book) => (
+              {books.map((book, index) => (
                 <BookCard
                   key={book._id}
                   book={book}
@@ -332,6 +352,7 @@ const MyBooksPage = () => {
                   onEdit={handleEditBook}
                   showDeleteButton={true}
                   onDelete={handleDeleteBook}
+                  priority={index < 6}
                 />
               ))}
             </div>

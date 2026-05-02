@@ -8,7 +8,7 @@ import { formatCityName } from '../utils/formatLocation';
 import { getBookImageUrl } from '../utils/imageUtils';
 import './BookCard.css';
 
-const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete }) => {
+const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete, priority = false }) => {
   const { isAuthenticated, user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -92,6 +92,8 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
               alt={`${title} by ${author}`}
               className="book-image"
               decoding="async"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchpriority={priority ? 'high' : 'low'}
               onLoad={handleImageLoad}
               onError={handleImageError}
               style={{ opacity: imageLoaded ? 1 : 0 }}

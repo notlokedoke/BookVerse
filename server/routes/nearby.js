@@ -100,6 +100,7 @@ router.get('/same-city', authenticateToken, async (req, res) => {
     // Apply privacy settings
     const booksWithPrivacy = applyBookOwnerPrivacyToArray(books);
 
+    res.set('Cache-Control', 'private, max-age=30');
     res.status(200).json({
       success: true,
       data: {

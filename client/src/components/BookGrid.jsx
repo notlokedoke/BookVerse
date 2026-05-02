@@ -1,10 +1,14 @@
 import React from 'react';
 import BookCard from './BookCard';
+import useDelayedFlag from '../hooks/useDelayedFlag';
 import './BookGrid.css';
 
 const BookGrid = ({ books, loading, error, pagination, onPageChange }) => {
-  // Loading state
-  if (loading) {
+  const hasNoBooks = !books || books.length === 0;
+  const showSkeleton = useDelayedFlag(loading && hasNoBooks, 150);
+
+  // Loading state — only render skeleton after 150ms of waiting on an empty list
+  if (loading && hasNoBooks && showSkeleton) {
     return (
       <div className="book-grid-container">
         <div className="book-grid">
@@ -50,6 +54,11 @@ const BookGrid = ({ books, loading, error, pagination, onPageChange }) => {
         </div>
       </div>
     );
+  }
+
+  // While initial fetch is still in flight but skeleton suppressed — render nothing yet
+  if (loading && hasNoBooks) {
+    return <div className="book-grid-container" />;
   }
 
   // Empty state
@@ -122,11 +131,12 @@ const BookGrid = ({ books, loading, error, pagination, onPageChange }) => {
     <div className="book-grid-container">
       {/* Book Grid */}
       <div className="book-grid">
-        {books.map((book) => (
-          <BookCard 
-            key={book._id} 
-            book={book} 
+        {books.map((book, index) => (
+          <BookCard
+            key={book._id}
+            book={book}
             showOwner={true}
+            priority={index < 5}
           />
         ))}
       </div>

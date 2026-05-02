@@ -543,6 +543,7 @@ router.get('/:id', async (req, res) => {
     // Apply privacy settings to owner information
     const bookWithPrivacy = applyBookOwnerPrivacy(book);
 
+    res.set('Cache-Control', 'public, max-age=60');
     res.status(200).json({
       success: true,
       data: bookWithPrivacy
@@ -734,8 +735,8 @@ router.get('/user/:userId', async (req, res) => {
     // Apply privacy settings to all books
     const booksWithPrivacy = applyBookOwnerPrivacyToArray(books);
 
-    // Set cache headers for better performance
-    res.set('Cache-Control', 'public, max-age=60'); // Cache for 1 minute
+    // Set cache headers for better performance (user-specific list)
+    res.set('Cache-Control', 'private, max-age=60');
 
     res.status(200).json({
       success: true,

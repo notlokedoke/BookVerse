@@ -5,6 +5,7 @@ import BookGrid from '../components/BookGrid';
 import SearchFilters from '../components/SearchFilters';
 import GenreSidebar from '../components/GenreSidebar';
 import { Search, Sparkles, TrendingUp, Filter } from 'lucide-react';
+import { getCached, setCached } from '../utils/bookCache';
 import './BrowsePage.css';
 
 const BrowsePage = () => {
@@ -61,7 +62,6 @@ const BrowsePage = () => {
   // Fetch books from API
   const fetchBooks = async (page = 1, currentFilters = filters) => {
     try {
-      setLoading(true);
       setError(null);
 
       // Build query parameters
@@ -82,6 +82,16 @@ const BrowsePage = () => {
       }
       if (currentFilters.title.trim()) {
         params.append('title', currentFilters.title.trim());
+      }
+
+      const cacheKey = `browse:${params.toString()}`;
+      const cached = getCached(cacheKey);
+      if (cached) {
+        setBooks(cached.books);
+        setPagination(cached.pagination);
+        setLoading(false);
+      } else {
+        setLoading(true);
       }
 
       const response = await fetch(`/api/books?${params.toString()}`);
@@ -113,6 +123,7 @@ const BrowsePage = () => {
         
         setBooks(fetchedBooks);
         setPagination(paginationData);
+        setCached(cacheKey, { books: fetchedBooks, pagination: paginationData });
       } else {
         throw new Error(data.error?.message || 'Failed to fetch books');
       }

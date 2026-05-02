@@ -25,6 +25,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // Apply privacy settings to book owners
     const recommendationsWithPrivacy = applyBookOwnerPrivacyToArray(recommendations);
 
+    res.set('Cache-Control', 'private, max-age=60');
     res.json({
       success: true,
       data: {
