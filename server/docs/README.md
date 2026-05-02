@@ -15,6 +15,15 @@ Complete documentation for the BookVerse backend API.
   - Google OAuth integration
   - JWT token authentication
 
+#### Books API
+- **[Books Quick Reference](./BOOKS_QUICK_REFERENCE.md)** - Quick start guide with code examples
+- **[Books API](./BOOKS_API.md)** - Complete book management endpoints documentation
+  - Book CRUD operations (Create, Read, Update, Delete)
+  - ISBN lookup and external book search
+  - Advanced filtering and pagination
+  - Image handling and proxy
+  - Query parameters and validation
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
