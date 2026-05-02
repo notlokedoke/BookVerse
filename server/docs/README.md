@@ -1,17 +1,42 @@
 # BookVerse Server Documentation
 
-## 📚 Book Cover Strategy Documentation
+## 📚 API Documentation
 
-Complete documentation for the hybrid book cover fetching system.
+Complete documentation for the BookVerse backend API.
 
 ### Quick Links
 
+#### Authentication API
+- **[Authentication Quick Reference](./AUTH_QUICK_REFERENCE.md)** - Quick start guide with code examples
+- **[Authentication API](./AUTHENTICATION_API.md)** - Complete authentication endpoints documentation
+  - User registration and login
+  - Profile management
+  - Password reset and email verification
+  - Google OAuth integration
+  - JWT token authentication
+
+#### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
 - **[Implementation Summary](./IMPLEMENTATION_SUMMARY.md)** - What was implemented and why
 - **[Sources Comparison](./COVER_SOURCES_COMPARISON.md)** - Google Books vs Open Library analysis
 
 ## 🎯 Overview
+
+### Authentication System
+
+BookVerse implements a secure JWT-based authentication system with:
+
+- **Email/Password Authentication** - Traditional registration and login
+- **Google OAuth 2.0** - Social login integration
+- **Email Verification** - Token-based email confirmation
+- **Password Recovery** - Secure password reset flow
+- **Profile Management** - User profile and privacy settings
+- **Token Blacklisting** - Secure logout implementation
+
+See [Authentication API](./AUTHENTICATION_API.md) for complete documentation.
+
+### Book Cover Strategy
 
 BookVerse uses a **hybrid approach** for fetching book cover images:
 
