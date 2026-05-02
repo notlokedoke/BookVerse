@@ -671,7 +671,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Personalized Recommendations */}
-      <RecommendedBooks limit={6} />
+      <RecommendedBooks limit={5} />
 
       {/* Empty State */}
       {stats.booksListed === 0 && pendingTrades.length === 0 && activeTrades.length === 0 && (

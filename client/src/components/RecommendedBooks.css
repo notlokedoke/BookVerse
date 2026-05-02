@@ -39,7 +39,7 @@
 
 .recommended-books__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 1.5rem;
 }
 
@@ -126,13 +126,19 @@
   }
 
   .recommended-books__grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
 
   .recommended-books__header {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .recommended-books__grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
