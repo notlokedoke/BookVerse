@@ -24,6 +24,23 @@ Complete documentation for the BookVerse backend API.
   - Image handling and proxy
   - Query parameters and validation
 
+#### Wishlist API
+- **[Wishlist API](./WISHLIST_API.md)** - Complete wishlist management endpoints documentation
+  - Wishlist CRUD operations (Create, Read, Delete)
+  - Automatic matching with three-level algorithm (ISBN, Title+Author, Fuzzy)
+  - Priority system and privacy controls
+  - Public/private wishlist items
+  - Image lookup and backfill
+
+#### Trades API
+- **[Trades API](./TRADES_API.md)** - Complete trade management endpoints documentation
+  - Trade proposal with validation
+  - Accept and decline trade proposals
+  - Mark trades as complete
+  - Complete trade lifecycle and status transitions
+  - Automatic notifications on status changes
+  - Wishlist fulfillment tracking
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
