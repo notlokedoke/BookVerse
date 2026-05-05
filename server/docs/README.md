@@ -70,6 +70,15 @@ Complete documentation for the BookVerse backend API.
   - Automatic expiration after 30 days
   - Real-time event notifications
 
+#### Error Responses
+- **[API Error Documentation](./API_ERRORS.md)** - Comprehensive error response documentation
+  - Standardized error response format
+  - All HTTP status codes explained
+  - Complete error code reference by endpoint
+  - Troubleshooting guide and common solutions
+  - Best practices for error handling
+  - User-friendly error message mapping
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
