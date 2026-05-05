@@ -51,6 +51,15 @@ Complete documentation for the BookVerse backend API.
   - Delete own messages
   - Trade-specific access control
 
+#### Ratings API
+- **[Ratings API](./RATINGS_API.md)** - Complete rating system endpoints documentation
+  - Submit ratings for completed trades (1-5 stars)
+  - Mandatory comments for low ratings (≤3 stars)
+  - Get user's ratings and reputation
+  - Check rating status for trades
+  - Automatic average rating calculation
+  - Duplicate prevention and validation
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
