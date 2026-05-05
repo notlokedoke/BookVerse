@@ -60,6 +60,16 @@ Complete documentation for the BookVerse backend API.
   - Automatic average rating calculation
   - Duplicate prevention and validation
 
+#### Notifications API
+- **[Notifications API](./NOTIFICATIONS_API.md)** - Complete notification system endpoints documentation
+  - Get all notifications with unread count
+  - Mark individual notifications as read
+  - Mark all notifications as read (bulk action)
+  - Clear all notifications
+  - Multiple notification types (trade, message, wishlist, location-based)
+  - Automatic expiration after 30 days
+  - Real-time event notifications
+
 #### Book Cover Strategy
 - **[Quick Reference](./QUICK_REFERENCE.md)** - Start here! Code examples and common use cases
 - **[Book Cover Strategy](./BOOK_COVER_STRATEGY.md)** - Complete technical documentation
