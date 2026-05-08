@@ -1,0 +1,2112 @@
+openapi: 3.0.3
+info:
+  title: BookVerse API
+  description: |
+    BookVerse is a peer-to-peer book trading platform API built on the MERN stack.
+    
+    ## Features
+    - User authentication with JWT
+    - Book listing management with image uploads
+    - Wishlist system with automatic matching
+    - Trade proposal and negotiation
+    - Real-time messaging for trades
+    - User rating and reputation system
+    - In-app notifications
+    - Location-based book discovery
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+    
+    ## Rate Limiting
+    - Authentication endpoints: 100 requests per minute
+    - General API endpoints: 1000 requests per 15 minutes
+    - Contact form: 3 submissions per hour per IP
+    
+  version: 1.0.0
+  contact:
+    name: BookVerse Support
+    email: support@bookverse.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+  - url: https://api.bookverse.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and profile management
+  - name: Books
+    description: Book listing CRUD operations and search
+  - name: Wishlist
+    description: User wishlist management with automatic matching
+  - name: Trades
+    description: Trade proposal, acceptance, and completion
+  - name: Messages
+    description: Trade-specific messaging system
+  - name: Ratings
+    description: User rating and review system
+  - name: Notifications
+    description: In-app notification management
+  - name: Users
+    description: Public user profile access
+  - name: Cities
+    description: City search for location-based features
+  - name: Recommendations
+    description: Personalized book recommendations
+  - name: Nearby
+    description: Location-based book discovery
+  - name: Contact
+    description: Contact form submission
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login or registration
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f191e810c19729de860ea"
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        city:
+          type: string
+          example: "New York"
+          nullable: true
+        bio:
+          type: string
+          example: "Book enthusiast and avid reader"
+          nullable: true
+        privacySettings:
+          type: object
+          properties:
+            showCity:
+              type: boolean
+              default: true
+            showEmail:
+              type: boolean
+              default: false
+        averageRating:
+          type: number
+          format: float
+          example: 4.5
+        ratingCount:
+          type: integer
+          example: 10
+        emailVerified:
+          type: boolean
+          default: false
+        isOAuthUser:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+
+    Book:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        owner:
+          $ref: '#/components/schemas/User'
+        title:
+          type: string
+          example: "The Great Gatsby"
+        author:
+          type: string
+          example: "F. Scott Fitzgerald"
+        isbn:
+          type: string
+          example: "9780743273565"
+          nullable: true
+        genre:
+          type: array
+          items:
+            type: string
+          example: ["Classic Fiction", "American Literature"]
+        condition:
+          type: string
+          enum: [Like New, Good, Fair, Poor]
+          example: "Good"
+        description:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          format: uri
+          example: "https://covers.openlibrary.org/b/isbn/9780743273565-L.jpg"
+        frontImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        backImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        googleBooksImageUrl:
+          type: string
+          format: uri
+          nullable: true
+        publicationYear:
+          type: integer
+          example: 1925
+          nullable: true
+        publisher:
+          type: string
+          nullable: true
+        isAvailable:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WishlistItem:
+      type: object
+      properties:
+        _id:
+          type: string
+        user:
+          type: string
+          example: "507f191e810c19729de860ea"
+        title:
+          type: string
+          example: "1984"
+        author:
+          type: string
+          example: "George Orwell"
+          nullable: true
+        isbn:
+          type: string
+          example: "9780451524935"
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 3
+        isPublic:
+          type: boolean
+          default: true
+        fulfilledBy:
+          type: string
+          nullable: true
+        fulfilledAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Trade:
+      type: object
+      properties:
+        _id:
+          type: string
+        proposer:
+          $ref: '#/components/schemas/User'
+        receiver:
+          $ref: '#/components/schemas/User'
+        requestedBook:
+          $ref: '#/components/schemas/Book'
+        offeredBook:
+          $ref: '#/components/schemas/Book'
+        status:
+          type: string
+          enum: [proposed, accepted, declined, completed]
+          example: "proposed"
+        proposedAt:
+          type: string
+          format: date-time
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        ratingEnabled:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        _id:
+          type: string
+        trade:
+          type: string
+          example: "507f1f77bcf86cd799439013"
+        sender:
+          $ref: '#/components/schemas/User'
+        content:
+          type: string
+          example: "When would you like to meet for the exchange?"
+        read:
+          type: boolean
+          default: false
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Rating:
+      type: object
+      properties:
+        _id:
+          type: string
+        trade:
+          type: string
+        rater:
+          $ref: '#/components/schemas/User'
+        ratedUser:
+          $ref: '#/components/schemas/User'
+        stars:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: "Great trader! Book was in excellent condition."
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        _id:
+          type: string
+        recipient:
+          type: string
+        type:
+          type: string
+          enum: [trade_request, trade_accepted, trade_declined, trade_completed, new_message, wishlist_match]
+        relatedTrade:
+          type: string
+          nullable: true
+        relatedUser:
+          $ref: '#/components/schemas/User'
+        relatedBook:
+          type: string
+          nullable: true
+        message:
+          type: string
+        isRead:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "An error occurred"
+            code:
+              type: string
+              example: "ERROR_CODE"
+            details:
+              type: array
+              items:
+                type: object
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+
+
+paths:
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email, password, name, and city
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+                - city
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "password123"
+                name:
+                  type: string
+                  example: "John Doe"
+                city:
+                  type: string
+                  example: "New York"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error or missing fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login successful"
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Get authenticated user's profile information
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidate JWT token and logout user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/profile:
+    put:
+      tags:
+        - Authentication
+      summary: Update user profile
+      description: Update user's name, city, bio, and privacy settings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                city:
+                  type: string
+                  example: "Los Angeles"
+                bio:
+                  type: string
+                  example: "Book enthusiast"
+                privacySettings:
+                  type: object
+                  properties:
+                    showCity:
+                      type: boolean
+                    showEmail:
+                      type: boolean
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/change-password:
+    put:
+      tags:
+        - Authentication
+      summary: Change password
+      description: Change password for authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Send password reset email to user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password with token
+      description: Reset password using token from email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/account:
+    delete:
+      tags:
+        - Authentication
+      summary: Delete user account
+      description: Delete user account and all associated data
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - confirmText
+              properties:
+                password:
+                  type: string
+                  format: password
+                confirmText:
+                  type: string
+                  example: "DELETE"
+      responses:
+        '200':
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Incorrect password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Book Endpoints
+  /books:
+    get:
+      tags:
+        - Books
+      summary: Get all books
+      description: Get all available books with optional filters and pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: city
+          in: query
+          schema:
+            type: string
+          description: Filter by city
+        - name: genre
+          in: query
+          schema:
+            type: string
+          description: Filter by genre (comma-separated for multiple)
+        - name: author
+          in: query
+          schema:
+            type: string
+          description: Filter by author (partial match)
+        - name: title
+          in: query
+          schema:
+            type: string
+          description: Filter by title (partial match)
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      books:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+                      pagination:
+                        type: object
+                        properties:
+                          currentPage:
+                            type: integer
+                          totalPages:
+                            type: integer
+                          totalBooks:
+                            type: integer
+                          hasNextPage:
+                            type: boolean
+                          hasPrevPage:
+                            type: boolean
+
+    post:
+      tags:
+        - Books
+      summary: Create book listing
+      description: Create a new book listing with images
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - author
+                - condition
+                - genres
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                condition:
+                  type: string
+                  enum: [Like New, Good, Fair, Poor]
+                genres:
+                  type: string
+                  description: JSON array of genres
+                  example: '["Classic Fiction","American Literature"]'
+                isbn:
+                  type: string
+                description:
+                  type: string
+                publicationYear:
+                  type: integer
+                publisher:
+                  type: string
+                googleBooksImageUrl:
+                  type: string
+                  format: uri
+                frontImage:
+                  type: string
+                  format: binary
+                backImage:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Book listing created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '400':
+          description: Validation error or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /books/{id}:
+    get:
+      tags:
+        - Books
+      summary: Get book by ID
+      description: Get single book details with owner information
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Book ID
+      responses:
+        '200':
+          description: Book retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Books
+      summary: Update book listing
+      description: Update book listing (owner only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                author:
+                  type: string
+                condition:
+                  type: string
+                  enum: [Like New, Good, Fair, Poor]
+                genres:
+                  type: string
+                  description: JSON array of genres
+                isbn:
+                  type: string
+                description:
+                  type: string
+                publicationYear:
+                  type: integer
+                publisher:
+                  type: string
+                googleBooksImageUrl:
+                  type: string
+                frontImage:
+                  type: string
+                  format: binary
+                backImage:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Book updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Book'
+        '403':
+          description: Unauthorized - Not book owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Books
+      summary: Delete book listing
+      description: Delete book listing (owner only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Book deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: Unauthorized - Not book owner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /books/isbn/{isbn}:
+    post:
+      tags:
+        - Books
+      summary: Lookup book by ISBN
+      description: Fetch book metadata from Open Library using ISBN
+      parameters:
+        - name: isbn
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ISBN-10 or ISBN-13
+      responses:
+        '200':
+          description: Book data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      author:
+                        type: string
+                      isbn:
+                        type: string
+                      thumbnail:
+                        type: string
+                      publishedDate:
+                        type: string
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /books/search-external:
+    get:
+      tags:
+        - Books
+      summary: Search books externally
+      description: Search for books using Open Library API
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        author:
+                          type: string
+                        isbn:
+                          type: string
+                        thumbnail:
+                          type: string
+
+  /books/user/{userId}:
+    get:
+      tags:
+        - Books
+      summary: Get books by user
+      description: Get all books owned by a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: includeUnavailable
+          in: query
+          schema:
+            type: string
+            enum: [true, false]
+            default: false
+      responses:
+        '200':
+          description: Books retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      books:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Book'
+                      pagination:
+                        type: object
+
+
+  # Wishlist Endpoints
+  /wishlist:
+    get:
+      tags:
+        - Wishlist
+      summary: Get user's wishlist
+      description: Get all wishlist items for authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Wishlist retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WishlistItem'
+                  count:
+                    type: integer
+
+    post:
+      tags:
+        - Wishlist
+      summary: Add book to wishlist
+      description: Add a book to user's wishlist
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  example: "1984"
+                author:
+                  type: string
+                  example: "George Orwell"
+                isbn:
+                  type: string
+                  example: "9780451524935"
+                notes:
+                  type: string
+                imageUrl:
+                  type: string
+                priority:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                isPublic:
+                  type: boolean
+      responses:
+        '201':
+          description: Book added to wishlist successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/WishlistItem'
+        '409':
+          description: Book already in wishlist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wishlist/{id}:
+    delete:
+      tags:
+        - Wishlist
+      summary: Remove from wishlist
+      description: Remove a book from user's wishlist
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Book removed from wishlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Wishlist item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /wishlist/user/{userId}:
+    get:
+      tags:
+        - Wishlist
+      summary: Get user's public wishlist
+      description: Get all wishlist items for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Wishlist retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WishlistItem'
+                  count:
+                    type: integer
+
+  /wishlist/matches:
+    get:
+      tags:
+        - Wishlist
+      summary: Find wishlist matches
+      description: Find available books that match user's wishlist items
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Matches found successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        wishlistItem:
+                          $ref: '#/components/schemas/WishlistItem'
+                        matches:
+                          type: array
+                          items:
+                            allOf:
+                              - $ref: '#/components/schemas/Book'
+                              - type: object
+                                properties:
+                                  matchType:
+                                    type: string
+                                    enum: [exact, strong, fuzzy]
+                                  matchScore:
+                                    type: integer
+                                    minimum: 0
+                                    maximum: 100
+                  count:
+                    type: integer
+
+  /wishlist/check/{bookId}:
+    get:
+      tags:
+        - Wishlist
+      summary: Check if book is in wishlist
+      description: Check if a specific book is in user's wishlist
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Check completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      inWishlist:
+                        type: boolean
+                      wishlistItem:
+                        $ref: '#/components/schemas/WishlistItem'
+
+  # Trade Endpoints
+  /trades:
+    get:
+      tags:
+        - Trades
+      summary: Get user's trades
+      description: Get all trades where user is proposer or receiver
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [proposed, accepted, declined, completed]
+          description: Filter by trade status
+      responses:
+        '200':
+          description: Trades retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Trade'
+                  count:
+                    type: integer
+
+    post:
+      tags:
+        - Trades
+      summary: Propose a trade
+      description: Create a new trade proposal
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - requestedBook
+                - offeredBook
+              properties:
+                requestedBook:
+                  type: string
+                  description: ID of the book you want
+                  example: "507f1f77bcf86cd799439011"
+                offeredBook:
+                  type: string
+                  description: ID of the book you're offering
+                  example: "507f1f77bcf86cd799439012"
+      responses:
+        '201':
+          description: Trade proposal created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Trade'
+        '400':
+          description: Validation error or books unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized (not book owner)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /trades/{id}/accept:
+    put:
+      tags:
+        - Trades
+      summary: Accept trade proposal
+      description: Accept a trade proposal (receiver only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trade accepted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Trade'
+        '400':
+          description: Invalid trade status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized (not receiver)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /trades/{id}/decline:
+    put:
+      tags:
+        - Trades
+      summary: Decline trade proposal
+      description: Decline a trade proposal (receiver only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trade declined successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Trade'
+        '400':
+          description: Invalid trade status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized (not receiver)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /trades/{id}/complete:
+    put:
+      tags:
+        - Trades
+      summary: Mark trade as complete
+      description: Mark a trade as complete (proposer or receiver)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trade marked as complete successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Trade'
+        '400':
+          description: Invalid trade status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Message Endpoints
+  /messages:
+    post:
+      tags:
+        - Messages
+      summary: Send message
+      description: Send a message in a trade chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - trade
+                - content
+              properties:
+                trade:
+                  type: string
+                  description: Trade ID
+                  example: "507f1f77bcf86cd799439013"
+                content:
+                  type: string
+                  maxLength: 1000
+                  example: "When would you like to meet for the exchange?"
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Message'
+        '400':
+          description: Validation error or invalid trade status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized (not part of trade)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/trade/{tradeId}:
+    get:
+      tags:
+        - Messages
+      summary: Get trade messages
+      description: Get all messages for a specific trade
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tradeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+        '403':
+          description: Not authorized (not part of trade)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/trade/{tradeId}/unread-count:
+    get:
+      tags:
+        - Messages
+      summary: Get unread message count
+      description: Get count of unread messages for a trade
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tradeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      tradeId:
+                        type: string
+                      unreadCount:
+                        type: integer
+
+  /messages/{id}/read:
+    patch:
+      tags:
+        - Messages
+      summary: Mark message as read
+      description: Mark a specific message as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message marked as read
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Message'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/{id}:
+    delete:
+      tags:
+        - Messages
+      summary: Delete message
+      description: Delete a message (sender only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          description: Not authorized (not sender)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Message not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Rating Endpoints
+  /ratings:
+    post:
+      tags:
+        - Ratings
+      summary: Submit rating
+      description: Submit a rating for a completed trade
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - trade
+                - stars
+              properties:
+                trade:
+                  type: string
+                  description: Trade ID
+                  example: "507f1f77bcf86cd799439013"
+                stars:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+                comment:
+                  type: string
+                  maxLength: 1000
+                  description: Required for ratings of 3 stars or lower
+                  example: "Great trader! Book was in excellent condition."
+      responses:
+        '201':
+          description: Rating submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Rating'
+        '400':
+          description: Validation error or trade not completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized (not part of trade)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Already rated this trade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ratings/user/{userId}:
+    get:
+      tags:
+        - Ratings
+      summary: Get user ratings
+      description: Get all ratings for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ratings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Rating'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ratings/trade/{tradeId}:
+    get:
+      tags:
+        - Ratings
+      summary: Get rating for trade
+      description: Get rating for a specific trade by authenticated user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tradeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rating retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Rating'
+        '404':
+          description: Rating not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Notification Endpoints
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get notifications
+      description: Get all notifications for authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  unreadCount:
+                    type: integer
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Mark a specific notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Notification'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/read-all:
+    put:
+      tags:
+        - Notifications
+      summary: Mark all notifications as read
+      description: Mark all notifications as read for authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  count:
+                    type: integer
+
+  /notifications/clear-all:
+    delete:
+      tags:
+        - Notifications
+      summary: Clear all notifications
+      description: Delete all notifications for authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All notifications cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  count:
+                    type: integer
+
+  # User Endpoints
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      description: Get public user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Contact Endpoint
+  /contact:
+    post:
+      tags:
+        - Contact
+      summary: Submit contact form
+      description: Submit a contact form message (rate limited to 3 per hour per IP)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - subject
+                - message
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                subject:
+                  type: string
+                  enum: [support, feedback, bug, other]
+                  example: "support"
+                message:
+                  type: string
+                  example: "I need help with my account."
+      responses:
+        '200':
+          description: Contact form submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
