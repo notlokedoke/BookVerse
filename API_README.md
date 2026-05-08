@@ -340,6 +340,10 @@ CLOUDINARY_API_SECRET=your_api_secret
 FRONTEND_URL=http://localhost:3000
 ```
 
+**Setup Guides:**
+- See [DATABASE_SETUP.md](DATABASE_SETUP.md) for MongoDB Atlas configuration
+- See [CLOUD_STORAGE_SETUP.md](CLOUD_STORAGE_SETUP.md) for Cloudinary configuration
+
 ### Start Development Server
 ```bash
 cd server

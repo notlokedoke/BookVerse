@@ -192,6 +192,14 @@ The client will run on `http://localhost:3000`
 - **Geocoding**: OpenStreetMap Nominatim (free, no API key needed)
 - **Email**: SMTP (configurable)
 
+## 📖 Documentation
+
+### Setup Guides
+- **[Database Setup Guide](DATABASE_SETUP.md)** - Complete MongoDB Atlas setup instructions
+- **[Cloud Storage Setup Guide](CLOUD_STORAGE_SETUP.md)** - Cloudinary configuration for image uploads
+- **[API Documentation](API_DOCUMENTATION.md)** - API overview and quick reference
+- **[API cURL Examples](API_CURL_EXAMPLES.md)** - Ready-to-use cURL commands for all endpoints
+
 ## 📚 API Documentation
 
 ### Base URL
