@@ -51,16 +51,26 @@ const Footer = () => {
             <h3 className="footer-heading">Resources</h3>
             <ul className="footer-links">
               <li>
+                <Link to="/help" className="footer-link">
+                  Help Center
+                </Link>
+              </li>
+              <li>
+                <Link to="/faq" className="footer-link">
+                  FAQ
+                </Link>
+              </li>
+              <li>
                 <Link to="/safety" className="footer-link">
                   <Shield size={16} />
                   Safety Guidelines
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@bookverse.com" className="footer-link">
+                <Link to="/contact" className="footer-link">
                   <Mail size={16} />
                   Contact Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

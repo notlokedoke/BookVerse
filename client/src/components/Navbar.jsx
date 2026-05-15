@@ -17,7 +17,8 @@ import {
   LayoutDashboard,
   Shield,
   Heart,
-  MapPin
+  MapPin,
+  HelpCircle
 } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import './Navbar.css';
@@ -275,6 +276,10 @@ const Navbar = () => {
                       <Settings size={16} />
                       Settings
                     </Link>
+                    <Link to="/help" className="dropdown-item">
+                      <HelpCircle size={16} />
+                      Help Center
+                    </Link>
                     <Link to="/safety" className="dropdown-item">
                       <Shield size={16} />
                       Safety Guidelines
@@ -367,6 +372,10 @@ const Navbar = () => {
                     <Settings size={18} />
                     Settings
                   </Link>
+                  <Link to="/help" className="mobile-footer-link">
+                    <HelpCircle size={18} />
+                    Help Center
+                  </Link>
                   <Link to="/safety" className="mobile-footer-link">
                     <Shield size={18} />
                     Safety Guidelines
@@ -383,6 +392,10 @@ const Navbar = () => {
                   <Link to="/browse" className="mobile-nav-link">
                     <Search size={20} />
                     Browse
+                  </Link>
+                  <Link to="/help" className="mobile-nav-link">
+                    <HelpCircle size={20} />
+                    Help Center
                   </Link>
                   <Link to="/safety" className="mobile-nav-link">
                     <Shield size={20} />

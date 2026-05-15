@@ -48,6 +48,13 @@ describe('Footer Component', () => {
     renderFooter();
     const contactLink = screen.getByRole('link', { name: /contact support/i });
     expect(contactLink).toBeInTheDocument();
-    expect(contactLink).toHaveAttribute('href', 'mailto:support@bookverse.com');
+    expect(contactLink).toHaveAttribute('href', '/contact');
+  });
+
+  it('displays help center link', () => {
+    renderFooter();
+    const helpLink = screen.getByRole('link', { name: /help center/i });
+    expect(helpLink).toBeInTheDocument();
+    expect(helpLink).toHaveAttribute('href', '/help');
   });
 });

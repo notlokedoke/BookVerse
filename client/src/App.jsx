@@ -32,6 +32,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import HelpCenterPage from './pages/HelpCenterPage'
+import FAQPage from './pages/FAQPage'
 import NotFoundPage from './pages/NotFoundPage'
 import NearbyBooks from './components/NearbyBooks'
 import './App.css'
@@ -70,6 +71,7 @@ const AppContent = () => {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/help" element={<HelpCenterPage />} />
+            <Route path="/faq" element={<FAQPage />} />
 
             {/* Protected routes */}
             <Route
