@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react'
+import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react'
 import axios from 'axios'
 
 const AuthContext = createContext(null)
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     loadUser()
   }, [])
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL || ''}/api/auth/login`,
@@ -77,20 +77,22 @@ export const AuthProvider = ({ children }) => {
         error: error.response?.data?.error?.message || 'Login failed. Please try again.'
       }
     }
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null)
     setUser(null)
     localStorage.removeItem('token')
     delete axios.defaults.headers.common['Authorization']
-  }
+  }, [])
 
-  const updateUser = (updatedUserData) => {
+  const updateUser = useCallback((updatedUserData) => {
     setUser(updatedUserData)
-  }
+  }, [])
 
-  const value = {
+  // Memoize the context value so consumers only re-render when something
+  // they actually depend on changes, not on every AuthProvider render.
+  const value = useMemo(() => ({
     user,
     setUser,
     token,
@@ -100,7 +102,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     isAuthenticated: !!user
-  }
+  }), [user, token, loading, login, logout, updateUser])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

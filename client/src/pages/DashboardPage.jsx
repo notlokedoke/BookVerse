@@ -1,28 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import {
-  BookOpen,
-  RefreshCw,
-  CheckCircle,
-  Clock,
-  Plus,
-  Search,
-  Library,
-  TrendingUp,
-  ArrowRight,
-  Calendar,
-  User,
-  Bell,
-  Star,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  Heart,
-  MessageSquare,
-  Sparkles
+  BookOpen, RefreshCw, CheckCircle, Clock, Plus, Search,
+  Library, TrendingUp, ArrowRight, Calendar, Bell, Heart
 } from 'lucide-react';
 import FloatingActionButton from '../components/FloatingActionButton';
 import RecommendedBooks from '../components/RecommendedBooks';
@@ -31,55 +14,41 @@ import './DashboardPage.css';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    booksListed: 0,
-    activeTrades: 0,
-    completedTrades: 0,
-    pendingRequests: 0
+    booksListed: 0, activeTrades: 0, completedTrades: 0, pendingRequests: 0
   });
   const [pendingTrades, setPendingTrades] = useState([]);
   const [activeTrades, setActiveTrades] = useState([]);
   const [allTrades, setAllTrades] = useState([]);
   const [userBooks, setUserBooks] = useState([]);
   const [wishlistStats, setWishlistStats] = useState({
-    totalItems: 0,
-    matchesFound: 0,
-    recentMatches: []
+    totalItems: 0, matchesFound: 0, recentMatches: []
   });
 
-  // Get time-based greeting
   const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
     return 'Good evening';
   };
 
-  // Get today's date formatted
-  const getFormattedDate = () => {
-    return new Date().toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric'
+  const getFormattedDate = () =>
+    new Date().toLocaleDateString('en-US', {
+      weekday: 'long', month: 'long', day: 'numeric'
     });
-  };
 
-  // Calculate profile completion percentage
   const calculateProfileCompletion = () => {
-    let completed = 0;
+    let done = 0;
     const total = user?.isOAuthUser ? 4 : 5;
-
-    if (user?.name) completed++;
-    if (!user?.isOAuthUser && user?.emailVerified) completed++;
-    if (user?.city) completed++;
-    if (userBooks.length > 0 || allTrades.length > 0) completed++;
-    if (allTrades.some(t => t.status === 'completed')) completed++;
-
-    return Math.round((completed / total) * 100);
+    if (user?.name) done++;
+    if (!user?.isOAuthUser && user?.emailVerified) done++;
+    if (user?.city) done++;
+    if (userBooks.length > 0 || allTrades.length > 0) done++;
+    if (allTrades.some(t => t.status === 'completed')) done++;
+    return Math.round((done / total) * 100);
   };
 
   const getProfileItems = () => {
@@ -89,131 +58,87 @@ const DashboardPage = () => {
       { label: 'List your first book', completed: userBooks.length > 0 || allTrades.length > 0 },
       { label: 'Complete a trade', completed: allTrades.some(t => t.status === 'completed') }
     ];
-
     if (!user?.isOAuthUser) {
       items.splice(1, 0, { label: 'Verify email', completed: !!user?.emailVerified });
     }
-
     return items;
   };
 
-  // Calculate trade success rate
   const getTradeSuccessRate = () => {
     const completed = allTrades.filter(t => t.status === 'completed').length;
     const declined = allTrades.filter(t => t.status === 'declined').length;
     const total = completed + declined;
-    if (total === 0) return 0;
-    return Math.round((completed / total) * 100);
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
   };
 
-  // Get recent activity items (limit to 5 for dashboard)
-  const getRecentActivity = () => {
-    const activities = [];
+  const getRecentActivity = () =>
+    allTrades
+      .map(trade => {
+        const isProposer = trade.proposer._id === user?.userId;
+        return {
+          id: trade._id,
+          status: trade.status,
+          title: isProposer
+            ? `Trade ${trade.status} with ${trade.receiver?.name}`
+            : `Trade ${trade.status} from ${trade.proposer?.name}`,
+          book: trade.requestedBook?.title,
+          time: new Date(trade.createdAt || Date.now()),
+          icon: trade.status === 'completed' ? 'completed' : trade.status === 'accepted' ? 'active' : 'pending',
+          link: '/trades'
+        };
+      })
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 6);
 
-    // Add recent trades as activities
-    allTrades.forEach(trade => {
-      const isProposer = trade.proposer._id === user?.userId;
-      activities.push({
-        id: trade._id,
-        type: 'trade',
-        status: trade.status,
-        title: isProposer
-          ? `Trade ${trade.status} with ${trade.receiver?.name}`
-          : `Trade ${trade.status} from ${trade.proposer?.name}`,
-        book: trade.requestedBook?.title,
-        time: new Date(trade.createdAt || Date.now()),
-        icon: trade.status === 'completed' ? 'completed' : trade.status === 'accepted' ? 'active' : 'pending',
-        link: `/trades`
-      });
-    });
-
-    // Sort by time and return only 5 for dashboard
-    return activities.sort((a, b) => b.time - a.time).slice(0, 5);
-  };
-
-  // Format relative time
   const getRelativeTime = (date) => {
-    const now = new Date();
-    const diffMs = now - new Date(date);
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    const diff = Date.now() - new Date(date);
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hrs < 24) return `${hrs}h ago`;
+    if (days < 7) return `${days}d ago`;
     return new Date(date).toLocaleDateString();
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const config = {
-        headers: { Authorization: `Bearer ${token}` }
-      };
+      const cfg = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Fetch all trades
-      const tradesRes = await axios.get('/api/trades', config);
+      const [tradesRes, booksRes, wishlistRes, matchesRes] = await Promise.all([
+        axios.get('/api/trades', cfg),
+        axios.get(`/api/books/user/${user._id}?limit=100&includeUnavailable=true`),
+        axios.get('/api/wishlist', cfg),
+        axios.get('/api/wishlist/matches', cfg)
+      ]);
+
       const trades = tradesRes.data.data || [];
       setAllTrades(trades);
 
-      // Separate pending requests (where current user is receiver)
-      const pending = trades.filter(
-        trade => trade.status === 'proposed' && trade.receiver._id === user._id
-      );
-
-      // Active trades (accepted trades)
-      const active = trades.filter(
-        trade => trade.status === 'accepted'
-      );
-
-      // Completed trades
-      const completed = trades.filter(
-        trade => trade.status === 'completed'
-      );
-
-      // Fetch user's books (with high limit to get all books)
-      const booksRes = await axios.get(`/api/books/user/${user._id}?limit=100&includeUnavailable=true`);
+      const pending = trades.filter(t => t.status === 'proposed' && t.receiver._id === user._id);
+      const active = trades.filter(t => t.status === 'accepted');
       const books = booksRes.data.data?.books || [];
       setUserBooks(books);
 
-      // Fetch wishlist data
-      const wishlistRes = await axios.get('/api/wishlist', config);
       const wishlistItems = wishlistRes.data.data || [];
-
-      // Fetch wishlist matches
-      const matchesRes = await axios.get('/api/wishlist/matches', config);
       const matches = matchesRes.data.data || [];
-
-      // Calculate wishlist stats
       const totalMatches = matches.reduce((acc, m) => acc + m.matches.length, 0);
-      const recentMatches = matches.slice(0, 3); // Get first 3 for display
 
-      setWishlistStats({
-        totalItems: wishlistItems.length,
-        matchesFound: totalMatches,
-        recentMatches: recentMatches
-      });
-
-      // Update stats
+      setWishlistStats({ totalItems: wishlistItems.length, matchesFound: totalMatches, recentMatches: matches.slice(0, 3) });
       setStats({
         booksListed: books.length,
         activeTrades: active.length,
-        completedTrades: completed.length,
+        completedTrades: trades.filter(t => t.status === 'completed').length,
         pendingRequests: pending.length
       });
-
       setPendingTrades(pending);
       setActiveTrades(active);
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -223,9 +148,7 @@ const DashboardPage = () => {
   const handleAcceptTrade = async (tradeId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/trades/${tradeId}/accept`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`/api/trades/${tradeId}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Trade accepted!');
       fetchDashboardData();
     } catch (error) {
@@ -236,9 +159,7 @@ const DashboardPage = () => {
   const handleDeclineTrade = async (tradeId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/trades/${tradeId}/decline`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`/api/trades/${tradeId}/decline`, {}, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Trade declined');
       fetchDashboardData();
     } catch (error) {
@@ -249,20 +170,22 @@ const DashboardPage = () => {
   const profileCompletion = calculateProfileCompletion();
   const successRate = getTradeSuccessRate();
   const recentActivity = getRecentActivity();
+  const declinedCount = allTrades.filter(t => t.status === 'declined').length;
+  const isEmpty = stats.booksListed === 0 && pendingTrades.length === 0 && activeTrades.length === 0;
 
   if (loading) {
     return (
       <div className="dashboard-container">
         <div className="dashboard-skeleton">
-          <div className="skeleton-header"></div>
+          <div className="skeleton-header" />
           <div className="skeleton-stats">
-            <div className="skeleton-card"></div>
-            <div className="skeleton-card"></div>
-            <div className="skeleton-card"></div>
-            <div className="skeleton-card"></div>
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
           </div>
-          <div className="skeleton-section"></div>
-          <div className="skeleton-section"></div>
+          <div className="skeleton-section" />
+          <div className="skeleton-section" />
         </div>
       </div>
     );
@@ -270,431 +193,312 @@ const DashboardPage = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Welcome Banner */}
-      <section className="welcome-banner">
-        <div className="welcome-content">
-          <div className="welcome-avatar">
+
+      {/* Command Banner */}
+      <section className="command-banner">
+        <div className="command-identity">
+          <div className="command-avatar">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <div className="welcome-text">
-            <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!</h1>
-            <p className="welcome-date">
-              <Calendar size={14} />
-              {getFormattedDate()}
-            </p>
+          <div className="command-text">
+            <h1>{getGreeting()}, <span className="command-name">{user?.name?.split(' ')[0] || 'there'}</span>!</h1>
+            <p className="command-date"><Calendar size={13} />{getFormattedDate()}</p>
           </div>
         </div>
-        <div className="welcome-actions">
-          <Link to="/browse" className="action-btn-secondary">
-            <Search size={18} />
-            Browse Books
+
+        <div className="command-stats-row">
+          <Link to="/trades?status=pending" className={`cmd-pill${stats.pendingRequests > 0 ? ' cmd-pill-urgent' : ''}`}>
+            <Clock size={13} />
+            <strong>{stats.pendingRequests}</strong>
+            <span>Pending</span>
+          </Link>
+          <Link to="/trades?status=active" className="cmd-pill">
+            <RefreshCw size={13} />
+            <strong>{stats.activeTrades}</strong>
+            <span>Active</span>
+          </Link>
+          <Link to="/trades?status=completed" className="cmd-pill">
+            <CheckCircle size={13} />
+            <strong>{stats.completedTrades}</strong>
+            <span>Done</span>
+          </Link>
+          <Link to="/my-books" className="cmd-pill">
+            <BookOpen size={13} />
+            <strong>{stats.booksListed}</strong>
+            <span>Books</span>
+          </Link>
+          <Link to="/wishlist" className={`cmd-pill${wishlistStats.matchesFound > 0 ? ' cmd-pill-match' : ''}`}>
+            <Heart size={13} />
+            <strong>{wishlistStats.totalItems}</strong>
+            <span>Wishlist</span>
+            {wishlistStats.matchesFound > 0 && (
+              <span className="cmd-match-dot">{wishlistStats.matchesFound}</span>
+            )}
+          </Link>
+        </div>
+
+        <div className="command-ctas">
+          {stats.pendingRequests > 0 ? (
+            <Link to="/trades?status=pending" className="cmd-cta-primary">
+              <Bell size={14} /> Review {stats.pendingRequests}
+            </Link>
+          ) : (
+            <Link to="/browse" className="cmd-cta-ghost">
+              <Search size={14} /> Browse
+            </Link>
+          )}
+          <Link to="/books/create" className="cmd-cta-ghost">
+            <Plus size={14} /> Add Book
           </Link>
         </div>
       </section>
 
-      {/* Main Grid */}
-      <div className="dashboard-grid">
-        {/* Left Column - Profile & Analytics */}
-        <div className="dashboard-sidebar">
-          {/* Profile Completion Card */}
-          {profileCompletion < 100 && (
-            <div className="profile-card glass-card">
-              <div className="profile-header">
-                <h3>Complete Your Profile</h3>
-                <span className="profile-badge">{profileCompletion}%</span>
-              </div>
-              <div className="progress-ring-container">
-                <svg className="progress-ring" viewBox="0 0 100 100">
-                  <circle className="progress-ring-bg" cx="50" cy="50" r="40" />
-                  <circle
-                    className="progress-ring-fill"
-                    cx="50" cy="50" r="40"
-                    style={{ strokeDashoffset: 251.2 - (251.2 * profileCompletion / 100) }}
-                  />
-                </svg>
-                <div className="progress-ring-text">
-                  <Sparkles size={20} />
+      {/* Bento Grid */}
+      <div className="bento-grid">
+
+        {/* Pending Requests — 2/3 width */}
+        <section className="bento-cell bento-pending glass-card">
+          <div className="section-header">
+            <h2><Clock size={17} /> Pending Requests</h2>
+            {pendingTrades.length > 0 && <span className="badge pulse">{pendingTrades.length}</span>}
+          </div>
+          {pendingTrades.length > 0 ? (
+            <div className="pending-list">
+              {pendingTrades.slice(0, 2).map(trade => (
+                <div key={trade._id} className="pending-card">
+                  <div className="pending-books">
+                    <div className="pending-book">
+                      <img src={getBookImageUrl(trade.requestedBook?.imageUrl)} alt={trade.requestedBook?.title} />
+                      <div className="pending-book-info">
+                        <span className="pending-book-label">Your book</span>
+                        <p className="pending-book-title">{trade.requestedBook?.title}</p>
+                      </div>
+                    </div>
+                    <div className="pending-swap"><RefreshCw size={17} /></div>
+                    <div className="pending-book">
+                      <img src={getBookImageUrl(trade.offeredBook?.imageUrl)} alt={trade.offeredBook?.title} />
+                      <div className="pending-book-info">
+                        <span className="pending-book-label">From {trade.proposer?.name}</span>
+                        <p className="pending-book-title">{trade.offeredBook?.title}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pending-actions">
+                    <button onClick={() => handleAcceptTrade(trade._id)} className="btn-accept">
+                      <CheckCircle size={15} /> Accept
+                    </button>
+                    <button onClick={() => handleDeclineTrade(trade._id)} className="btn-decline">
+                      Decline
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <ul className="profile-checklist">
-                {getProfileItems().map((item, idx) => (
-                  <li key={idx} className={item.completed ? 'completed' : ''}>
-                    <CheckCircle size={14} />
-                    {item.label}
-                  </li>
-                ))}
-              </ul>
+              ))}
+              {pendingTrades.length > 2 && (
+                <Link to="/trades?status=pending" className="bento-more-link">
+                  +{pendingTrades.length - 2} more requests <ArrowRight size={13} />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="bento-empty">
+              <CheckCircle size={30} />
+              <p>All caught up</p>
+              <span>No pending trade requests</span>
             </div>
           )}
+        </section>
 
-          {/* Trading Analytics Card */}
-          <div className="analytics-card glass-card">
-            <div className="analytics-header">
-              <h3><Activity size={18} /> Trading Analytics</h3>
+        {/* Recent Activity — 1/3 width */}
+        <section className="bento-cell bento-activity glass-card">
+          <div className="section-header">
+            <h2><Bell size={17} /> Activity</h2>
+            <Link to="/activity" className="view-all-link">All <ArrowRight size={13} /></Link>
+          </div>
+          {recentActivity.length > 0 ? (
+            <div className="activity-timeline">
+              {recentActivity.map((item, idx) => (
+                <Link key={item.id || idx} to={item.link} className="activity-item clickable">
+                  <div className={`activity-dot ${item.icon}`} />
+                  <div className="activity-content">
+                    <p className="activity-title">{item.title}</p>
+                    {item.book && <p className="activity-book">"{item.book}"</p>}
+                  </div>
+                  <span className="activity-time">{getRelativeTime(item.time)}</span>
+                </Link>
+              ))}
             </div>
-            <div className="analytics-stats">
-              {/* Success Rate */}
-              <div className="analytics-stat">
-                <span className="analytics-label">Success Rate</span>
-                {stats.completedTrades === 0 && allTrades.filter(t => t.status === 'declined').length === 0 ? (
-                  <div className="analytics-empty-state">
-                    <span className="empty-icon">🎯</span>
-                    <span className="empty-text">Complete your first trade!</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="analytics-value">
-                      <span className="big-number">{successRate}%</span>
-                      {successRate >= 80 && (
-                        <span className="trend positive">
-                          <ArrowUpRight size={14} />
-                        </span>
-                      )}
-                      {successRate > 0 && successRate < 80 && (
-                        <span className="trend neutral">
-                          <ArrowRight size={14} />
-                        </span>
-                      )}
+          ) : (
+            <div className="bento-empty">
+              <Bell size={30} />
+              <p>No activity yet</p>
+              <span>Your trades will appear here</span>
+            </div>
+          )}
+        </section>
+
+        {/* Active Trades — 2/3 width horizontal shelf */}
+        <section className="bento-cell bento-trades glass-card">
+          <div className="section-header">
+            <h2><RefreshCw size={17} /> Active Trades</h2>
+            {activeTrades.length > 0 && (
+              <Link to="/trades" className="view-all-link">View All <ArrowRight size={13} /></Link>
+            )}
+          </div>
+          {activeTrades.length > 0 ? (
+            <div className="trades-shelf">
+              {activeTrades.slice(0, 6).map(trade => {
+                const isProposer = trade.proposer._id === user._id;
+                const partner = isProposer ? trade.receiver : trade.proposer;
+                const myBook = isProposer ? trade.offeredBook : trade.requestedBook;
+                const theirBook = isProposer ? trade.requestedBook : trade.offeredBook;
+                const daysAgo = Math.floor((Date.now() - new Date(trade.createdAt)) / 86400000);
+                return (
+                  <Link key={trade._id} to="/trades" className="shelf-trade-card glass-card">
+                    <div className="shelf-books">
+                      <img
+                        src={getBookImageUrl(myBook?.imageUrl)} alt={myBook?.title}
+                        className="shelf-book-img"
+                        onError={e => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }}
+                      />
+                      <span className="shelf-swap">⇄</span>
+                      <img
+                        src={getBookImageUrl(theirBook?.imageUrl)} alt={theirBook?.title}
+                        className="shelf-book-img"
+                        onError={e => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }}
+                      />
                     </div>
-                    <div className="progress-bar">
-                      <div 
-                        className={`progress-fill ${successRate >= 80 ? 'success' : successRate >= 50 ? 'warning' : 'low'}`} 
-                        style={{ width: `${successRate}%` }}
-                      ></div>
+                    <div className="shelf-meta">
+                      <div className="shelf-partner">
+                        <div className="partner-avatar-small">{partner?.name?.charAt(0).toUpperCase()}</div>
+                        <span className="shelf-partner-name">{partner?.name}</span>
+                      </div>
+                      <span className="shelf-age">{daysAgo === 0 ? 'Today' : `${daysAgo}d`}</span>
                     </div>
-                    <span className="analytics-subtext">
-                      {stats.completedTrades} completed, {allTrades.filter(t => t.status === 'declined').length} declined
-                    </span>
-                  </>
-                )}
-              </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bento-empty">
+              <RefreshCw size={30} />
+              <p>No active trades</p>
+              <Link to="/browse" className="bento-empty-link">Browse books to trade</Link>
+            </div>
+          )}
+        </section>
 
-              {/* Active Trades */}
-              <div className="analytics-stat">
-                <span className="analytics-label">Active Trades</span>
-                {stats.activeTrades + stats.pendingRequests === 0 ? (
-                  <div className="analytics-empty-state">
-                    <span className="empty-icon">🔄</span>
-                    <span className="empty-text">No active trades</span>
-                  </div>
-                ) : (
-                  <div className="analytics-value">
-                    <span className="big-number">{stats.activeTrades + stats.pendingRequests}</span>
-                    {stats.pendingRequests > 0 && (
-                      <span className="analytics-badge">{stats.pendingRequests} pending</span>
-                    )}
-                  </div>
-                )}
+        {/* Analytics — 1/3 width */}
+        <div className="bento-cell bento-analytics glass-card">
+          <div className="section-header">
+            <h2><TrendingUp size={17} /> Analytics</h2>
+          </div>
+          <div className="analytics-condensed">
+            <div className="analytics-metric">
+              <div className="analytics-metric-top">
+                <span className="analytics-metric-label">Success Rate</span>
+                <span className="analytics-metric-value">{successRate}%</span>
               </div>
-
-              {/* Total Completed */}
-              <div className="analytics-stat">
-                <span className="analytics-label">Total Completed</span>
-                {stats.completedTrades === 0 ? (
-                  <div className="analytics-empty-state">
-                    <span className="empty-icon">🏆</span>
-                    <span className="empty-text">Complete your first trade!</span>
-                  </div>
-                ) : (
-                  <div className="analytics-value">
-                    <span className="big-number">{stats.completedTrades}</span>
-                    <span className="analytics-badge success">
-                      <CheckCircle size={12} /> Done
-                    </span>
-                  </div>
-                )}
+              <div className="progress-bar">
+                <div
+                  className={`progress-fill ${successRate >= 80 ? 'success' : successRate >= 50 ? 'warning' : 'low'}`}
+                  style={{ width: `${Math.max(successRate, 4)}%` }}
+                />
               </div>
+              <span className="analytics-metric-sub">
+                {stats.completedTrades} completed · {declinedCount} declined
+              </span>
+            </div>
 
-              {/* Books Listed */}
-              <div className="analytics-stat">
-                <span className="analytics-label">Books Listed</span>
-                <div className="analytics-value">
-                  <span className="big-number">{stats.booksListed}</span>
+            <div className="analytics-metric-row">
+              <div className="analytics-mini-stat">
+                <span className="mini-stat-value">{stats.booksListed}</span>
+                <span className="mini-stat-label">Listed</span>
+              </div>
+              <div className="analytics-mini-stat">
+                <span className="mini-stat-value">{stats.activeTrades + stats.pendingRequests}</span>
+                <span className="mini-stat-label">In Progress</span>
+              </div>
+              <div className="analytics-mini-stat">
+                <span className="mini-stat-value">{stats.completedTrades}</span>
+                <span className="mini-stat-label">Completed</span>
+              </div>
+            </div>
+
+            {profileCompletion < 100 && (
+              <div className="analytics-profile-strip">
+                <div className="analytics-profile-header">
+                  <span>Profile completion</span>
+                  <span className="profile-pct">{profileCompletion}%</span>
                 </div>
-                {stats.booksListed === 0 ? (
-                  <Link to="/books/create" className="analytics-action-link">
-                    + Add your first book
-                  </Link>
-                ) : (
-                  <Link to="/my-books" className="analytics-action-link">
-                    View library →
-                  </Link>
-                )}
+                <div className="progress-bar">
+                  <div className="progress-fill success" style={{ width: `${profileCompletion}%` }} />
+                </div>
+                <ul className="profile-checklist-mini">
+                  {getProfileItems().filter(i => !i.completed).slice(0, 3).map((item, idx) => (
+                    <li key={idx}><CheckCircle size={11} /> {item.label}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column - Main Content */}
-        <div className="dashboard-main">
-          {/* Quick Stats */}
-          <section className="stats-section">
-            <div className="stats-grid">
-              <Link to="/trades?status=pending" className="stat-card theme-neutral">
-                <div className="stat-icon-container">
-                  <Clock size={24} />
+        {/* Wishlist Matches — full width, conditional */}
+        {wishlistStats.matchesFound > 0 && (
+          <section className="bento-cell bento-wishlist glass-card">
+            <div className="section-header">
+              <h2><Heart size={17} /> Wishlist Matches</h2>
+              <Link to="/wishlist" className="view-all-link">View All <ArrowRight size={13} /></Link>
+            </div>
+            <p className="wishlist-matches-subtitle">
+              {wishlistStats.matchesFound} {wishlistStats.matchesFound === 1 ? 'book' : 'books'} from your wishlist {wishlistStats.matchesFound === 1 ? 'is' : 'are'} now available!
+            </p>
+            <div className="wishlist-matches-grid">
+              {wishlistStats.recentMatches.map((match, idx) => (
+                <div key={idx} className="wishlist-match-card">
+                  <div className="wishlist-match-header">
+                    <span className="wishlist-match-label">Looking for:</span>
+                    <h4>{match.wishlistItem.title}</h4>
+                  </div>
+                  <div className="wishlist-match-books">
+                    {match.matches.slice(0, 2).map(book => (
+                      <Link key={book._id} to={`/browse?bookId=${book._id}`} className="wishlist-match-book">
+                        <img src={getBookImageUrl(book.imageUrl)} alt={book.title} />
+                        <div className="wishlist-match-book-info">
+                          <p className="wishlist-match-book-title">{book.title}</p>
+                          <p className="wishlist-match-book-owner">by {book.owner?.name}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {match.matches.length > 2 && (
+                    <Link to="/wishlist" className="wishlist-match-more">
+                      +{match.matches.length - 2} more {match.matches.length - 2 === 1 ? 'match' : 'matches'}
+                    </Link>
+                  )}
                 </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.pendingRequests}</p>
-                  <p className="stat-label">Pending</p>
-                </div>
-                {stats.pendingRequests > 0 && (
-                  <span className="stat-badge pulse">!</span>
-                )}
-              </Link>
-
-              <Link to="/trades?status=active" className="stat-card theme-secondary">
-                <div className="stat-icon-container">
-                  <RefreshCw size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.activeTrades}</p>
-                  <p className="stat-label">Active Trades</p>
-                </div>
-              </Link>
-
-              <Link to="/trades?status=completed" className="stat-card theme-primary">
-                <div className="stat-icon-container">
-                  <CheckCircle size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.completedTrades}</p>
-                  <p className="stat-label">Completed</p>
-                </div>
-              </Link>
-
-              <Link to="/my-books" className="stat-card theme-accent">
-                <div className="stat-icon-container">
-                  <BookOpen size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{stats.booksListed}</p>
-                  <p className="stat-label">Books Listed</p>
-                </div>
-              </Link>
-
-              <Link to="/wishlist" className="stat-card theme-wishlist">
-                <div className="stat-icon-container">
-                  <Heart size={24} />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-value">{wishlistStats.totalItems}</p>
-                  <p className="stat-label">Wishlist</p>
-                </div>
-                {wishlistStats.matchesFound > 0 && (
-                  <span className="stat-badge pulse">{wishlistStats.matchesFound}</span>
-                )}
-              </Link>
+              ))}
             </div>
           </section>
+        )}
 
-          {/* Wishlist Matches Widget */}
-          {wishlistStats.matchesFound > 0 && (
-            <section className="wishlist-matches-section glass-card">
-              <div className="section-header">
-                <h2>
-                  <Heart size={18} /> Wishlist Matches
-                </h2>
-                <Link to="/wishlist" className="view-all-link">
-                  View All <ArrowRight size={14} />
-                </Link>
-              </div>
-              <p className="wishlist-matches-subtitle">
-                {wishlistStats.matchesFound} {wishlistStats.matchesFound === 1 ? 'book' : 'books'} from your wishlist {wishlistStats.matchesFound === 1 ? 'is' : 'are'} now available!
-              </p>
-              <div className="wishlist-matches-grid">
-                {wishlistStats.recentMatches.map((match, idx) => (
-                  <div key={idx} className="wishlist-match-card">
-                    <div className="wishlist-match-header">
-                      <span className="wishlist-match-label">Looking for:</span>
-                      <h4>{match.wishlistItem.title}</h4>
-                    </div>
-                    <div className="wishlist-match-books">
-                      {match.matches.slice(0, 2).map((book) => (
-                        <Link
-                          key={book._id}
-                          to={`/browse?bookId=${book._id}`}
-                          className="wishlist-match-book"
-                        >
-                          <img
-                            src={getBookImageUrl(book.imageUrl)}
-                            alt={book.title}
-                          />
-                          <div className="wishlist-match-book-info">
-                            <p className="wishlist-match-book-title">{book.title}</p>
-                            <p className="wishlist-match-book-owner">by {book.owner?.name}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                    {match.matches.length > 2 && (
-                      <Link to="/wishlist" className="wishlist-match-more">
-                        +{match.matches.length - 2} more {match.matches.length - 2 === 1 ? 'match' : 'matches'}
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Activity Timeline */}
-          {recentActivity.length > 0 && (
-            <section className="activity-section glass-card">
-              <div className="section-header">
-                <h2>
-                  <Bell size={18} /> Recent Activity
-                </h2>
-                <Link to="/activity" className="view-all-link">
-                  View All <ArrowRight size={14} />
-                </Link>
-              </div>
-              <div className="activity-timeline">
-                {recentActivity.map((activity, idx) => (
-                  <Link
-                    key={activity.id || idx}
-                    to={activity.link}
-                    className="activity-item clickable"
-                  >
-                    <div className={`activity-dot ${activity.icon}`}></div>
-                    <div className="activity-content">
-                      <p className="activity-title">{activity.title}</p>
-                      {activity.book && (
-                        <p className="activity-book">"{activity.book}"</p>
-                      )}
-                    </div>
-                    <span className="activity-time">{getRelativeTime(activity.time)}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Pending Trade Requests */}
-          {pendingTrades.length > 0 && (
-            <section className="pending-section">
-              <div className="section-header">
-                <h2><Clock size={18} /> Pending Requests</h2>
-                <span className="badge pulse">{pendingTrades.length}</span>
-              </div>
-              <div className="pending-list">
-                {pendingTrades.map(trade => (
-                  <div key={trade._id} className="pending-card glass-card">
-                    <div className="pending-books">
-                      <div className="pending-book">
-                        <img
-                          src={getBookImageUrl(trade.requestedBook?.imageUrl)}
-                          alt={trade.requestedBook?.author ? `${trade.requestedBook.title} by ${trade.requestedBook.author}` : trade.requestedBook?.title}
-                        />
-                        <div className="pending-book-info">
-                          <span className="pending-book-label">Your book</span>
-                          <p className="pending-book-title">{trade.requestedBook?.title}</p>
-                        </div>
-                      </div>
-                      <div className="pending-swap">
-                        <RefreshCw size={20} />
-                      </div>
-                      <div className="pending-book">
-                        <img
-                          src={getBookImageUrl(trade.offeredBook?.imageUrl)}
-                          alt={trade.offeredBook?.author ? `${trade.offeredBook.title} by ${trade.offeredBook.author}` : trade.offeredBook?.title}
-                        />
-                        <div className="pending-book-info">
-                          <span className="pending-book-label">From {trade.proposer?.name}</span>
-                          <p className="pending-book-title">{trade.offeredBook?.title}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pending-actions">
-                      <button
-                        onClick={() => handleAcceptTrade(trade._id)}
-                        className="btn-accept"
-                      >
-                        <CheckCircle size={16} />
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleDeclineTrade(trade._id)}
-                        className="btn-decline"
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Active Trades */}
-          {activeTrades.length > 0 && (
-            <section className="trades-section">
-              <div className="section-header">
-                <h2><RefreshCw size={18} /> Active Trades</h2>
-                <Link to="/trades" className="view-all-link">
-                  View All <ArrowRight size={14} />
-                </Link>
-              </div>
-              <div className="trades-carousel">
-                {activeTrades.slice(0, 3).map(trade => {
-                  const isProposer = trade.proposer._id === user._id;
-                  const partner = isProposer ? trade.receiver : trade.proposer;
-                  const myBook = isProposer ? trade.offeredBook : trade.requestedBook;
-                  const theirBook = isProposer ? trade.requestedBook : trade.offeredBook;
-
-                  return (
-                    <div key={trade._id} className="trade-card glass-card">
-                      <div className="trade-partner">
-                        <div className="partner-avatar-small">
-                          {partner?.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="partner-name">{partner?.name}</p>
-                          <span className="trade-status">In Progress</span>
-                        </div>
-                      </div>
-                      <div className="trade-books-preview">
-                        <img src={getBookImageUrl(myBook?.imageUrl)} alt={myBook?.author ? `${myBook.title} by ${myBook.author}` : myBook?.title} className="trade-book-img" onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }} />
-                        <span className="trade-swap-icon">⇄</span>
-                        <img src={getBookImageUrl(theirBook?.imageUrl)} alt={theirBook?.author ? `${theirBook.title} by ${theirBook.author}` : theirBook?.title} className="trade-book-img" onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder-book.svg'; }} />
-                      </div>
-                      <Link to="/trades" className="trade-view-btn">
-                        View Details
-                      </Link>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-        </div>
       </div>
 
-      {/* Personalized Recommendations */}
       <RecommendedBooks limit={5} />
 
-      {/* Empty State */}
-      {stats.booksListed === 0 && pendingTrades.length === 0 && activeTrades.length === 0 && (
+      {isEmpty && (
         <section className="empty-state-enhanced">
-          <div className="empty-illustration">
-            <Library size={64} />
-          </div>
+          <div className="empty-illustration"><Library size={64} /></div>
           <h2>Welcome to BookVerse!</h2>
           <p>Your book trading journey begins here. Add your first book to start trading with fellow book lovers.</p>
           <Link to="/books/create" className="btn-get-started">
-            <Plus size={18} />
-            Add Your First Book
+            <Plus size={18} /> Add Your First Book
           </Link>
         </section>
       )}
 
-      {/* Floating Action Button - Only show if user has books */}
       {stats.booksListed > 0 && (
-        <FloatingActionButton
-          to="/books/create"
-          icon={<Plus size={24} />}
-          label="Add Book"
-        />
+        <FloatingActionButton to="/books/create" icon={<Plus size={24} />} label="Add Book" />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import BookCard from './BookCard';
 import useDelayedFlag from '../hooks/useDelayedFlag';
 import './BookGrid.css';
@@ -86,46 +86,27 @@ const BookGrid = ({ books, loading, error, pagination, onPageChange }) => {
     );
   }
 
-  // Generate page numbers for pagination
-  const generatePageNumbers = () => {
+  // Memoize page numbers — only recompute when pagination changes
+  const pageNumbers = useMemo(() => {
     const pages = [];
     const { currentPage, totalPages } = pagination;
-    
-    // Always show first page
-    if (totalPages > 0) {
-      pages.push(1);
-    }
-    
-    // Calculate range around current page
-    let startPage = Math.max(2, currentPage - 2);
-    let endPage = Math.min(totalPages - 1, currentPage + 2);
-    
-    // Add ellipsis after first page if needed
-    if (startPage > 2) {
-      pages.push('...');
-    }
-    
-    // Add pages around current page
-    for (let i = startPage; i <= endPage; i++) {
-      if (i !== 1 && i !== totalPages) {
-        pages.push(i);
-      }
-    }
-    
-    // Add ellipsis before last page if needed
-    if (endPage < totalPages - 1) {
-      pages.push('...');
-    }
-    
-    // Always show last page (if different from first)
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
-    
-    return pages;
-  };
 
-  const pageNumbers = generatePageNumbers();
+    if (totalPages > 0) pages.push(1);
+
+    const startPage = Math.max(2, currentPage - 2);
+    const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+    if (startPage > 2) pages.push('...');
+
+    for (let i = startPage; i <= endPage; i++) {
+      if (i !== 1 && i !== totalPages) pages.push(i);
+    }
+
+    if (endPage < totalPages - 1) pages.push('...');
+    if (totalPages > 1) pages.push(totalPages);
+
+    return pages;
+  }, [pagination]);
 
   return (
     <div className="book-grid-container">

@@ -129,25 +129,28 @@ const monitorDatabaseConnection = () => {
  * Memory usage monitoring
  */
 const monitorMemoryUsage = () => {
-  if (process.env.NODE_ENV === 'production') {
-    setInterval(() => {
-      const memUsage = process.memoryUsage();
-      const memUsageMB = {
-        rss: Math.round(memUsage.rss / 1024 / 1024),
-        heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
-        heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
-        external: Math.round(memUsage.external / 1024 / 1024)
-      };
-      
-      // Log memory usage every 5 minutes
-      console.log('Memory Usage (MB):', memUsageMB);
-      
-      // Warn if memory usage is high
-      if (memUsageMB.heapUsed > 500) {
-        console.warn('⚠️ High memory usage detected:', memUsageMB);
-      }
-    }, 5 * 60 * 1000); // Every 5 minutes
-  }
+  if (process.env.NODE_ENV !== 'production') return;
+
+  const intervalId = setInterval(() => {
+    const memUsage = process.memoryUsage();
+    const memUsageMB = {
+      rss: Math.round(memUsage.rss / 1024 / 1024),
+      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+      external: Math.round(memUsage.external / 1024 / 1024)
+    };
+
+    console.log('Memory Usage (MB):', memUsageMB);
+
+    if (memUsageMB.heapUsed > 500) {
+      console.warn('High memory usage detected:', memUsageMB);
+    }
+  }, 5 * 60 * 1000); // Every 5 minutes
+
+  // Allow the process to exit cleanly even if this interval is still running
+  intervalId.unref();
+
+  return intervalId;
 };
 
 module.exports = {

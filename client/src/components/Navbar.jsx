@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -28,21 +28,22 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
+  const userMenuRef = useRef(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch notifications function
-  const fetchNotifications = async () => {
+  // Stable reference — won't cause child re-renders on each Navbar render
+  const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/api/notifications', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.data.success) {
         setNotifications(response.data.data);
         setUnreadCount(response.data.unreadCount);
@@ -50,7 +51,7 @@ const Navbar = () => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  }, [isAuthenticated]);
 
   // Fetch notifications on mount when authenticated
   useEffect(() => {
@@ -79,15 +80,15 @@ const Navbar = () => {
     setIsUserMenuOpen(false);
   }, [location.pathname]);
 
-  // Close user menu when clicking outside
+  // Close user menu when clicking outside — ref-based, no DOM traversal per click
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest('.user-menu')) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setIsUserMenuOpen(false);
       }
     };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleLogout = () => {
@@ -96,8 +97,8 @@ const Navbar = () => {
     navigate('/');
   };
 
-  // Handle mark as read
-  const handleMarkAsRead = async (notificationId) => {
+  // Handle mark as read — stable reference so NotificationBell doesn't re-render
+  const handleMarkAsRead = useCallback(async (notificationId) => {
     // Optimistic update for immediate UI feedback
     setNotifications(prevNotifications =>
       prevNotifications.map(notif =>
@@ -123,10 +124,10 @@ const Navbar = () => {
       setUnreadCount(prevCount => prevCount + 1);
       toast.error('Failed to mark notification as read');
     }
-  };
+  }, []);
 
   // Handle clear all notifications
-  const handleClearAll = async () => {
+  const handleClearAll = useCallback(async () => {
     if (!window.confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
       return;
     }
@@ -154,13 +155,12 @@ const Navbar = () => {
       setUnreadCount(previousUnreadCount);
       toast.error('Failed to clear notifications');
     }
-  };
+  }, []);
 
-  // Handle notification dropdown open
-  const handleNotificationOpen = () => {
-    // Refresh notifications when dropdown opens
+  // Handle notification dropdown open — stable reference
+  const handleNotificationOpen = useCallback(() => {
     fetchNotifications();
-  };
+  }, [fetchNotifications]);
 
   const isActive = (path) => location.pathname === path;
 
@@ -249,7 +249,7 @@ const Navbar = () => {
                 onClearAll={handleClearAll}
                 onOpen={handleNotificationOpen}
               />
-              <div className="user-menu">
+              <div className="user-menu" ref={userMenuRef}>
                 <button
                   className="user-trigger"
                   onClick={(e) => {
@@ -298,7 +298,7 @@ const Navbar = () => {
               <Link to="/login" className="btn-signin">
                 Sign In
               </Link>
-              <Link to="/register" className="btn-getstarted">
+              <Link to="/register" className="btn-get-started">
                 Get Started
               </Link>
             </>

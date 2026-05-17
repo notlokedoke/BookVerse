@@ -499,11 +499,7 @@
   margin: 0 auto 1rem;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* @keyframes spin defined in global.css */
 
 /* Fulfilled Wishlist Items */
 .wishlist-card.fulfilled {

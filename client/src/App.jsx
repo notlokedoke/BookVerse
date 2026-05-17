@@ -1,40 +1,43 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import BookDetailView from './components/BookDetailView'
-import TradeDetailView from './components/TradeDetailView'
+// Critical path — loaded eagerly
 import HomePage from './pages/HomePage'
-import DashboardPage from './pages/DashboardPage'
-import ActivityPage from './pages/ActivityPage'
-import BrowsePage from './pages/BrowsePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/SignUpPage'
-import AuthCallbackPage from './pages/AuthCallbackPage'
-import CompleteProfilePage from './pages/CompleteProfilePage'
-import UserProfilePage from './pages/UserProfilePage'
-import ProfileSettingsPage from './pages/ProfileSettingsPage'
-import CreateBookPage from './pages/CreateBookPage'
-import CreateWishlistPage from './pages/CreateWishlistPage'
-import WishlistPage from './pages/WishlistPage'
-import WishlistMatchesPage from './pages/WishlistMatchesPage'
-import MyBooksPage from './pages/MyBooksPage'
-import TradesPage from './pages/TradesPage'
-import VerifyEmailPage from './pages/VerifyEmailPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
-import SafetyGuidelinesPage from './pages/SafetyGuidelinesPage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
-import TermsOfServicePage from './pages/TermsOfServicePage'
-import AboutPage from './pages/AboutPage'
-import ContactPage from './pages/ContactPage'
-import HelpCenterPage from './pages/HelpCenterPage'
-import FAQPage from './pages/FAQPage'
+import BrowsePage from './pages/BrowsePage'
 import NotFoundPage from './pages/NotFoundPage'
-import NearbyBooks from './components/NearbyBooks'
+
+// Non-critical — loaded lazily
+const BookDetailView = lazy(() => import('./components/BookDetailView'))
+const TradeDetailView = lazy(() => import('./components/TradeDetailView'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ActivityPage = lazy(() => import('./pages/ActivityPage'))
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
+const CompleteProfilePage = lazy(() => import('./pages/CompleteProfilePage'))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
+const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage'))
+const CreateBookPage = lazy(() => import('./pages/CreateBookPage'))
+const CreateWishlistPage = lazy(() => import('./pages/CreateWishlistPage'))
+const WishlistPage = lazy(() => import('./pages/WishlistPage'))
+const WishlistMatchesPage = lazy(() => import('./pages/WishlistMatchesPage'))
+const MyBooksPage = lazy(() => import('./pages/MyBooksPage'))
+const TradesPage = lazy(() => import('./pages/TradesPage'))
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const SafetyGuidelinesPage = lazy(() => import('./pages/SafetyGuidelinesPage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const ContactPage = lazy(() => import('./pages/ContactPage'))
+const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'))
+const FAQPage = lazy(() => import('./pages/FAQPage'))
+const NearbyBooks = lazy(() => import('./components/NearbyBooks'))
 import './App.css'
 
 // Component to conditionally render navbar and footer
@@ -54,6 +57,7 @@ const AppContent = () => {
     <div className="App">
       {!isAuthPage && !isLandingPage && <Navbar />}
       <div className="app-content">
+        <Suspense fallback={<div className="page-loading" aria-live="polite" aria-label="Loading page" />}>
         <Routes>
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
@@ -183,6 +187,7 @@ const AppContent = () => {
             {/* 404 Not Found - catch all unknown routes */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+        </Suspense>
       </div>
       {!isAuthPage && !user && <Footer />}
     </div>

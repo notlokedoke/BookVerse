@@ -41,7 +41,7 @@ const HomePage = () => {
 
           <div className="navbar-actions">
             <Link to="/login" className="btn-signin">Sign In</Link>
-            <Link to="/register" className="btn-getstarted">
+            <Link to="/register" className="btn-get-started">
               Get Started
               <ArrowRight size={16} />
             </Link>

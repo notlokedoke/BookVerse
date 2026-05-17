@@ -17,7 +17,15 @@ router.get('/', [
   query('status')
     .optional()
     .isIn(['proposed', 'accepted', 'declined', 'completed'])
-    .withMessage('Status must be one of: proposed, accepted, declined, completed')
+    .withMessage('Status must be one of: proposed, accepted, declined, completed'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer')
 ], async (req, res) => {
   try {
     // Check for validation errors
@@ -34,9 +42,12 @@ router.get('/', [
     }
 
     const { status } = req.query;
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const skip = (page - 1) * limit;
 
     // Build query to find trades where user is either proposer or receiver
-    const query = {
+    const tradeQuery = {
       $or: [
         { proposer: req.userId },
         { receiver: req.userId }
@@ -45,39 +56,30 @@ router.get('/', [
 
     // Add optional status filter if provided
     if (status) {
-      query.status = status;
+      tradeQuery.status = status;
     }
 
     // Fetch trades with populated references, sorted by creation date descending
-    const trades = await Trade.find(query)
-      .populate({
-        path: 'proposer',
-        select: '-password'
-      })
-      .populate({
-        path: 'receiver',
-        select: '-password'
-      })
-      .populate({
-        path: 'requestedBook',
-        populate: {
-          path: 'owner',
-          select: '-password'
-        }
-      })
-      .populate({
-        path: 'offeredBook',
-        populate: {
-          path: 'owner',
-          select: '-password'
-        }
-      })
-      .sort({ createdAt: -1 });
+    // Select only fields actually needed in the UI to cut payload size
+    const trades = await Trade.find(tradeQuery)
+      .populate({ path: 'proposer', select: 'name email city averageRating' })
+      .populate({ path: 'receiver', select: 'name email city averageRating' })
+      .populate({ path: 'requestedBook', select: 'title author imageUrl condition isAvailable owner' })
+      .populate({ path: 'offeredBook', select: 'title author imageUrl condition isAvailable owner' })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     res.status(200).json({
       success: true,
       data: trades,
-      count: trades.length
+      count: trades.length,
+      pagination: {
+        page,
+        limit,
+        hasMore: trades.length === limit
+      }
     });
 
   } catch (error) {
@@ -89,6 +91,61 @@ router.get('/', [
         message: 'An error occurred while fetching trades',
         code: 'INTERNAL_ERROR'
       }
+    });
+  }
+});
+
+/**
+ * @route   GET /api/trades/:id
+ * @desc    Get a single trade by ID (must be proposer or receiver)
+ * @access  Private (requires authentication)
+ */
+router.get('/:id', [
+  authenticateToken,
+  param('id')
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage('Invalid trade ID format')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: { message: errors.array()[0].msg, code: 'VALIDATION_ERROR' }
+      });
+    }
+
+    const trade = await Trade.findById(req.params.id)
+      .populate({ path: 'proposer', select: 'name email city averageRating' })
+      .populate({ path: 'receiver', select: 'name email city averageRating' })
+      .populate({ path: 'requestedBook', select: 'title author imageUrl condition isAvailable owner' })
+      .populate({ path: 'offeredBook', select: 'title author imageUrl condition isAvailable owner' })
+      .lean();
+
+    if (!trade) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Trade not found', code: 'TRADE_NOT_FOUND' }
+      });
+    }
+
+    const isParticipant =
+      trade.proposer._id.toString() === req.userId ||
+      trade.receiver._id.toString() === req.userId;
+
+    if (!isParticipant) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Not authorized to view this trade', code: 'NOT_AUTHORIZED' }
+      });
+    }
+
+    res.status(200).json({ success: true, data: trade });
+  } catch (error) {
+    console.error('Get trade error:', error);
+    res.status(500).json({
+      success: false,
+      error: { message: 'An error occurred while fetching the trade', code: 'INTERNAL_ERROR' }
     });
   }
 });

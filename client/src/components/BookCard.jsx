@@ -8,6 +8,27 @@ import { formatCityName } from '../utils/formatLocation';
 import { getBookImageUrl } from '../utils/imageUtils';
 import './BookCard.css';
 
+// Stable module-level helpers — defined once, not recreated per render
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const CONDITION_CLASS_MAP = {
+  'new': 'condition-new',
+  'like new': 'condition-like-new',
+  'good': 'condition-good',
+  'fair': 'condition-fair',
+  'poor': 'condition-poor',
+};
+
+const getConditionClass = (condition) =>
+  CONDITION_CLASS_MAP[condition?.toLowerCase()] ?? 'condition-default';
+
 const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, showDeleteButton = false, onDelete, priority = false }) => {
   const { isAuthenticated, user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,48 +52,20 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
   } = book;
 
   // Handle image load
-  const handleImageLoad = (e) => {
+  const handleImageLoad = () => {
     setImageLoaded(true);
   };
 
   // Handle image error
   const handleImageError = (e) => {
     setImageError(true);
-    setImageLoaded(true); // Stop showing skeleton
+    setImageLoaded(true);
     e.target.src = '/placeholder-book.svg';
     e.target.onerror = null;
   };
 
   // Check if current user is the owner
   const isOwner = user && owner && user._id === owner._id;
-
-  // Format creation date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Get condition color class
-  const getConditionClass = (condition) => {
-    switch (condition?.toLowerCase()) {
-      case 'new':
-        return 'condition-new';
-      case 'like new':
-        return 'condition-like-new';
-      case 'good':
-        return 'condition-good';
-      case 'fair':
-        return 'condition-fair';
-      case 'poor':
-        return 'condition-poor';
-      default:
-        return 'condition-default';
-    }
-  };
 
   // Handle propose trade button click
   const handleProposeTrade = (e) => {

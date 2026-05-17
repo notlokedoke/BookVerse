@@ -2,6 +2,12 @@ const Book = require('../models/Book');
 const Wishlist = require('../models/Wishlist');
 const User = require('../models/User');
 
+// In-process cache for popularity metrics — recomputing two aggregations on
+// every recommendation request is expensive. Cache for 5 minutes.
+let _popularityCache = null;
+let _popularityCacheTs = 0;
+const POPULARITY_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
  * Scoring weights for wishlist-based recommendations
  */
@@ -129,6 +135,11 @@ async function extractWishlistPreferences(userId) {
  * @returns {Object} Popularity data for genres and authors
  */
 async function getPopularityMetrics() {
+  // Return cached result if still fresh
+  if (_popularityCache && Date.now() - _popularityCacheTs < POPULARITY_CACHE_TTL_MS) {
+    return _popularityCache;
+  }
+
   try {
     const [genreCounts, authorCounts] = await Promise.all([
       Book.aggregate([
@@ -162,12 +173,18 @@ async function getPopularityMetrics() {
       authorPopularity[a._id] = a.count / maxAuthorCount;
     });
 
-    return {
+    const result = {
       topGenres,
       topAuthors,
       genrePopularity,
       authorPopularity
     };
+
+    // Store in cache
+    _popularityCache = result;
+    _popularityCacheTs = Date.now();
+
+    return result;
   } catch (error) {
     console.error('Error calculating popularity metrics:', error);
     return {

@@ -449,18 +449,20 @@ router.post('/', authenticateToken, sanitizeInput, uploadBookImages(), [
       if (orConditions.length > 0) {
         matchQuery.$or = orConditions;
         
-        const wishlistMatches = await Wishlist.find(matchQuery);
+        const wishlistMatches = await Wishlist.find(matchQuery).select('_id user').lean();
 
-        // Create notifications for users with matching wishlist items
-        for (const wishlistItem of wishlistMatches) {
-          await Notification.create({
-            recipient: wishlistItem.user,
-            type: 'wishlist_match',
-            relatedUser: req.userId,
-            relatedBook: book._id,
-            relatedWishlist: wishlistItem._id,
-            message: `Great news! "${book.title}" from your wishlist is now available for trade!`
-          });
+        if (wishlistMatches.length > 0) {
+          // Batch insert — one round-trip instead of N sequential creates
+          await Notification.insertMany(
+            wishlistMatches.map(wishlistItem => ({
+              recipient: wishlistItem.user,
+              type: 'wishlist_match',
+              relatedUser: req.userId,
+              relatedBook: book._id,
+              relatedWishlist: wishlistItem._id,
+              message: `Great news! "${book.title}" from your wishlist is now available for trade!`
+            }))
+          );
         }
 
         console.log(`Created ${wishlistMatches.length} wishlist match notifications for book: ${book.title}`);
@@ -631,27 +633,25 @@ router.get('/', async (req, res) => {
       });
     }
 
-    // Add sorting and pagination
-    // Use random sorting to give all users fair visibility
-    // Add a random field for shuffling, then sort by it
+    // Snapshot the filter pipeline before adding sort/pagination stages.
+    // The count query uses only these stages so Mongo doesn't waste time
+    // computing a random field for every document just to count them.
+    const countPipeline = [...pipeline, { $count: 'total' }];
+
+    // Add random sort + pagination to the main pipeline
     pipeline.push(
-      { 
-        $addFields: { 
-          randomSort: { $rand: {} } 
-        } 
-      },
+      { $addFields: { randomSort: { $rand: {} } } },
       { $sort: { randomSort: 1 } },
       { $skip: skip },
       { $limit: limitNum }
     );
 
-    // Execute aggregation
-    const books = await Book.aggregate(pipeline);
+    // Run data fetch and count in parallel
+    const [books, countResult] = await Promise.all([
+      Book.aggregate(pipeline),
+      Book.aggregate(countPipeline)
+    ]);
 
-    // Get total count for pagination (without limit/skip)
-    const countPipeline = pipeline.slice(0, -2); // Remove skip and limit
-    countPipeline.push({ $count: 'total' });
-    const countResult = await Book.aggregate(countPipeline);
     const total = countResult.length > 0 ? countResult[0].total : 0;
 
     // Apply privacy settings to all books

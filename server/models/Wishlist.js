@@ -71,6 +71,12 @@ wishlistSchema.index({ user: 1, isbn: 1 }, { unique: true, sparse: true });
 // Create index on createdAt for sorting by creation date
 wishlistSchema.index({ createdAt: -1 });
 
+// Support the wishlist-match query on new book creation (title + author lookup)
+wishlistSchema.index({ title: 1, author: 1 });
+
+// Support ISBN-based wishlist matching
+wishlistSchema.index({ isbn: 1 });
+
 const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 
 module.exports = Wishlist;

@@ -61,7 +61,7 @@ const ChatBox = ({ tradeId, otherUserName }) => {
     lastMessageCountRef.current = messages.length;
   }, [messages]);
 
-  // Fetch trade details
+  // Fetch a single trade by ID — avoids loading the full trades list
   const fetchTradeDetails = async () => {
     try {
       setLoadingTrade(true);
@@ -70,7 +70,7 @@ const ChatBox = ({ tradeId, otherUserName }) => {
 
       if (!token) return;
 
-      const response = await fetch(`${apiUrl}/api/trades`, {
+      const response = await fetch(`${apiUrl}/api/trades/${tradeId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -79,8 +79,7 @@ const ChatBox = ({ tradeId, otherUserName }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        const trade = data.data.find(t => t._id === tradeId);
-        setTradeDetails(trade);
+        setTradeDetails(data.data);
       }
     } catch (err) {
       console.error('Error fetching trade details:', err);

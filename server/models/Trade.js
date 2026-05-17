@@ -73,6 +73,11 @@ tradeSchema.index({ createdAt: -1 });
 // Compound index for status and createdAt for efficient filtered sorting
 tradeSchema.index({ status: 1, createdAt: -1 });
 
+// Indexes on book references so the active-trade check in DELETE /books/:id
+// can resolve without a full collection scan
+tradeSchema.index({ requestedBook: 1, status: 1 });
+tradeSchema.index({ offeredBook: 1, status: 1 });
+
 const Trade = mongoose.model('Trade', tradeSchema);
 
 module.exports = Trade;

@@ -15,15 +15,17 @@ router.get('/', authenticateToken, async (req, res) => {
     const { limit = 10 } = req.query;
     const limitNum = Math.min(50, Math.max(1, parseInt(limit))); // Max 50, min 1
 
-    // Check if user has wishlist items
-    const wishlist = await Wishlist.find({ user: req.userId });
-    const hasWishlist = wishlist.length > 0;
-
-    // Generate recommendations
+    // getRecommendations already queries the wishlist internally — avoid the
+    // duplicate Wishlist.find() that was here before. isColdStart is inferred
+    // from whether the returned set was produced by cold-start logic.
     const recommendations = await getRecommendations(req.userId, limitNum);
 
     // Apply privacy settings to book owners
     const recommendationsWithPrivacy = applyBookOwnerPrivacyToArray(recommendations);
+
+    // Detect cold-start: wishlist-based recs always carry a recommendationReason
+    const isColdStart = recommendationsWithPrivacy.length === 0
+      || !recommendationsWithPrivacy.some(r => r.recommendationReason);
 
     res.set('Cache-Control', 'private, max-age=60');
     res.json({
@@ -31,7 +33,7 @@ router.get('/', authenticateToken, async (req, res) => {
       data: {
         recommendations: recommendationsWithPrivacy,
         count: recommendationsWithPrivacy.length,
-        isColdStart: !hasWishlist
+        isColdStart
       },
       message: 'Recommendations generated successfully'
     });

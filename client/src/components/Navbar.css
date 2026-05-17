@@ -145,7 +145,7 @@
   color: #1a1a2e;
 }
 
-.btn-getstarted {
+.btn-get-started {
   padding: 0.5rem 1.25rem;
   background: #1a1a2e;
   color: white;
@@ -156,7 +156,7 @@
   transition: all 0.2s ease;
 }
 
-.btn-getstarted:hover {
+.btn-get-started:hover {
   background: #2d2d44;
   transform: translateY(-1px);
 }

@@ -83,16 +83,16 @@ router.get('/same-city', authenticateToken, async (req, res) => {
       { $sort: { createdAt: -1 } }
     ];
 
-    // Get total count
+    // Snapshot count pipeline before pagination stages are added, then run both in parallel
     const countPipeline = [...pipeline, { $count: 'total' }];
-    const countResult = await Book.aggregate(countPipeline);
-    const total = countResult.length > 0 ? countResult[0].total : 0;
-
-    // Add pagination
     pipeline.push({ $skip: skip }, { $limit: limitNum });
 
-    // Execute query
-    const books = await Book.aggregate(pipeline);
+    const [books, countResult] = await Promise.all([
+      Book.aggregate(pipeline),
+      Book.aggregate(countPipeline)
+    ]);
+
+    const total = countResult.length > 0 ? countResult[0].total : 0;
     console.log(`✅ Page ${pageNum}: Found ${books.length} books from other users in ${currentUser.city}`);
     console.log(`   Total count: ${total}, Skip: ${skip}, Limit: ${limitNum}`);
     console.log(`   Calculated pages: ${Math.ceil(total / limitNum)}`);

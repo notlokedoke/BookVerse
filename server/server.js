@@ -274,9 +274,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Import background jobs
-const bookEnrichmentJob = require('./jobs/bookEnrichmentJob');
-
 // Connect to database and start server
 const startServer = async () => {
   try {
@@ -287,11 +284,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
       
-      // Start background jobs (only in non-test environments)
-      if (process.env.NODE_ENV !== 'test') {
-        console.log('Starting background jobs...');
-        // bookEnrichmentJob.startJob(); // Disabled - uncomment to enable book enrichment
-      }
+
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);
