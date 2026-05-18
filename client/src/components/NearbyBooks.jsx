@@ -29,7 +29,7 @@ function NearbyBooks() {
     try {
       setError(null);
 
-      const cacheKey = `nearby:page=${page}&limit=35`;
+      const cacheKey = `nearby:page=${page}&limit=30`;
       const cached = getCached(cacheKey);
       if (cached) {
         setBooks(cached.books);
@@ -43,7 +43,7 @@ function NearbyBooks() {
       const response = await axios.get('/api/nearby/same-city', {
         params: {
           page,
-          limit: 35
+          limit: 30
         }
       });
 

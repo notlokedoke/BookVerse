@@ -151,7 +151,7 @@
 
 /* Submit button */
 .submit-button {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary, #1abc9c);
   color: #ffffff;
   border: none;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -172,8 +172,8 @@
 /* Cancel button */
 .cancel-button {
   background-color: #ffffff;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
+  color: var(--color-primary, #1abc9c);
+  border: 2px solid var(--color-primary, #1abc9c);
 }
 
 .cancel-button:hover:not(:disabled) {

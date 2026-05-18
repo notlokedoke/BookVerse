@@ -50,7 +50,7 @@ const MyBooksPage = () => {
       }
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=28`
+        `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${page}&limit=30`
       );
 
       if (response.data.success) {
@@ -104,7 +104,7 @@ const MyBooksPage = () => {
       const preloadNextPage = async () => {
         try {
           const response = await axios.get(
-            `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${nextPage}&limit=28`
+            `${import.meta.env.VITE_API_URL || ''}/api/books/user/${user._id}?page=${nextPage}&limit=30`
           );
           
           if (response.data.success) {
@@ -279,7 +279,7 @@ const MyBooksPage = () => {
               <div className="skeleton-stat-card"></div>
             </div>
             <div className="skeleton-grid">
-              {[...Array(Math.min(28, pagination.totalBooks || 8))].map((_, i) => (
+              {[...Array(Math.min(30, pagination.totalBooks || 6))].map((_, i) => (
                 <div key={i} className="skeleton-card"></div>
               ))}
             </div>
@@ -446,6 +446,9 @@ const MyBooksPage = () => {
                 </div>
                 <p className="warning-text">
                   This action cannot be undone. The book will be permanently removed from your listings.
+                </p>
+                <p className="warning-text">
+                  If this book is involved in any active or pending trades, those trades must be completed or cancelled before it can be deleted.
                 </p>
               </div>
               <div className="modal-actions">

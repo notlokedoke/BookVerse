@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TradeProposalModal from './TradeProposalModal';
 import WishlistButton from './WishlistButton';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, Pencil } from 'lucide-react';
 import { formatCityName } from '../utils/formatLocation';
 import { getBookImageUrl } from '../utils/imageUtils';
 import './BookCard.css';
@@ -172,7 +172,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
                 }}
                 title="Edit this book"
               >
-                ✏️ Edit
+                <Pencil size={14} /> Edit
               </button>
             )}
             {showDeleteButton && onDelete && (

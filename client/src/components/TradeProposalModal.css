@@ -463,7 +463,7 @@
 }
 
 .submit-button {
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   color: white;
 }
 

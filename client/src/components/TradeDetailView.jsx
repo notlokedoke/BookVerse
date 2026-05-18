@@ -22,6 +22,15 @@ import {
 import { getBookImageUrl } from '../utils/imageUtils';
 import './TradeDetailView.css';
 
+const STATUS_META = {
+  proposed:  { label: 'Awaiting Response', Icon: Clock },
+  accepted:  { label: 'Accepted',          Icon: CheckCircle },
+  declined:  { label: 'Declined',          Icon: XCircle },
+  completed: { label: 'Completed',         Icon: CheckCircle },
+};
+
+const getStatusMeta = (status) => STATUS_META[status?.toLowerCase()] ?? { label: status, Icon: Clock };
+
 const TradeDetailView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -116,7 +125,6 @@ const TradeDetailView = () => {
 
   const handleRatingSuccess = (rating) => {
     setUserRating(rating);
-    setShowRatingForm(false);
     toast.success('Rating submitted successfully!');
   };
 
@@ -285,9 +293,19 @@ const TradeDetailView = () => {
                 <ArrowLeft size={28} />
               </button>
               <h1 className="header-title">Trade Details</h1>
-              <div className={`header-badge ${trade.status}`}>
-                {trade.status}
-              </div>
+              {(() => {
+                const { label, Icon } = getStatusMeta(trade.status);
+                return (
+                  <div
+                    className={`header-badge ${trade.status}`}
+                    role="status"
+                    aria-label={`Trade status: ${label}`}
+                  >
+                    <Icon size={14} aria-hidden="true" />
+                    <span>{label}</span>
+                  </div>
+                );
+              })()}
             </div>
             <div className="header-subtitle">
               <Clock size={16} />

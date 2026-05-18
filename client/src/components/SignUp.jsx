@@ -274,7 +274,7 @@ const SignUp = () => {
 
               <form onSubmit={handleSubmit} className="signup-form">
                 <div className="form-group">
-                  <label htmlFor="name">Full Name</label>
+                  <label htmlFor="name">Full Name <span style={{ color: 'red' }}>*</span></label>
                   <input
                     type="text"
                     id="name"
@@ -291,7 +291,7 @@ const SignUp = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="email">Email</label>
+                  <label htmlFor="email">Email <span style={{ color: 'red' }}>*</span></label>
                   <input
                     type="email"
                     id="email"
@@ -321,7 +321,7 @@ const SignUp = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="password">Password</label>
+                  <label htmlFor="password">Password <span style={{ color: 'red' }}>*</span></label>
                   <div className="password-input-wrapper">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -359,7 +359,7 @@ const SignUp = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm Password</label>
+                  <label htmlFor="confirmPassword">Confirm Password <span style={{ color: 'red' }}>*</span></label>
                   <div className="password-input-wrapper">
                     <input
                       type={showConfirmPassword ? "text" : "password"}

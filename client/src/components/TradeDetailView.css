@@ -6,14 +6,12 @@
 /* CSS Custom Properties */
 :root {
   --color-accent: var(--color-primary);
-  --color-primary: var(--color-primary);
   --color-warning: #F39C12;
-  --color-secondary: var(--color-secondary);
-  
-  
+
+
   --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
-  --primary: var(--color-primary);
+  --primary: #1abc9c;
   --primary-dark: #25a35a;
   --text-primary: #1a1a2e;
   --text-secondary: #6b7280;
@@ -42,7 +40,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.75rem 2rem;
-  background: var(--color-primary, var(--color-primary));
+  background: var(--color-primary, #1abc9c);
   border-radius: 1.25rem;
   margin-bottom: 2rem;
   color: white;
@@ -357,7 +355,7 @@
 .exchange-icon-container {
   width: 60px;
   height: 60px;
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -381,7 +379,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -491,7 +489,7 @@
 }
 
 .btn-primary-gradient {
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   color: white;
   box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
 }
@@ -562,100 +560,95 @@
   .action-buttons-container {
     flex-direction: column;
   }
+}
 
-  /* ===================================
+/* ===================================
    Grid Layout & Refactoring
    =================================== */
-  .trade-content-grid {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 2rem;
-    align-items: start;
-  }
+.trade-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
 
-  .trade-main-col {
-    display: flex;
-    flex-direction: column;
+.trade-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.trade-sidebar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: 2rem;
+  z-index: 1;
+}
+
+.section-title.small {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Sidebar Specifics */
+.partner-card-content.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}
+
+.partner-card-content.compact .partner-avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 1.25rem;
+}
+
+.partner-card-content.compact .partner-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.action-buttons-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.highlight-card {
+  border: 1px solid var(--primary);
+  background: rgba(46, 204, 113, 0.05);
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.status-banner.compact {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-banner.compact .status-icon {
+  font-size: 1.5rem;
+}
+
+.status-banner.compact h3 {
+  font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .trade-content-grid {
+    grid-template-columns: 1fr;
     gap: 2rem;
-    position: relative;
-    z-index: 2;
   }
 
   .trade-sidebar-col {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    position: sticky;
-    top: 2rem;
-    z-index: 1;
-  }
-
-  .section-title.small {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  /* Sidebar Specifics */
-  .partner-card-content.compact {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .partner-card-content.compact .partner-avatar {
-    width: 48px;
-    height: 48px;
-    font-size: 1.25rem;
-  }
-
-  .partner-card-content.compact .partner-info h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .action-buttons-vertical {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .highlight-card {
-    border: 1px solid var(--primary);
-    background: rgba(46, 204, 113, 0.05);
-  }
-
-  .timeline-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .status-banner.compact {
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .status-banner.compact .status-icon {
-    font-size: 1.5rem;
-  }
-
-  .status-banner.compact h3 {
-    font-size: 1rem;
-  }
-
-  /* Responsive Grid */
-  @media (max-width: 1024px) {
-    .trade-content-grid {
-      grid-template-columns: 1fr;
-      gap: 2rem;
-    }
-
-    .trade-sidebar-col {
-      position: static;
-    }
-
-    /* Make sidebar appear at top only if needed, otherwise normal flow */
-    /* We removed order: -1 based on typical mobile patterns, 
-       but can facilitate "response required" by keeping it visible */
+    position: static;
   }
 }

@@ -640,7 +640,7 @@
 }
 
 .edit-btn {
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   color: white;
   border: none;
   padding: 4px 8px;

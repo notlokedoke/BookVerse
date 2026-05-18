@@ -78,10 +78,10 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
-// Rate limiting for authentication endpoints
+// Rate limiting for authentication endpoints (100 requests/minute per IP)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 0, // Unlimited login attempts
+  windowMs: 60 * 1000, // 1 minute
+  max: 100,
   message: {
     success: false,
     error: {
@@ -92,8 +92,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting - unlimited attempts allowed
-    return true;
+    return process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development';
   }
 });
 
@@ -274,9 +273,50 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+const validateEnv = () => {
+  const required = [
+    'MONGODB_URI',
+    'JWT_SECRET',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET',
+    'FRONTEND_URL',
+  ];
+
+  const productionOnly = [
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'GOOGLE_CALLBACK_URL',
+    'SMTP_HOST',
+    'SMTP_USER',
+    'SMTP_PASS',
+    'SMTP_FROM',
+    'ADMIN_EMAIL',
+  ];
+
+  const missing = required.filter(key => !process.env[key]);
+
+  if (process.env.NODE_ENV === 'production') {
+    missing.push(...productionOnly.filter(key => !process.env[key]));
+  }
+
+  if (missing.length > 0) {
+    console.error('Missing required environment variables:');
+    missing.forEach(key => console.error(`  - ${key}`));
+    process.exit(1);
+  }
+
+  if (process.env.JWT_SECRET.length < 32) {
+    console.error('JWT_SECRET must be at least 32 characters long');
+    process.exit(1);
+  }
+};
+
 // Connect to database and start server
 const startServer = async () => {
   try {
+    validateEnv();
+
     // Connect to MongoDB
     await connectDB();
     

@@ -10,12 +10,12 @@
     --font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
     /* Colors - Primary Palette (Emerald Green) */
-    --color-primary: var(--color-primary);
+    --color-primary: #1abc9c;
+    --color-primary-dark: #16a085;
     --color-primary-hover: var(--color-primary-dark);
     --color-primary-light: #E8F8F0;
 
     /* Colors - Secondary (Slate Gray) */
-    --color-secondary: var(--color-secondary);
     --color-secondary-light: #34495E;
 
     /* Colors - Accent (Teal) */
