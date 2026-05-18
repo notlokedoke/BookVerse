@@ -19,6 +19,7 @@
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: visible;
 }
 
 .notification-bell-button:hover {
@@ -38,8 +39,8 @@
 /* Badge */
 .notification-bell-badge {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 2px;
+  right: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
