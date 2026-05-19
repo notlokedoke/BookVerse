@@ -76,11 +76,13 @@ router.post('/', [
     }
 
     // Check for duplicate entries (same user and ISBN) if ISBN is provided
+    console.log('[Wishlist DEBUG] userId:', req.userId, '| isbn:', isbn, '| title:', title);
     if (isbn && isbn.trim()) {
       const existingWishlistItem = await Wishlist.findOne({
         user: req.userId,
         isbn: isbn.trim()
       });
+      console.log('[Wishlist DEBUG] ISBN duplicate check result:', existingWishlistItem ? existingWishlistItem._id : 'none');
 
       if (existingWishlistItem) {
         return res.status(409).json({
@@ -96,6 +98,7 @@ router.post('/', [
         user: req.userId,
         title: { $regex: new RegExp(`^${title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
       });
+      console.log('[Wishlist DEBUG] Title duplicate check result:', existingByTitle ? existingByTitle._id : 'none');
 
       if (existingByTitle) {
         return res.status(409).json({

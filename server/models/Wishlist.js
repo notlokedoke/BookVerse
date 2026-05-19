@@ -63,10 +63,14 @@ const wishlistSchema = new mongoose.Schema({
 // Create index on user field for queries as specified in requirements
 wishlistSchema.index({ user: 1 });
 
-// Create compound unique index on user and isbn as specified in requirements
-// This prevents duplicate entries for the same user and ISBN combination
-// Using sparse: true to allow multiple entries with null ISBN for the same user
-wishlistSchema.index({ user: 1, isbn: 1 }, { unique: true, sparse: true });
+// Compound unique index on user + isbn, only applied when isbn is a non-null string.
+// sparse: true on a compound index still indexes null isbn values (because user is always
+// present), causing E11000 for any second book without an isbn per user.
+// partialFilterExpression correctly skips documents where isbn is absent or null.
+wishlistSchema.index(
+  { user: 1, isbn: 1 },
+  { unique: true, partialFilterExpression: { isbn: { $exists: true, $type: 'string' } } }
+);
 
 // Create index on createdAt for sorting by creation date
 wishlistSchema.index({ createdAt: -1 });
