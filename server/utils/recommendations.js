@@ -228,16 +228,31 @@ async function getColdStartRecommendations(userId, limit = 10) {
     const ownedBookIds = ownedBooks.map(book => book._id);
 
     // Get books with recency scoring
-    const books = await Book.find({
+    let books = await Book.find({
       isAvailable: true,
       owner: { $ne: userId },
       _id: { $nin: ownedBookIds },
       $or: orConditions
     })
     .populate('owner', 'name city averageRating privacySettings')
-    .sort({ createdAt: -1 }) // Recent additions first
-    .limit(limit * 3) // Get more to score and filter
+    .sort({ createdAt: -1 })
+    .limit(limit * 3)
     .lean();
+
+    // The topGenres/topAuthors are computed across all books (including the user's own),
+    // so other users' books may not match those genres/authors. Fall back to all
+    // available books from other users so the section never renders empty.
+    if (books.length === 0) {
+      books = await Book.find({
+        isAvailable: true,
+        owner: { $ne: userId },
+        _id: { $nin: ownedBookIds }
+      })
+      .populate('owner', 'name city averageRating privacySettings')
+      .sort({ createdAt: -1 })
+      .limit(limit * 3)
+      .lean();
+    }
 
     // Score books based on popularity
     const scoredBooks = books.map(book => {
