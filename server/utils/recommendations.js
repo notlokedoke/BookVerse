@@ -529,8 +529,16 @@ async function getRecommendations(userId, limit = 10) {
     // Sort by score (highest first)
     scoredBooks.sort((a, b) => b.recommendationScore - a.recommendationScore);
 
-    // Return top recommendations
-    return scoredBooks.slice(0, limit);
+    const topBooks = scoredBooks.slice(0, limit);
+
+    // If wishlist-based matching produced nothing (e.g. author name format mismatch
+    // between Open Library and books database, or no genre data on wishlist items),
+    // fall back to cold-start so the section never renders empty.
+    if (topBooks.length === 0) {
+      return await getColdStartRecommendations(userId, limit);
+    }
+
+    return topBooks;
 
   } catch (error) {
     console.error('Error generating recommendations:', error);
