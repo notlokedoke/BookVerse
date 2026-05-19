@@ -1,8 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import axios from 'axios'
 import App from './App.jsx'
 import './index.css'
 import { ToastProvider } from './context/ToastContext'
+
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
 
 // Register service worker for image caching
 if ('serviceWorker' in navigator) {
