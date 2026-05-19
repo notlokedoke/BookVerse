@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -8,6 +9,7 @@ import './WishlistForm.css';
 const WishlistForm = ({ onSuccess, onCancel }) => {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -140,7 +142,7 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
                 onSuccess();
               } else {
                 // Otherwise, redirect directly to wishlist page
-                window.location.href = '/wishlist';
+                navigate('/wishlist');
               }
             }, 1500);
           } else {
