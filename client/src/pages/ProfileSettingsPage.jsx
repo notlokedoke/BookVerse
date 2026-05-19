@@ -53,7 +53,7 @@ const ProfileSettingsPage = () => {
   const handleVerifyEmail = async () => {
     setVerifyingEmail(true);
     try {
-      const response = await fetch('/api/auth/resend-verification', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/resend-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +346,7 @@ const ProfileSettingsPage = () => {
     setPasswordLoading(true);
 
     try {
-      const response = await fetch('/api/auth/change-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -401,7 +401,7 @@ const ProfileSettingsPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -473,7 +473,7 @@ const ProfileSettingsPage = () => {
   const handleSaveNotifications = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/notification-settings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/notification-settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -554,7 +554,7 @@ const ProfileSettingsPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/account', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/account`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

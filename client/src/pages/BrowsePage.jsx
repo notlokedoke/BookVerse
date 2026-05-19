@@ -94,7 +94,8 @@ const BrowsePage = () => {
         setLoading(true);
       }
 
-      const response = await fetch(`/api/books?${params.toString()}`);
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiBase}/api/books?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch books: ${response.status}`);
