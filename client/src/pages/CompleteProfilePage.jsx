@@ -17,115 +17,48 @@ const CompleteProfilePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Get token from URL and decode if needed
-    let token = searchParams.get('token');
+    let cancelled = false;
+    const timers = [];
+    const addTimer = (fn, ms) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
 
-    console.log('=== CompleteProfilePage useEffect ===');
-    console.log('Current URL:', window.location.href);
-    console.log('Token in URL params:', token ? 'YES' : 'NO');
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    const urlToken = hashParams.get('token');
+    const token = urlToken ? decodeURIComponent(urlToken) : localStorage.getItem('token');
+
+    const verifyToken = async (t) => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        const response = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${t}` }
+        });
+        if (cancelled) return;
+        if (!response.ok) {
+          const errorData = await response.json();
+          setError(errorData.error?.message || 'Your session has expired. Please sign in again.');
+          addTimer(() => { localStorage.removeItem('token'); navigate('/login'); }, 3000);
+          return;
+        }
+        setError('');
+      } catch {
+        if (cancelled) return;
+        setError('Your session has expired. Please sign in again.');
+        addTimer(() => { localStorage.removeItem('token'); navigate('/login'); }, 3000);
+      }
+    };
 
     if (token) {
-      // Token might be URL encoded, try to decode it
-      try {
-        const decoded = decodeURIComponent(token);
-        if (decoded !== token) {
-          console.log('Token was URL encoded, decoded it');
-          token = decoded;
-        }
-      } catch (e) {
-        console.log('Token does not need decoding');
-      }
-
-      console.log('Token length:', token.length);
-      console.log('Token first 30 chars:', token.substring(0, 30));
-      console.log('Token last 30 chars:', token.substring(token.length - 30));
-
-      console.log('Storing token in localStorage...');
       localStorage.setItem('token', token);
-      console.log('Token stored. Verifying localStorage:', !!localStorage.getItem('token'));
-
-      // Verify token is valid by fetching user data
-      const verifyToken = async () => {
-        try {
-          const apiUrl = import.meta.env.VITE_API_URL || '';
-          console.log('Verifying token with API:', apiUrl);
-
-          const response = await fetch(`${apiUrl}/api/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-
-          console.log('Token verification response status:', response.status);
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Token verification failed:', errorData);
-            setError(errorData.error?.message || 'Your session has expired. Please sign in again.');
-            setTimeout(() => {
-              localStorage.removeItem('token');
-              navigate('/login');
-            }, 3000);
-            return;
-          }
-
-          const data = await response.json();
-          console.log('Token verified successfully for user:', data.data?.email);
-          setError('');
-        } catch (error) {
-          console.error('Token verification error:', error);
-          setError('Your session has expired. Please sign in again.');
-          setTimeout(() => {
-            localStorage.removeItem('token');
-            navigate('/login');
-          }, 3000);
-        }
-      };
-
-      verifyToken();
+      verifyToken(token);
     } else {
-      console.log('No token in URL');
-      const storedToken = localStorage.getItem('token');
-      console.log('Checking localStorage for token:', storedToken ? 'FOUND' : 'NOT FOUND');
-
-      if (!storedToken) {
-        console.log('No token found anywhere, redirecting to login in 2 seconds...');
-        setError('No authentication token found. Redirecting to login...');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        console.log('Found stored token, verifying...');
-        // If we have a stored token, verify it
-        const verifyStoredToken = async () => {
-          try {
-            const apiUrl = import.meta.env.VITE_API_URL || '';
-            const response = await fetch(`${apiUrl}/api/auth/me`, {
-              headers: {
-                'Authorization': `Bearer ${storedToken}`
-              }
-            });
-
-            if (!response.ok) {
-              console.error('Stored token is invalid');
-              localStorage.removeItem('token');
-              navigate('/login');
-              return;
-            }
-
-            console.log('Stored token is valid');
-            setError('');
-          } catch (error) {
-            console.error('Error verifying stored token:', error);
-            localStorage.removeItem('token');
-            navigate('/login');
-          }
-        };
-
-        verifyStoredToken();
-      }
+      setError('No authentication token found. Redirecting to login...');
+      addTimer(() => navigate('/login'), 2000);
     }
-  }, [searchParams, navigate]);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,26 +73,17 @@ const CompleteProfilePage = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      // Try to get token from URL first, then localStorage
-      let token = searchParams.get('token') || localStorage.getItem('token');
-
-      console.log('Submitting profile');
-      console.log('Token from URL:', !!searchParams.get('token'));
-      console.log('Token from localStorage:', !!localStorage.getItem('token'));
-      console.log('Using token:', !!token);
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const urlToken = hashParams.get('token');
+      const token = urlToken ? decodeURIComponent(urlToken) : localStorage.getItem('token');
 
       if (!token) {
-        console.error('No token found in URL or localStorage');
         setError('Your session has expired. Please sign in again.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
-      // Store token if it came from URL
-      if (searchParams.get('token')) {
-        console.log('Storing token from URL to localStorage');
+      if (urlToken) {
         localStorage.setItem('token', token);
       }
 
@@ -180,10 +104,6 @@ const CompleteProfilePage = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      console.error('Profile completion error:', err);
-      console.error('Error response:', err.response?.data);
-
-      // Check if it's a token error
       if (err.response?.status === 401 ||
         err.response?.data?.error?.code === 'INVALID_TOKEN' ||
         err.response?.data?.error?.code === 'NO_TOKEN') {
@@ -210,26 +130,17 @@ const CompleteProfilePage = () => {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '';
-      // Try to get token from URL first, then localStorage
-      let token = searchParams.get('token') || localStorage.getItem('token');
-
-      console.log('Skip button clicked');
-      console.log('Token from URL:', !!searchParams.get('token'));
-      console.log('Token from localStorage:', !!localStorage.getItem('token'));
-      console.log('Using token:', !!token);
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const urlToken = hashParams.get('token');
+      const token = urlToken ? decodeURIComponent(urlToken) : localStorage.getItem('token');
 
       if (!token) {
-        console.error('No token found in URL or localStorage');
         setError('No authentication token found. Please sign in again.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
-      // Store token if it came from URL
-      if (searchParams.get('token')) {
-        console.log('Storing token from URL to localStorage');
+      if (urlToken) {
         localStorage.setItem('token', token);
       }
 

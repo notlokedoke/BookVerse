@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import {
@@ -15,6 +15,7 @@ import './DashboardPage.css';
 const DashboardPage = () => {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -74,7 +75,7 @@ const DashboardPage = () => {
   const getRecentActivity = () =>
     allTrades
       .map(trade => {
-        const isProposer = trade.proposer._id === user?.userId;
+        const isProposer = trade.proposer._id === user?._id;
         return {
           id: trade._id,
           status: trade.status,
@@ -112,7 +113,7 @@ const DashboardPage = () => {
 
       const [tradesRes, booksRes, wishlistRes, matchesRes] = await Promise.all([
         axios.get('/api/trades', cfg),
-        axios.get(`/api/books/user/${user._id}?limit=100&includeUnavailable=true`),
+        axios.get(`/api/books/user/${user._id}?limit=100&includeUnavailable=true`, cfg),
         axios.get('/api/wishlist', cfg),
         axios.get('/api/wishlist/matches', cfg)
       ]);
@@ -138,8 +139,12 @@ const DashboardPage = () => {
       });
       setPendingTrades(pending);
       setActiveTrades(active);
-    } catch {
-      toast.error('Failed to load dashboard data');
+    } catch (err) {
+      if (err.response?.status === 401) {
+        navigate('/login');
+      } else {
+        toast.error('Failed to load dashboard data');
+      }
     } finally {
       setLoading(false);
     }

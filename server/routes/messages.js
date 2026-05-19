@@ -202,34 +202,16 @@ router.get('/trade/:tradeId', [
     }
 
     // Fetch all messages for the trade
+    // Mark unread messages from the other party as read before fetching,
+    // so the response already reflects the final state
+    await Message.updateMany(
+      { trade: tradeId, sender: { $ne: req.userId }, read: false },
+      { $set: { read: true, readAt: new Date() } }
+    );
+
     const messages = await Message.find({ trade: tradeId })
       .populate('sender', '-password')
-      .sort({ createdAt: 1 }); // Sort by createdAt ascending (chronological order)
-
-    // Auto-mark unread messages as read when recipient fetches them
-    const unreadMessageIds = messages
-      .filter(msg => msg.sender.toString() !== req.userId && !msg.read)
-      .map(msg => msg._id);
-
-    if (unreadMessageIds.length > 0) {
-      await Message.updateMany(
-        { _id: { $in: unreadMessageIds } },
-        { 
-          $set: { 
-            read: true,
-            readAt: new Date()
-          } 
-        }
-      );
-
-      // Update the messages array to reflect the read status
-      messages.forEach(msg => {
-        if (unreadMessageIds.some(id => id.toString() === msg._id.toString())) {
-          msg.read = true;
-          msg.readAt = new Date();
-        }
-      });
-    }
+      .sort({ createdAt: 1 });
 
     res.status(200).json({
       success: true,

@@ -68,8 +68,11 @@ router.get('/', [
       .populate({ path: 'offeredBook', select: 'title author imageUrl condition isAvailable owner' })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
+      .limit(limit + 1)
       .lean();
+
+    const hasMore = trades.length > limit;
+    if (hasMore) trades.pop();
 
     res.status(200).json({
       success: true,
@@ -78,7 +81,7 @@ router.get('/', [
       pagination: {
         page,
         limit,
-        hasMore: trades.length === limit
+        hasMore
       }
     });
 
@@ -253,6 +256,23 @@ router.post('/', [
         error: {
           message: 'Offered book is not available for trade',
           code: 'OFFERED_BOOK_UNAVAILABLE'
+        }
+      });
+    }
+
+    // Guard against duplicate proposals for the same book pair
+    const existingTrade = await Trade.findOne({
+      proposer: req.userId,
+      requestedBook: requestedBook,
+      offeredBook: offeredBook,
+      status: 'proposed'
+    });
+    if (existingTrade) {
+      return res.status(409).json({
+        success: false,
+        error: {
+          message: 'You already have a pending trade proposal for these books',
+          code: 'DUPLICATE_TRADE_PROPOSAL'
         }
       });
     }
@@ -650,6 +670,11 @@ router.put('/:id/complete', [
     trade.completedAt = new Date();
     trade.ratingEnabled = true;
     await trade.save();
+
+    await Book.updateMany(
+      { _id: { $in: [trade.offeredBook._id, trade.requestedBook._id] } },
+      { $set: { isAvailable: false } }
+    );
 
     // Determine the other party in the trade for notification
     const otherPartyId = isProposer ? trade.receiver._id : trade.proposer._id;

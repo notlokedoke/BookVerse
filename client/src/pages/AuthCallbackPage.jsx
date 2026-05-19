@@ -8,29 +8,26 @@ const AuthCallbackPage = () => {
   const { setUser, setToken } = useAuth();
 
   useEffect(() => {
+    let cancelled = false;
     const handleCallback = async () => {
-      const token = searchParams.get('token');
+      const hashParams = new URLSearchParams(window.location.hash.slice(1));
+      const token = hashParams.get('token');
       const error = searchParams.get('error');
 
       if (error) {
-        // Handle error
-        console.error('OAuth error:', error);
         navigate('/login?error=' + error);
         return;
       }
 
       if (token) {
         try {
-          // Store token
           localStorage.setItem('token', token);
-
-          // Fetch user data
           const apiUrl = import.meta.env.VITE_API_URL || '';
           const response = await fetch(`${apiUrl}/api/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
           });
+
+          if (cancelled) return;
 
           if (response.ok) {
             const data = await response.json();
@@ -44,8 +41,8 @@ const AuthCallbackPage = () => {
           } else {
             throw new Error('Failed to authenticate');
           }
-        } catch (error) {
-          console.error('Auth callback error:', error);
+        } catch {
+          if (cancelled) return;
           localStorage.removeItem('token');
           navigate('/login?error=auth_failed');
         }
@@ -55,6 +52,7 @@ const AuthCallbackPage = () => {
     };
 
     handleCallback();
+    return () => { cancelled = true; };
   }, [searchParams, navigate, setUser, setToken]);
 
   return (

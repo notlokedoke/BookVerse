@@ -714,9 +714,20 @@ router.get('/user/:userId', async (req, res) => {
     // Calculate pagination
     const skip = (pageNum - 1) * limitNum;
 
-    // Build query
+    // Resolve requesting user (optional auth)
+    let requesterId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const { verifyToken } = require('../utils/jwt');
+        const decoded = verifyToken(authHeader.slice(7));
+        requesterId = decoded?.userId?.toString();
+      } catch { /* unauthenticated request */ }
+    }
+
+    // Build query — only the owner may request unavailable books
     const query = { owner: userId };
-    if (includeUnavailable !== 'true') {
+    if (includeUnavailable !== 'true' || requesterId !== userId) {
       query.isAvailable = true;
     }
 

@@ -533,15 +533,9 @@ router.get('/google/callback',
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       
       if (needsProfile) {
-        // For profile completion, use a simpler redirect with token in URL
-        const redirectUrl = `${frontendUrl}/complete-profile?token=${encodeURIComponent(token)}`;
-        console.log('Redirecting to complete-profile');
-        res.redirect(redirectUrl);
+        res.redirect(`${frontendUrl}/complete-profile#token=${encodeURIComponent(token)}`);
       } else {
-        // For direct login, redirect to auth callback
-        const redirectUrl = `${frontendUrl}/auth/callback?token=${encodeURIComponent(token)}`;
-        console.log('Redirecting to auth/callback');
-        res.redirect(redirectUrl);
+        res.redirect(`${frontendUrl}/auth/callback#token=${encodeURIComponent(token)}`);
       }
     } catch (error) {
       console.error('Google OAuth callback error:', error);
@@ -550,8 +544,6 @@ router.get('/google/callback',
     }
   }
 );
-
-module.exports = router;
 
 /**
  * @route   POST /api/auth/verify-email
@@ -1045,3 +1037,5 @@ router.delete('/account', [
     });
   }
 });
+
+module.exports = router;

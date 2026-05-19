@@ -92,6 +92,8 @@ bookSchema.index({ title: 1 });
 // Compound index for owner and availability for efficient queries
 bookSchema.index({ owner: 1, isAvailable: 1 });
 
+bookSchema.index({ isbn: 1 }, { sparse: true });
+
 // Text index for search functionality on title and author
 bookSchema.index({ 
   title: 'text', 

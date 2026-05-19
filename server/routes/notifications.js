@@ -70,6 +70,36 @@ router.get('/', [
 });
 
 /**
+ * @route   PUT /api/notifications/read-all
+ * @desc    Mark all notifications as read for authenticated user
+ * @access  Private (requires authentication)
+ */
+router.put('/read-all', authenticateToken, async (req, res) => {
+  try {
+    const result = await Notification.updateMany(
+      { recipient: req.userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'All notifications marked as read',
+      count: result.modifiedCount
+    });
+
+  } catch (error) {
+    console.error('Mark all notifications as read error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'An error occurred while updating notifications',
+        code: 'INTERNAL_ERROR'
+      }
+    });
+  }
+});
+
+/**
  * @route   PUT /api/notifications/:id/read
  * @desc    Mark a notification as read
  * @access  Private (requires authentication)
@@ -125,36 +155,6 @@ router.put('/:id/read', [
       success: false,
       error: {
         message: 'An error occurred while updating the notification',
-        code: 'INTERNAL_ERROR'
-      }
-    });
-  }
-});
-
-/**
- * @route   PUT /api/notifications/read-all
- * @desc    Mark all notifications as read for authenticated user
- * @access  Private (requires authentication)
- */
-router.put('/read-all', authenticateToken, async (req, res) => {
-  try {
-    const result = await Notification.updateMany(
-      { recipient: req.userId, isRead: false },
-      { $set: { isRead: true } }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: 'All notifications marked as read',
-      count: result.modifiedCount
-    });
-
-  } catch (error) {
-    console.error('Mark all notifications as read error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        message: 'An error occurred while updating notifications',
         code: 'INTERNAL_ERROR'
       }
     });

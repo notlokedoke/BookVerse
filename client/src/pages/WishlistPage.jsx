@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Heart, Plus, Trash2, Search, BookOpen } from 'lucide-react';
 import axios from 'axios';
@@ -10,22 +10,15 @@ const WishlistPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const toast = useToast();
+  const location = useLocation();
 
   useEffect(() => {
     fetchWishlist();
-  }, []);
-
-  // Add effect to refetch when returning to the page
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchWishlist();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [location.key]);
 
   const fetchWishlist = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const token = localStorage.getItem('token');
       console.log('Fetching wishlist with token:', token ? 'Token exists' : 'No token');
@@ -106,7 +99,7 @@ const WishlistPage = () => {
         <div className="empty-state">
           <h2>Error Loading Wishlist</h2>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} className="btn-add-wishlist-large">
+          <button onClick={fetchWishlist} className="btn-add-wishlist-large">
             Retry
           </button>
         </div>

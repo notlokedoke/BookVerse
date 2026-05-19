@@ -37,7 +37,7 @@ passport.use(
           name: profile.displayName,
           email: profile.emails[0].value,
           // Set a random password (user won't use it for Google login)
-          password: Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8),
+          password: require('crypto').randomBytes(24).toString('hex'),
           // City will be empty for Google users - they'll complete it later
           city: '',
           // Mark email as verified since it's from Google

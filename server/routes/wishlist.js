@@ -62,17 +62,9 @@ router.post('/', [
   try {
     const { title, author, isbn, notes, imageUrl, sourceBook, priority, isPublic } = req.body;
 
-    console.log('=== ADD TO WISHLIST REQUEST ===');
-    console.log('User ID:', req.userId);
-    console.log('Title:', title);
-    console.log('Author:', author);
-    console.log('ISBN:', isbn);
-    console.log('Full request body:', JSON.stringify(req.body, null, 2));
-
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         error: {
@@ -85,14 +77,12 @@ router.post('/', [
 
     // Check for duplicate entries (same user and ISBN) if ISBN is provided
     if (isbn && isbn.trim()) {
-      console.log('Checking for duplicate ISBN:', isbn.trim());
       const existingWishlistItem = await Wishlist.findOne({
         user: req.userId,
         isbn: isbn.trim()
       });
 
       if (existingWishlistItem) {
-        console.log('Duplicate wishlist item found:', existingWishlistItem._id);
         return res.status(409).json({
           success: false,
           error: {
@@ -102,15 +92,12 @@ router.post('/', [
         });
       }
     } else {
-      console.log('No ISBN provided, checking for duplicate title+author');
-      // If no ISBN, check for duplicate title (case-insensitive)
       const existingByTitle = await Wishlist.findOne({
         user: req.userId,
         title: { $regex: new RegExp(`^${title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
       });
 
       if (existingByTitle) {
-        console.log('Duplicate title found:', existingByTitle._id);
         return res.status(409).json({
           success: false,
           error: {

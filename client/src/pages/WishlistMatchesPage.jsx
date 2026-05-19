@@ -12,7 +12,11 @@ const WishlistMatchesPage = () => {
 
   useEffect(() => {
     fetchMatches();
-    backfillImages();
+    const lastRun = parseInt(localStorage.getItem('wishlist_backfill_last_run') || '0');
+    if (Date.now() - lastRun > 86400000) {
+      backfillImages();
+      localStorage.setItem('wishlist_backfill_last_run', String(Date.now()));
+    }
   }, []);
 
   const backfillImages = async () => {

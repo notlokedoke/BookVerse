@@ -49,12 +49,8 @@ const notificationSchema = new mongoose.Schema({
   isRead: {
     type: Boolean,
     default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true });
 
 // Index on recipient for efficient querying
 notificationSchema.index({ recipient: 1 });
