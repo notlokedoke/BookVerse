@@ -78,8 +78,8 @@ const UserProfilePage = () => {
         {/* Hero Section */}
         <div className="profile-hero">
           <div className="profile-hero-content">
-            <div className="profile-avatar-hero">
-              {profileUser.name?.charAt(0).toUpperCase()}
+            <div className="profile-avatar-hero" style={{ background: 'var(--color-primary, #2ecc71)', color: '#fff' }}>
+              {profileUser.name?.charAt(0).toUpperCase() || '?'}
             </div>
 
             <div className="hero-info">
@@ -133,8 +133,8 @@ const UserProfilePage = () => {
             <div className="stat-card">
               <MessageCircle size={24} />
               <div className="stat-content">
-                <span className="stat-value">95%</span>
-                <span className="stat-label">Response Rate</span>
+                <span className="stat-value">{ratings.length > 0 ? (profileUser.averageRating || 0).toFixed(1) : '—'}</span>
+                <span className="stat-label">Avg Rating</span>
               </div>
             </div>
           </div>
@@ -151,19 +151,6 @@ const UserProfilePage = () => {
               </div>
             )}
 
-            <div className="sidebar-card">
-              <h3>Trading Preferences</h3>
-              <div className="preference-list">
-                <div className="preference-item">
-                  <span className="preference-label">Preferred Genres</span>
-                  <span className="preference-value">Fiction, Mystery</span>
-                </div>
-                <div className="preference-item">
-                  <span className="preference-label">Condition Standards</span>
-                  <span className="preference-value">Good or better</span>
-                </div>
-              </div>
-            </div>
 
             {!isOwnProfile && (
               <button className="btn-contact">
