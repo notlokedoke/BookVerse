@@ -357,7 +357,7 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
             </div>
           )}
           
-          <form onSubmit={handleSubmit} noValidate>
+          <form id="edit-book-form" onSubmit={handleSubmit} noValidate>
             {/* Required Fields */}
             <div className="form-group">
               <label htmlFor="edit-title">Book Title *</label>
@@ -526,24 +526,27 @@ const EditBookModal = ({ book, isOpen, onClose, onBookUpdated }) => {
               </div>
             </div>
 
-            <div className="form-actions">
-              <button
-                type="button"
-                className="cancel-btn"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="update-btn" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Updating...' : 'Update Book'}
-              </button>
-            </div>
           </form>
+        </div>
+
+        {/* Sticky footer — always visible outside the scroll area */}
+        <div className="modal-footer">
+          <button
+            type="button"
+            className="cancel-btn"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="edit-book-form"
+            className="update-btn"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Updating...' : 'Update Book'}
+          </button>
         </div>
       </div>
     </div>

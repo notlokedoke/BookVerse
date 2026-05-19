@@ -260,10 +260,10 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit}>
+              <form id="trade-proposal-form" onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label className="selection-label">Select your book to offer:</label>
-                  
+
                   {loading ? (
                     <div className="loading-books">
                       <div className="spinner"></div>
@@ -282,8 +282,8 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                           className={`book-grid-item ${selectedBook === book._id ? 'selected' : ''}`}
                           onClick={() => setSelectedBook(selectedBook === book._id ? '' : book._id)}
                         >
-                          <img 
-                            src={getBookImageUrl(book.imageUrl)} 
+                          <img
+                            src={getBookImageUrl(book.imageUrl)}
                             alt={book.title}
                             className="book-grid-image"
                           />
@@ -305,25 +305,27 @@ const TradeProposalModal = ({ isOpen, onClose, requestedBook }) => {
                     {error}
                   </div>
                 )}
-
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="cancel-button"
-                    onClick={handleClose}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={submitting || !selectedBook || userBooks.length === 0}
-                  >
-                    {submitting ? 'Proposing...' : 'Send Trade Proposal'}
-                  </button>
-                </div>
               </form>
+            </div>
+
+            {/* Sticky footer — always visible outside the scroll area */}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="cancel-button"
+                onClick={handleClose}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="trade-proposal-form"
+                className="submit-button"
+                disabled={submitting || !selectedBook || userBooks.length === 0}
+              >
+                {submitting ? 'Proposing...' : 'Send Trade Proposal'}
+              </button>
             </div>
           </>
         )}

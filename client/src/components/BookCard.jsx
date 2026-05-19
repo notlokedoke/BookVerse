@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import TradeProposalModal from './TradeProposalModal';
@@ -34,6 +34,15 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const imgRef = useRef(null);
+
+  // Browser-cached images fire onLoad before React attaches the handler.
+  // Check if the image is already complete after mount to avoid staying invisible.
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setImageLoaded(true);
+    }
+  }, []);
 
   if (!book) {
     return null;
@@ -81,6 +90,7 @@ const BookCard = ({ book, showOwner = true, showEditButton = false, onEdit, show
           {/* Book Image */}
           <div className="book-image-container">
             <img
+              ref={imgRef}
               src={getBookImageUrl(imageUrl)}
               alt={`${title} by ${author}`}
               className="book-image"
