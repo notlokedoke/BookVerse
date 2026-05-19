@@ -423,14 +423,14 @@
 }
 
 .priority-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-primary, #1abc9c);
+  color: var(--color-primary, #1abc9c);
   transform: translateY(-2px);
 }
 
 .priority-btn.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
+  border-color: var(--color-primary, #1abc9c);
+  background: var(--color-primary, #1abc9c);
   color: white;
 }
 

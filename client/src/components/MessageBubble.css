@@ -46,7 +46,7 @@
 }
 
 .message-bubble.own {
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   color: white;
   border-bottom-right-radius: 0.375rem;
   margin-left: auto;
@@ -54,7 +54,7 @@
 
 .message-bubble.other {
   background-color: white;
-  color: var(--color-secondary);
+  color: var(--color-secondary, #2c3e50);
   border-bottom-left-radius: 0.375rem;
   border: 1px solid #E9ECEF;
 }
