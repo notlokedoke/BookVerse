@@ -250,7 +250,7 @@ const BrowsePage = () => {
   }
 
   return (
-    <div className="browse-page">
+    <div className="browse-page page-enter">
       <div className="browse-container">
         {/* Guest Banner */}
         {!isAuthenticated && (

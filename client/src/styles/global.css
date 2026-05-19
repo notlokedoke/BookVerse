@@ -1,13 +1,13 @@
-/* BookVerse Global Styles - Unified Theme */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+/* BookVerse Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 /* ============================================
    CSS Custom Properties (Design Tokens)
-   Material Design — Green Theme
    ============================================ */
 :root {
     /* Typography */
-    --font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
     /* Colors - Primary Palette (Emerald Green) */
     --color-primary: #1abc9c;
@@ -602,5 +602,86 @@ body {
 
     .stat-value {
         font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   Display Font Utility
+   ============================================ */
+h1, h2, h3, h4,
+.display-font {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+}
+
+/* ============================================
+   Entry Animations & Keyframes
+   ============================================ */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Page-level entry — wraps main content regions */
+.page-enter {
+    animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ============================================
+   Staggered Grid Choreography
+   ============================================ */
+.stagger-grid > *,
+.book-grid > .book-card,
+.wishlist-grid > .wishlist-card,
+.bento-grid > .bento-cell {
+    opacity: 0;
+    animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-grid > *:nth-child(1),  .book-grid > .book-card:nth-child(1),
+.wishlist-grid > .wishlist-card:nth-child(1), .bento-grid > .bento-cell:nth-child(1)  { animation-delay: 0ms;   }
+.stagger-grid > *:nth-child(2),  .book-grid > .book-card:nth-child(2),
+.wishlist-grid > .wishlist-card:nth-child(2), .bento-grid > .bento-cell:nth-child(2)  { animation-delay: 60ms;  }
+.stagger-grid > *:nth-child(3),  .book-grid > .book-card:nth-child(3),
+.wishlist-grid > .wishlist-card:nth-child(3), .bento-grid > .bento-cell:nth-child(3)  { animation-delay: 120ms; }
+.stagger-grid > *:nth-child(4),  .book-grid > .book-card:nth-child(4),
+.wishlist-grid > .wishlist-card:nth-child(4), .bento-grid > .bento-cell:nth-child(4)  { animation-delay: 180ms; }
+.stagger-grid > *:nth-child(5),  .book-grid > .book-card:nth-child(5),
+.wishlist-grid > .wishlist-card:nth-child(5), .bento-grid > .bento-cell:nth-child(5)  { animation-delay: 240ms; }
+.stagger-grid > *:nth-child(6),  .book-grid > .book-card:nth-child(6),
+.wishlist-grid > .wishlist-card:nth-child(6), .bento-grid > .bento-cell:nth-child(6)  { animation-delay: 300ms; }
+.stagger-grid > *:nth-child(n+7) { animation-delay: 360ms; }
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .page-enter,
+    .stagger-grid > *,
+    .book-grid > .book-card,
+    .wishlist-grid > .wishlist-card,
+    .bento-grid > .bento-cell {
+        animation: none;
+        opacity: 1;
     }
 }

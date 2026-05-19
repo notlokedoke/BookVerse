@@ -192,7 +192,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container page-enter">
 
       {/* Command Banner */}
       <section className="command-banner">
