@@ -5,12 +5,6 @@
 
 /* CSS Custom Properties */
 :root {
-  --color-accent: var(--color-primary);
-  --color-primary: var(--color-primary);
-  --color-warning: #F39C12;
-  --color-secondary: var(--color-secondary);
-  
-  
   --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.12);
   --primary: var(--color-primary, #1ABC9C);

@@ -4,14 +4,10 @@
 
 /* CSS Custom Properties */
 :root {
-  --color-accent: var(--color-primary);
-  --color-primary: var(--color-primary);
-  --color-warning: #F39C12;
-  --color-secondary: var(--color-secondary);
   --primary: var(--color-primary, #1ABC9C);
   --primary-dark: var(--color-primary-dark, #16A085);
   --primary-light: var(--color-primary-10, rgba(26, 188, 156, 0.1));
-  --text-primary: var(--color-secondary);
+  --text-primary: var(--color-secondary, #2C3E50);
   --text-secondary: #7F8C8D;
   --text-muted: #95A5A6;
   --border-light: #E8ECEF;
