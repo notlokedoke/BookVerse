@@ -225,43 +225,26 @@ const MyBooksPage = () => {
     }
   };
 
-  // Generate page numbers for pagination
+  // Generate page numbers — always 7 slots when totalPages > 7 so the row
+  // width stays constant as you navigate.
   const generatePageNumbers = () => {
-    const pages = [];
     const { currentPage, totalPages } = pagination;
-    
-    if (totalPages <= 1) return pages;
-    
-    // Always show first page
-    pages.push(1);
-    
-    // Calculate range around current page
-    let startPage = Math.max(2, currentPage - 2);
-    let endPage = Math.min(totalPages - 1, currentPage + 2);
-    
-    // Add ellipsis after first page if needed
-    if (startPage > 2) {
-      pages.push('...');
+
+    if (totalPages <= 1) return [];
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    // Near the start: [1, 2, 3, 4, 5, '...', last]
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
     }
-    
-    // Add pages around current page
-    for (let i = startPage; i <= endPage; i++) {
-      if (i !== 1 && i !== totalPages) {
-        pages.push(i);
-      }
+
+    // Near the end: [1, '...', last-4, last-3, last-2, last-1, last]
+    if (currentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     }
-    
-    // Add ellipsis before last page if needed
-    if (endPage < totalPages - 1) {
-      pages.push('...');
-    }
-    
-    // Always show last page (if different from first)
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
-    
-    return pages;
+
+    // Middle: [1, '...', prev, current, next, '...', last]
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
 
   // Skeleton loading state — only after delay to skip flash on fast/cached responses

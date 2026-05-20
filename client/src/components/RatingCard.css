@@ -47,7 +47,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
   color: white;
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
   font-size: 1rem;
   font-weight: 600;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 2px 8px var(--color-primary-30, rgba(26, 188, 156, 0.3));
 }
 
 .rater-details {
