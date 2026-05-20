@@ -185,6 +185,30 @@ router.get('/search-external', async (req, res) => {
       });
     }
 
+    // Known genres used in BookVerse book listings
+    const KNOWN_GENRES = [
+      'Fiction', 'Fantasy', 'Science Fiction', 'Mystery', 'Thriller', 'Horror',
+      'Romance', 'Historical Fiction', 'Adventure', 'Young Adult', 'Biography',
+      'Memoir', 'Self-Help', 'History', 'Science', 'Philosophy', 'Business',
+      'Poetry', 'Graphic Novel', 'Cookbook'
+    ];
+
+    // Map Open Library subjects to known BookVerse genres for recommendation matching
+    const mapSubjectsToGenres = (subjects) => {
+      if (!subjects || !Array.isArray(subjects)) return [];
+      const matched = new Set();
+      for (const subject of subjects) {
+        const subjectLower = subject.toLowerCase();
+        for (const genre of KNOWN_GENRES) {
+          if (subjectLower.includes(genre.toLowerCase())) {
+            matched.add(genre);
+          }
+        }
+        if (matched.size >= 3) break;
+      }
+      return Array.from(matched);
+    };
+
     // Extract book information from Open Library results
     const books = response.data.docs.map(doc => {
       // Get ISBN (prefer ISBN-13, fallback to ISBN-10)
@@ -217,7 +241,8 @@ router.get('/search-external', async (req, res) => {
         author: author,
         isbn: isbn,
         thumbnail: coverImage,
-        publishedDate: publishedDate
+        publishedDate: publishedDate,
+        genres: mapSubjectsToGenres(doc.subject)
       };
     });
 

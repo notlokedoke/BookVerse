@@ -107,7 +107,10 @@ const WishlistForm = ({ onSuccess, onCancel }) => {
       if (selectedBook.thumbnail) {
         dataToSend.imageUrl = selectedBook.thumbnail;
       }
-      
+      if (Array.isArray(selectedBook.genres) && selectedBook.genres.length > 0) {
+        dataToSend.genre = selectedBook.genres;
+      }
+
       // Add priority and public visibility
       dataToSend.priority = priority;
       dataToSend.isPublic = isPublic;

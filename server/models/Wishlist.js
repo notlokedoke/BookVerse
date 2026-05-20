@@ -44,6 +44,10 @@ const wishlistSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  genre: {
+    type: [String],
+    default: []
+  },
   // Priority level (1-5, where 5 is highest)
   priority: {
     type: Number,

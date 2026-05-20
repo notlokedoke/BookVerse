@@ -57,10 +57,14 @@ router.post('/', [
   body('isPublic')
     .optional()
     .isBoolean()
-    .withMessage('isPublic must be a boolean')
+    .withMessage('isPublic must be a boolean'),
+  body('genre')
+    .optional()
+    .isArray()
+    .withMessage('genre must be an array')
 ], async (req, res) => {
   try {
-    const { title, author, isbn, notes, imageUrl, sourceBook, priority, isPublic } = req.body;
+    const { title, author, isbn, notes, imageUrl, sourceBook, priority, isPublic, genre } = req.body;
 
     // Check for validation errors
     const errors = validationResult(req);
@@ -155,6 +159,9 @@ router.post('/', [
     }
     if (typeof isPublic === 'boolean') {
       wishlistData.isPublic = isPublic;
+    }
+    if (Array.isArray(genre) && genre.length > 0) {
+      wishlistData.genre = genre.filter(g => typeof g === 'string' && g.trim()).map(g => g.trim());
     }
 
     const wishlistItem = new Wishlist(wishlistData);
