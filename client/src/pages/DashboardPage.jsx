@@ -8,7 +8,6 @@ import {
   Library, TrendingUp, ArrowRight, Calendar, Bell, Heart
 } from 'lucide-react';
 import FloatingActionButton from '../components/FloatingActionButton';
-import RecommendedBooks from '../components/RecommendedBooks';
 import { getBookImageUrl } from '../utils/imageUtils';
 import './DashboardPage.css';
 
@@ -489,9 +488,7 @@ const DashboardPage = () => {
 
       </div>
 
-      <RecommendedBooks limit={5} />
-
-      {isEmpty && (
+{isEmpty && (
         <section className="empty-state-enhanced">
           <div className="empty-illustration"><Library size={64} /></div>
           <h2>Welcome to BookVerse!</h2>
