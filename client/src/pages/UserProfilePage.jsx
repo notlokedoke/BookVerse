@@ -152,12 +152,6 @@ const UserProfilePage = () => {
             )}
 
 
-            {!isOwnProfile && (
-              <button className="btn-contact">
-                <MessageCircle size={18} />
-                Contact User
-              </button>
-            )}
           </aside>
 
           {/* Main Content */}
