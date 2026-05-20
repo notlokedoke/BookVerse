@@ -74,14 +74,14 @@
 
 .wishlist-search-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary, #1abc9c);
+  box-shadow: 0 0 0 4px var(--color-primary-10, rgba(26, 188, 156, 0.1));
 }
 
 .loading-icon {
   position: absolute;
   right: 1rem;
-  color: #3b82f6;
+  color: var(--color-primary, #1abc9c);
 }
 
 .rotating {
@@ -270,8 +270,8 @@
 
 .form-group textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary, #1abc9c);
+  box-shadow: 0 0 0 3px var(--color-primary-10, rgba(26, 188, 156, 0.1));
 }
 
 .form-group small {
@@ -334,14 +334,14 @@
 }
 
 .add-btn {
-  background-color: #3b82f6;
+  background-color: var(--color-primary, #1abc9c);
   color: #ffffff;
 }
 
 .add-btn:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: var(--color-primary-dark, #16a085);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 8px var(--color-primary-20, rgba(26, 188, 156, 0.2));
 }
 
 .cancel-btn:disabled,
@@ -480,8 +480,8 @@
 }
 
 .custom-checkbox.checked {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-primary, #1abc9c);
+  border-color: var(--color-primary, #1abc9c);
   color: white;
 }
 
