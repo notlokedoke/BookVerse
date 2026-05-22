@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const app = require('../server');
 const User = require('../models/User');
 const Wishlist = require('../models/Wishlist');
+const connectDB = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
 describe('Wishlist API', () => {
@@ -11,9 +12,7 @@ describe('Wishlist API', () => {
 
   beforeAll(async () => {
     // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse-test');
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -208,11 +207,11 @@ describe('Wishlist API', () => {
         .send(wishlistData)
         .expect(201);
 
-      // Add second item (should be allowed since no ISBN)
+      // Add second item with different title
       const response = await request(app)
         .post('/api/wishlist')
         .set('Authorization', `Bearer ${authToken}`)
-        .send(wishlistData)
+        .send({ ...wishlistData, title: 'The Great Gatsby - 2nd copy' })
         .expect(201);
 
       expect(response.body.success).toBe(true);

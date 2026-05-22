@@ -4,6 +4,7 @@ const app = require('../server');
 const Book = require('../models/Book');
 const Trade = require('../models/Trade');
 const Notification = require('../models/Notification');
+const connectDB = require('../config/database');
 const {
   clearDatabase,
   createTestUser,
@@ -17,9 +18,7 @@ describe('Trades API - Propose Trade', () => {
 
   beforeAll(async () => {
     // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -135,7 +134,7 @@ describe('Trades API - Propose Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject trade proposal with missing offeredBook', async () => {
@@ -148,7 +147,7 @@ describe('Trades API - Propose Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject trade proposal with invalid requestedBook ID format', async () => {
@@ -162,7 +161,7 @@ describe('Trades API - Propose Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_BOOK_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject trade proposal with invalid offeredBook ID format', async () => {
@@ -176,7 +175,7 @@ describe('Trades API - Propose Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_BOOK_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject trade proposal with non-existent requestedBook', async () => {
@@ -482,8 +481,8 @@ describe('Trades API - Propose Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_STATUS');
-      expect(response.body.error.message).toContain('Invalid status value');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toContain('Status must be one of');
     });
 
     test('should require authentication', async () => {
@@ -559,9 +558,7 @@ describe('Trades API - Accept/Decline Trade', () => {
   let user1Book, user2Book, proposedTrade;
 
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -705,7 +702,7 @@ describe('Trades API - Accept/Decline Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject accept request for non-existent trade', async () => {
@@ -851,7 +848,7 @@ describe('Trades API - Accept/Decline Trade', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should reject decline request for non-existent trade', async () => {
@@ -922,9 +919,7 @@ describe('Trades API - Complete Trade', () => {
   let user1Book, user2Book, acceptedTrade;
 
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {

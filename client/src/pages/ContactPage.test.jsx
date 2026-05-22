@@ -104,8 +104,8 @@ describe('ContactPage', () => {
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
     fireEvent.change(subjectSelect, { target: { value: 'general' } });
     fireEvent.change(messageInput, { target: { value: 'This is a test message.' } });
-    fireEvent.click(submitButton);
-    
+    fireEvent.submit(submitButton.closest('form'));
+
     await waitFor(() => {
       expect(screen.getByText('Please enter a valid email address')).toBeInTheDocument();
     });

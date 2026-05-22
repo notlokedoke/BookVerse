@@ -73,11 +73,10 @@ describe('DashboardPage', () => {
 
     renderDashboard();
 
-    expect(await screen.findByText('Trading Analytics')).toBeInTheDocument();
-    expect(screen.getByText('Books Listed')).toBeInTheDocument();
-    expect(screen.getByText('Active Trades')).toBeInTheDocument();
+    expect(await screen.findByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Listed')).toBeInTheDocument();
+    expect(screen.getByText('In Progress')).toBeInTheDocument();
     expect(screen.getByText('Completed')).toBeInTheDocument();
-    expect(screen.getByText('Pending')).toBeInTheDocument();
   });
 
   test('renders new user empty state when there are no books or trades', async () => {

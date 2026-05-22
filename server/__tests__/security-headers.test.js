@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('../server');
+const connectDB = require('../config/database');
 
 describe('Security Headers Configuration', () => {
   describe('Helmet Security Headers', () => {
@@ -62,7 +63,7 @@ describe('Security Headers Configuration', () => {
       const response = await request(app).get('/api/health');
       const csp = response.headers['content-security-policy'];
       
-      expect(csp).toContain("frame-src 'none'");
+      expect(csp).toContain("frame-src 'self' https://accounts.google.com https://www.google.com");
     });
 
     it('should restrict object-src to none', async () => {

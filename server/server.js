@@ -28,7 +28,7 @@ monitorMemoryUsage();
 
 // Security Middleware
 // Security Middleware - More permissive for OAuth in development
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 app.use(helmet({
   contentSecurityPolicy: isDevelopment ? false : {

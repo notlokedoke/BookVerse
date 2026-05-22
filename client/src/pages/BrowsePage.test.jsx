@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import BrowsePage from './BrowsePage';
 import { vi } from 'vitest';
 
-// Mock fetch
 global.fetch = vi.fn();
 
 const mockUseAuth = vi.fn();
@@ -21,72 +20,51 @@ const renderWithProviders = (component) => {
   );
 };
 
+const emptyPageResponse = {
+  ok: true,
+  json: async () => ({
+    success: true,
+    data: {
+      books: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalBooks: 0,
+        hasNextPage: false,
+        hasPrevPage: false
+      }
+    }
+  })
+};
+
 describe('BrowsePage', () => {
   beforeEach(() => {
-    fetch.mockClear();
+    fetch.mockReset();
     mockUseAuth.mockReturnValue({
       user: { id: '1', name: 'Test User' },
       isAuthenticated: true,
       login: vi.fn(),
       logout: vi.fn()
     });
-    // Reset URL to clean state before each test
     window.history.replaceState({}, '', '/browse');
   });
 
   test('renders browse page with title and filters', async () => {
-    // Mock successful API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Check if main elements are rendered
     expect(await screen.findByText('Discover Books')).toBeInTheDocument();
     expect(screen.getByText(/books available for trade/)).toBeInTheDocument();
-
-    // Check if filter inputs are present
     expect(screen.getByPlaceholderText('City')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Genre')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Author')).toBeInTheDocument();
   });
 
   test('displays empty state when no books are found', async () => {
-    // Mock API response with no books
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for the API call to complete and empty state to show
     await waitFor(() => {
       expect(screen.getByText('No Books Found')).toBeInTheDocument();
     });
@@ -95,12 +73,10 @@ describe('BrowsePage', () => {
   });
 
   test('displays error state when API call fails', async () => {
-    // Mock API failure
     fetch.mockRejectedValueOnce(new Error('Network error'));
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for the error state to show
     await waitFor(() => {
       expect(screen.getByText('Unable to Load Books')).toBeInTheDocument();
     });
@@ -110,266 +86,119 @@ describe('BrowsePage', () => {
   });
 
   test('makes API call with correct parameters', async () => {
-    // Mock successful API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for the API call
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=1&limit=25')
+      );
     });
   });
 
   test('applies city filter when city input changes', async () => {
-    // Mock initial API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
-
-    // Mock filtered API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for initial load
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=1&limit=25')
+      );
     });
 
-    // Change city filter
     const cityInput = screen.getByPlaceholderText('City');
     fireEvent.change(cityInput, { target: { value: 'New York' } });
 
-    // Wait for filtered API call
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=New+York');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=1&limit=25&city=New+York')
+      );
     }, { timeout: 2000 });
   });
 
   test('applies multiple filters simultaneously', async () => {
-    // Mock initial API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
-
-    // Mock filtered API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for initial load
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=1&limit=25')
+      );
     });
 
-    // Apply multiple filters
     const cityInput = screen.getByPlaceholderText('City');
-    const genreInput = screen.getByPlaceholderText('Genre');
     const authorInput = screen.getByPlaceholderText('Author');
 
     fireEvent.change(cityInput, { target: { value: 'Seattle' } });
-    fireEvent.change(genreInput, { target: { value: 'Fantasy' } });
     fireEvent.change(authorInput, { target: { value: 'Tolkien' } });
 
-    // Wait for API call with all filters
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Seattle&genre=Fantasy&author=Tolkien');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('city=Seattle')
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('author=Tolkien')
+      );
     }, { timeout: 2000 });
 
-    // Verify URL is updated with all parameters
     expect(window.location.search).toContain('city=Seattle');
-    expect(window.location.search).toContain('genre=Fantasy');
     expect(window.location.search).toContain('author=Tolkien');
   });
 
   test('initializes filters from URL parameters', async () => {
-    // Mock API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
-    // Render with URL parameters
-    window.history.pushState({}, '', '/browse?city=Seattle&genre=Fiction&author=Tolkien&page=2');
+    window.history.pushState({}, '', '/browse?city=Seattle&author=Tolkien&page=2');
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for API call with URL parameters
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=2&limit=20&city=Seattle&genre=Fiction&author=Tolkien');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=2&limit=25')
+      );
     });
 
-    // Check that filter inputs show URL values
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('city=Seattle'));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining('author=Tolkien'));
+
     expect(screen.getByDisplayValue('Seattle')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Fiction')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Tolkien')).toBeInTheDocument();
   });
 
   test('clears filters when clear button is clicked', async () => {
-    // Mock initial API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
-
-    // Mock filtered API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
-
-    // Mock cleared API response
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        success: true,
-        data: {
-          books: [],
-          pagination: {
-            currentPage: 1,
-            totalPages: 1,
-            totalBooks: 0,
-            hasNextPage: false,
-            hasPrevPage: false
-          }
-        }
-      })
-    });
+    fetch.mockResolvedValueOnce(emptyPageResponse);
+    fetch.mockResolvedValueOnce(emptyPageResponse);
+    fetch.mockResolvedValueOnce(emptyPageResponse);
 
     renderWithProviders(<BrowsePage />);
 
-    // Wait for initial load
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/books?page=1&limit=25')
+      );
     });
 
-    // Add a filter
     const cityInput = screen.getByPlaceholderText('City');
     fireEvent.change(cityInput, { target: { value: 'Boston' } });
 
-    // Wait for filtered API call
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/books?page=1&limit=20&city=Boston');
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('city=Boston')
+      );
     }, { timeout: 2000 });
 
-    // Clear filters
     const clearButton = screen.getByText('Clear All');
     fireEvent.click(clearButton);
 
-    // Wait for cleared API call (should be the third call)
     await waitFor(() => {
-      expect(fetch).toHaveBeenNthCalledWith(3, '/api/books?page=1&limit=20');
+      expect(fetch).toHaveBeenCalledTimes(3);
     });
 
-    // Check that input is cleared
     await waitFor(() => {
       expect(screen.getByPlaceholderText('City')).toHaveValue('');
     });

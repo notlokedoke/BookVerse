@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const Trade = require('../models/Trade');
 const Book = require('../models/Book');
+const connectDB = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
 describe('Notifications API - GET /api/notifications', () => {
@@ -13,13 +14,7 @@ describe('Notifications API - GET /api/notifications', () => {
 
   beforeAll(async () => {
     // Connect to test database if not already connected
-    if (mongoose.connection.readyState === 0) {
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bookverse-test';
-      await mongoose.connect(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -406,10 +401,10 @@ describe('Notifications API - GET /api/notifications', () => {
       const response = await request(app)
         .put(`/api/notifications/${notification._id}/read`)
         .set('Authorization', `Bearer ${user1Token}`)
-        .expect(403);
+        .expect(404);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('FORBIDDEN');
+      expect(response.body.error.code).toBe('NOT_FOUND');
 
       // Verify notification was not modified
       const unchanged = await Notification.findById(notification._id);
@@ -435,7 +430,7 @@ describe('Notifications API - GET /api/notifications', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail without authentication', async () => {

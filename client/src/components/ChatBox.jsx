@@ -280,7 +280,7 @@ const ChatBox = ({ tradeId, otherUserName }) => {
           <div className="error-icon">⚠️</div>
           <p className="error-text">{error}</p>
           <button 
-            onClick={fetchMessages}
+            onClick={() => fetchMessages()}
             className="retry-button"
           >
             Try Again

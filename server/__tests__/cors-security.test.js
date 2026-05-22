@@ -1,5 +1,6 @@
 const request = require('supertest');
 const app = require('../server');
+const connectDB = require('../config/database');
 
 describe('CORS Security Configuration', () => {
   describe('CORS Headers', () => {

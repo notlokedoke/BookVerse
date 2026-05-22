@@ -7,6 +7,11 @@ import WishlistForm from './WishlistForm';
 
 vi.mock('axios');
 
+vi.mock('react-router-dom', async () => {
+  const mod = await vi.importActual('react-router-dom');
+  return { ...mod, useNavigate: () => vi.fn() };
+});
+
 const mockUser = {
   _id: '507f191e810c19729de860ea',
   name: 'Test User',
@@ -91,7 +96,7 @@ describe('WishlistForm', () => {
     fireEvent.click(screen.getByText('The Great Gatsby'));
 
     expect(screen.getByLabelText(/notes \(optional\)/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /save to wishlist/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /add to wishlist/i })).toBeInTheDocument();
   });
 
   test('submits selected book and calls onSuccess', async () => {
@@ -136,18 +141,18 @@ describe('WishlistForm', () => {
     fireEvent.change(screen.getByLabelText(/notes \(optional\)/i), {
       target: { value: 'Prefer hardcover' }
     });
-    fireEvent.click(screen.getByRole('button', { name: /save to wishlist/i }));
+    fireEvent.submit(screen.getByRole('button', { name: /add to wishlist/i }).closest('form'));
 
     await waitFor(() => {
       expect(axios.post).toHaveBeenCalledWith(
         expect.stringContaining('/api/wishlist'),
-        {
+        expect.objectContaining({
           title: 'The Great Gatsby',
           author: 'F. Scott Fitzgerald',
           isbn: '9780743273565',
           notes: 'Prefer hardcover',
           imageUrl: 'https://example.com/gatsby.jpg'
-        }
+        })
       );
       expect(mockToast.success).toHaveBeenCalledWith('Book added to wishlist successfully!');
     });
@@ -187,10 +192,10 @@ describe('WishlistForm', () => {
     });
 
     fireEvent.click(screen.getByText('The Great Gatsby'));
-    fireEvent.click(screen.getByRole('button', { name: /save to wishlist/i }));
+    fireEvent.click(screen.getByRole('button', { name: /add to wishlist/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('This book is already in your wishlist')).toBeInTheDocument();
+      expect(mockToast.info).toHaveBeenCalledWith('This book is already in your wishlist!');
     });
   });
 

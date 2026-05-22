@@ -83,8 +83,8 @@ const uploadSingleImage = (fieldName = 'image') => {
         return next();
       }
 
-      // Check if Cloudinary is configured
-      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      // Check if Cloudinary is configured or if we're in test mode
+      if (process.env.NODE_ENV === 'test' || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
         // In test environment without Cloudinary, set a mock URL
         req.imageUrl = 'https://example.com/test-image.jpg';
         req.cloudinaryPublicId = 'test-public-id';
@@ -206,8 +206,8 @@ const uploadBookImages = () => {
         return next();
       }
 
-      // Check if Cloudinary is configured
-      if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      // Check if Cloudinary is configured or if we're in test mode
+      if (process.env.NODE_ENV === 'test' || !process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
         // In test environment without Cloudinary, set mock URLs
         if (req.files.coverImage) {
           req.frontImageUrl = 'https://example.com/test-cover-image.jpg';

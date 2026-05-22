@@ -7,7 +7,6 @@ describe('SearchFilters', () => {
   const defaultProps = {
     filters: {
       city: '',
-      genre: '',
       author: '',
       title: ''
     },
@@ -26,7 +25,6 @@ describe('SearchFilters', () => {
     render(<SearchFilters {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('City')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Genre')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Author')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search by book title...')).toBeInTheDocument();
   });
@@ -34,14 +32,13 @@ describe('SearchFilters', () => {
   test('displays filter values correctly', () => {
     const filtersWithValues = {
       city: 'New York',
-      genre: 'Fiction',
-      author: 'Jane Doe'
+      author: 'Jane Doe',
+      title: ''
     };
 
     render(<SearchFilters {...defaultProps} filters={filtersWithValues} />);
 
     expect(screen.getByDisplayValue('New York')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Fiction')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Jane Doe')).toBeInTheDocument();
   });
 
@@ -54,15 +51,6 @@ describe('SearchFilters', () => {
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('city', 'Boston');
   });
 
-  test('calls onFilterChange when genre input changes', () => {
-    render(<SearchFilters {...defaultProps} />);
-
-    const genreInput = screen.getByPlaceholderText('Genre');
-    fireEvent.change(genreInput, { target: { value: 'Mystery' } });
-
-    expect(defaultProps.onFilterChange).toHaveBeenCalledWith('genre', 'Mystery');
-  });
-
   test('calls onFilterChange when author input changes', () => {
     render(<SearchFilters {...defaultProps} />);
 
@@ -70,6 +58,15 @@ describe('SearchFilters', () => {
     fireEvent.change(authorInput, { target: { value: 'John Smith' } });
 
     expect(defaultProps.onFilterChange).toHaveBeenCalledWith('author', 'John Smith');
+  });
+
+  test('calls onFilterChange when title input changes', () => {
+    render(<SearchFilters {...defaultProps} />);
+
+    const titleInput = screen.getByPlaceholderText('Search by book title...');
+    fireEvent.change(titleInput, { target: { value: 'Gatsby' } });
+
+    expect(defaultProps.onFilterChange).toHaveBeenCalledWith('title', 'Gatsby');
   });
 
   test('shows clear filters button when filters are active', () => {
@@ -91,35 +88,5 @@ describe('SearchFilters', () => {
     fireEvent.click(clearButton);
 
     expect(defaultProps.onClearFilters).toHaveBeenCalled();
-  });
-
-  test('displays results count correctly', () => {
-    render(<SearchFilters {...defaultProps} resultsCount={25} />);
-
-    expect(screen.getByText('25 books found')).toBeInTheDocument();
-  });
-
-  test('displays singular form for single result', () => {
-    render(<SearchFilters {...defaultProps} resultsCount={1} />);
-
-    expect(screen.getByText('1 book found')).toBeInTheDocument();
-  });
-
-  test('displays results count when filters are active', () => {
-    render(<SearchFilters {...defaultProps} resultsCount={10} hasActiveFilters={true} />);
-
-    expect(screen.getByText('10 books found')).toBeInTheDocument();
-  });
-
-  test('displays no books found message when results count is zero', () => {
-    render(<SearchFilters {...defaultProps} resultsCount={0} />);
-
-    expect(screen.getByText('No books found')).toBeInTheDocument();
-  });
-
-  test('hides results summary when loading', () => {
-    render(<SearchFilters {...defaultProps} loading={true} resultsCount={10} />);
-
-    expect(screen.queryByText('10 books found')).not.toBeInTheDocument();
   });
 });

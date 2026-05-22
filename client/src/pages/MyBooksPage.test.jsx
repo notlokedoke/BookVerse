@@ -20,6 +20,12 @@ vi.mock('../context/ToastContext', () => ({
 // Mock axios
 vi.mock('axios');
 
+vi.mock('../utils/bookCache', () => ({
+  getCached: vi.fn(() => null),
+  setCached: vi.fn(),
+  invalidateCache: vi.fn()
+}));
+
 // Mock BookCard component
 vi.mock('../components/BookCard', () => ({
   default: ({ book, showEditButton, onEdit, showDeleteButton, onDelete }) => (
@@ -87,14 +93,16 @@ describe('MyBooksPage', () => {
     });
   });
 
-  test('renders loading state initially', () => {
+  test('renders loading state initially', async () => {
     useAuth.mockReturnValue({ user: mockUser });
     axios.get.mockImplementation(() => new Promise(() => { })); // Never resolves
 
     const { container } = renderWithRouter(<MyBooksPage />);
 
-    // Check for skeleton loading UI
-    expect(container.querySelector('.my-books-skeleton')).toBeInTheDocument();
+    // useDelayedFlag delays skeleton by 150ms
+    await waitFor(() => {
+      expect(container.querySelector('.my-books-skeleton')).toBeInTheDocument();
+    }, { timeout: 500 });
   });
 
   test('renders empty state when user has no books', async () => {
@@ -102,7 +110,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: [] }
+        data: { books: [], pagination: { currentPage: 1, totalPages: 1, totalBooks: 0, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -137,7 +145,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: mockBooks }
+        data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 2, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -171,7 +179,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: [] }
+        data: { books: [], pagination: { currentPage: 1, totalPages: 1, totalBooks: 0, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -187,7 +195,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: [] }
+        data: { books: [], pagination: { currentPage: 1, totalPages: 1, totalBooks: 0, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -216,7 +224,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: mockBooks }
+        data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 2, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -249,7 +257,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: mockBooks }
+        data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 2, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -286,7 +294,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: mockBooks }
+        data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 2, hasNextPage: false, hasPrevPage: false } }
       }
     });
 
@@ -318,12 +326,19 @@ describe('MyBooksPage', () => {
     ];
 
     useAuth.mockReturnValue({ user: mockUser });
-    axios.get.mockResolvedValue({
-      data: {
-        success: true,
-        data: { books: mockBooks }
-      }
-    });
+    axios.get
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 1, hasNextPage: false, hasPrevPage: false } }
+        }
+      })
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: { books: [], pagination: { currentPage: 1, totalPages: 1, totalBooks: 0, hasNextPage: false, hasPrevPage: false } }
+        }
+      });
     axios.delete.mockResolvedValue({
       data: {
         success: true,
@@ -383,7 +398,7 @@ describe('MyBooksPage', () => {
     axios.get.mockResolvedValue({
       data: {
         success: true,
-        data: { books: mockBooks }
+        data: { books: mockBooks, pagination: { currentPage: 1, totalPages: 1, totalBooks: 2, hasNextPage: false, hasPrevPage: false } }
       }
     });
 

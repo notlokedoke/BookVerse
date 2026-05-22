@@ -4,6 +4,7 @@ const app = require('../server');
 const User = require('../models/User');
 const Book = require('../models/Book');
 const Trade = require('../models/Trade');
+const connectDB = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
 describe('Input Validation Tests', () => {
@@ -13,6 +14,7 @@ describe('Input Validation Tests', () => {
   let tradeId;
 
   beforeAll(async () => {
+    await connectDB();
     // Create a test user
     const user = new User({
       name: 'Test User',

@@ -187,7 +187,7 @@ describe('BookDetailView', () => {
     });
   });
 
-  test('disables propose trade button when book is not available', async () => {
+  test('does not show propose trade button when book is not available', async () => {
     const unavailableBook = {
       ...mockBook,
       isAvailable: false
@@ -201,8 +201,8 @@ describe('BookDetailView', () => {
     renderWithProviders();
 
     await waitFor(() => {
-      const proposeButton = screen.getByRole('button', { name: /not available/i });
-      expect(proposeButton).toBeDisabled();
+      expect(screen.getByText('Not Available')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /propose trade/i })).not.toBeInTheDocument();
     });
   });
 

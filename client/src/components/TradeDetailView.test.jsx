@@ -193,7 +193,7 @@ describe('TradeDetailView - Chat Integration', () => {
     renderWithProviders(<TradeDetailView />);
 
     await waitFor(() => {
-      expect(screen.getByText('declined')).toBeInTheDocument();
+      expect(screen.getByText('Declined')).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId('chat-box')).not.toBeInTheDocument();
@@ -245,7 +245,7 @@ describe('TradeDetailView - Chat Integration', () => {
     renderWithProviders(<TradeDetailView />);
 
     await waitFor(() => {
-      expect(screen.getByText('completed')).toBeInTheDocument();
+      expect(screen.getAllByText('Completed')[0]).toBeInTheDocument();
     });
 
     expect(screen.queryByTestId('chat-box')).not.toBeInTheDocument();

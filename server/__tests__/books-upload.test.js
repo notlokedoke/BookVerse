@@ -5,6 +5,7 @@ const fs = require('fs');
 const app = require('../server');
 const User = require('../models/User');
 const Book = require('../models/Book');
+const connectDB = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
 describe('Books API - Image Upload', () => {
@@ -12,9 +13,7 @@ describe('Books API - Image Upload', () => {
 
   beforeAll(async () => {
     // Connect to test database
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/bookverse_test');
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -59,7 +58,7 @@ describe('Books API - Image Upload', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('IMAGE_REQUIRED');
+      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
     });
 
     test('should reject book creation without authentication', async () => {
@@ -78,7 +77,7 @@ describe('Books API - Image Upload', () => {
         .field('title', 'Test Book')
         .field('author', 'Test Author')
         .field('condition', 'Good')
-        .field('genre', 'Fiction')
+        .field('genres', JSON.stringify(['Fiction']))
         .expect(401);
 
       expect(response.body.success).toBe(false);
@@ -127,7 +126,7 @@ describe('Books API - Image Upload', () => {
         .field('title', 'Test Book')
         .field('author', 'Test Author')
         .field('condition', 'Good')
-        .field('genre', 'Fiction')
+        .field('genres', JSON.stringify(['Fiction']))
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -160,7 +159,7 @@ describe('Books API - Image Upload', () => {
         .field('title', 'Test Book')
         .field('author', 'Test Author')
         .field('condition', 'Good')
-        .field('genre', 'Fiction')
+        .field('genres', JSON.stringify(['Fiction']))
         .field('description', 'A test book')
         .expect(201);
 
@@ -168,8 +167,6 @@ describe('Books API - Image Upload', () => {
       expect(response.body.data.title).toBe('Test Book');
       expect(response.body.data.author).toBe('Test Author');
       expect(response.body.data.imageUrl).toBeDefined();
-      expect(response.body.imageUrl).toBeDefined();
-      expect(response.body.imagePublicId).toBeDefined();
 
       // Verify book was saved to database
       const savedBook = await Book.findById(response.body.data._id);
@@ -179,5 +176,9 @@ describe('Books API - Image Upload', () => {
       // Clean up
       fs.unlinkSync(imagePath);
     });
+  });
+
+  afterAll(async () => {
+    await mongoose.connection.close();
   });
 });

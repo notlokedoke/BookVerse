@@ -108,7 +108,7 @@ describe('Users API', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.error.message).toBe('Invalid user ID format');
-      expect(response.body.error.code).toBe('INVALID_USER_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should handle user with default privacy settings (showCity should default to true)', async () => {

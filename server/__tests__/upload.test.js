@@ -2,6 +2,7 @@ const request = require('supertest');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const connectDB = require('../config/database');
 const { uploadSingleImage } = require('../middleware/upload');
 
 // Create a simple test app
@@ -91,8 +92,8 @@ describe('Image Upload Middleware', () => {
         0x08, 0x02, 0x00, 0x00, 0x00 // bit depth, color type, compression, filter, interlace
       ]);
       
-      // Create a large buffer (6MB) and prepend PNG header
-      const largeData = Buffer.alloc(6 * 1024 * 1024, 0xFF); // 6MB of data
+      // Create a large buffer (11MB) and prepend PNG header
+      const largeData = Buffer.alloc(11 * 1024 * 1024, 0xFF); // 11MB of data
       const largeBuffer = Buffer.concat([pngHeader, largeData]);
       
       const largePath = path.join(__dirname, 'large-image.png');

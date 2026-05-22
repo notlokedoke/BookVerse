@@ -256,7 +256,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('MISSING_TRADE_ID');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when stars is missing', async () => {
@@ -269,7 +269,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('MISSING_STARS');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when stars is less than 1', async () => {
@@ -283,7 +283,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_STARS');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when stars is greater than 5', async () => {
@@ -297,7 +297,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_STARS');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when stars is not an integer', async () => {
@@ -311,7 +311,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_STARS');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when comment is missing for 3 stars', async () => {
@@ -325,7 +325,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('COMMENT_REQUIRED');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when comment is empty string for 2 stars', async () => {
@@ -340,7 +340,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('COMMENT_REQUIRED');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 400 when trade ID format is invalid', async () => {
@@ -354,7 +354,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
     });
 
@@ -654,7 +654,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 401 without authentication', async () => {
@@ -1167,7 +1167,7 @@ describe('Rating API Endpoints', () => {
 
         expect(response.status).toBe(400);
         expect(response.body.success).toBe(false);
-        expect(response.body.error.code).toBe('INVALID_USER_ID');
+        expect(response.body.error.code).toBe('VALIDATION_ERROR');
       });
 
       test('should return 404 when user does not exist', async () => {

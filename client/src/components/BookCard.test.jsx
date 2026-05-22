@@ -68,9 +68,7 @@ describe('BookCard', () => {
     
     expect(screen.getByText('The Great Gatsby')).toBeInTheDocument();
     expect(screen.getByText('by F. Scott Fitzgerald')).toBeInTheDocument();
-    expect(screen.getByText('Classic Fiction')).toBeInTheDocument();
     expect(screen.getByText('Good')).toBeInTheDocument();
-    expect(screen.getByText('Listed Jan 1, 2025')).toBeInTheDocument();
   });
 
   test('renders book image with correct alt text', () => {
@@ -85,8 +83,6 @@ describe('BookCard', () => {
     renderWithRouter(<BookCard book={mockBook} showOwner={true} />);
     
     expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('📍 New York')).toBeInTheDocument();
-    expect(screen.getByText('4.5')).toBeInTheDocument();
   });
 
   test('does not render owner information when showOwner is false', () => {

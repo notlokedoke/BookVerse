@@ -1,4 +1,16 @@
 import { expect, afterEach, vi, beforeAll } from 'vitest';
+
+// Global mock for ToastContext — components use useToast but tests don't need a real provider
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => ({
+    showToast: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+  }),
+  ToastProvider: ({ children }) => children,
+}));
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 

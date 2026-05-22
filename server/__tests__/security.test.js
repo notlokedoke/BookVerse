@@ -105,7 +105,7 @@ describe('Security Features', () => {
         .field('title', maliciousBookData.title)
         .field('author', maliciousBookData.author)
         .field('condition', maliciousBookData.condition)
-        .field('genre', maliciousBookData.genre)
+        .field('genres', JSON.stringify([maliciousBookData.genre]))
         .field('description', maliciousBookData.description)
         .attach('coverImage', pngBuffer, 'test.png');
 

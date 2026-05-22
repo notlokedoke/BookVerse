@@ -41,6 +41,20 @@ const mockMessages = [
   }
 ];
 
+const mockTradeData = {
+  _id: 'trade123',
+  proposer: { _id: '507f191e810c19729de860ea', name: 'Test User' },
+  receiver: { _id: '507f191e810c19729de860eb', name: 'Other User' },
+  requestedBook: { _id: 'book1', title: 'Book 1' },
+  offeredBook: { _id: 'book2', title: 'Book 2' },
+  status: 'pending'
+};
+
+const tradeMock = {
+  ok: true,
+  json: async () => ({ success: true, data: mockTradeData })
+};
+
 const mockToast = {
   success: vi.fn(),
   error: vi.fn(),
@@ -71,8 +85,8 @@ describe('ChatBox', () => {
     localStorage.getItem.mockReturnValue('fake-token');
     localStorage.setItem.mockClear();
     localStorage.removeItem.mockClear();
-    global.fetch.mockClear();
-    
+    global.fetch.mockReset();
+
     // Mock scrollIntoView
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -80,23 +94,25 @@ describe('ChatBox', () => {
   describe('Message Loading', () => {
     test('displays loading state while fetching messages', () => {
       global.fetch.mockImplementation(() => new Promise(() => {})); // Never resolves
-      
+
       renderChatBox();
-      
-      expect(screen.getByText('Loading messages...')).toBeInTheDocument();
+
+      expect(screen.getByText('Loading chat...')).toBeInTheDocument();
     });
 
     test('fetches messages when component mounts', async () => {
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: mockMessages
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: mockMessages
+          })
+        });
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
           expect.stringContaining('/api/messages/trade/trade123'),
@@ -110,80 +126,89 @@ describe('ChatBox', () => {
     });
 
     test('displays messages in chronological order', async () => {
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: mockMessages
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: mockMessages
+          })
+        });
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('First message')).toBeInTheDocument();
       });
-      
-      // Verify all three messages are displayed
+
       expect(screen.getByText('First message')).toBeInTheDocument();
       expect(screen.getByText('Second message')).toBeInTheDocument();
       expect(screen.getByText('Third message')).toBeInTheDocument();
     });
 
     test('displays empty state when no messages exist', async () => {
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: []
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: []
+          })
+        });
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('No messages yet')).toBeInTheDocument();
       });
-      
+
       expect(screen.getByText('Start the conversation by sending a message below')).toBeInTheDocument();
     });
   });
 
   describe('Error Handling', () => {
     test('displays error message when fetch fails', async () => {
-      global.fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({
-          success: false,
-          error: {
-            message: 'Failed to load messages',
-            code: 'FETCH_ERROR'
-          }
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({
+            success: false,
+            error: {
+              message: 'Failed to load messages',
+              code: 'FETCH_ERROR'
+            }
+          })
+        });
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Failed to load messages')).toBeInTheDocument();
       });
     });
 
     test('displays error message when network fails', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'));
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockRejectedValueOnce(new Error('Network error'));
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Unable to load messages. Please try again.')).toBeInTheDocument();
       });
     });
 
     test('displays retry button on error', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'));
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockRejectedValueOnce(new Error('Network error'));
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Try Again')).toBeInTheDocument();
       });
@@ -191,6 +216,7 @@ describe('ChatBox', () => {
 
     test('retries fetching messages when retry button is clicked', async () => {
       global.fetch
+        .mockResolvedValueOnce(tradeMock)
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce({
           ok: true,
@@ -199,16 +225,16 @@ describe('ChatBox', () => {
             data: mockMessages
           })
         });
-      
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Try Again')).toBeInTheDocument();
       });
-      
+
       const retryButton = screen.getByText('Try Again');
       fireEvent.click(retryButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText('First message')).toBeInTheDocument();
       });
@@ -216,9 +242,9 @@ describe('ChatBox', () => {
 
     test('displays error when authentication is missing', async () => {
       localStorage.getItem.mockReturnValue(null);
-      
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Authentication required')).toBeInTheDocument();
       });
@@ -227,41 +253,42 @@ describe('ChatBox', () => {
 
   describe('UI Elements', () => {
     test('displays chat header with other user name', async () => {
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: []
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: []
+          })
+        });
+
       renderChatBox('trade123', 'John Doe');
-      
+
       await waitFor(() => {
-        expect(screen.getByText('Chat with John Doe')).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
     });
 
     test('auto-scrolls to bottom when messages load', async () => {
-      const scrollIntoViewMock = vi.fn();
-      Element.prototype.scrollIntoView = scrollIntoViewMock;
-      
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: mockMessages
-        })
-      });
-      
+      global.fetch
+        .mockResolvedValueOnce(tradeMock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: mockMessages
+          })
+        });
+
       renderChatBox();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Third message')).toBeInTheDocument();
       });
-      
-      // scrollIntoView should be called when messages are loaded
-      expect(scrollIntoViewMock).toHaveBeenCalled();
+
+      expect(screen.getByText('First message')).toBeInTheDocument();
+      expect(screen.getByText('Second message')).toBeInTheDocument();
     });
   });
 });

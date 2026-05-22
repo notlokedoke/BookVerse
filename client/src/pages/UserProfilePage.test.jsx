@@ -46,7 +46,7 @@ const renderWithProviders = (component, initialEntries = ['/']) => {
 
 describe('UserProfilePage', () => {
   beforeEach(() => {
-    axios.get.mockClear();
+    axios.get.mockReset();
     localStorage.setItem('token', 'fake-token');
   });
 
@@ -102,10 +102,9 @@ describe('UserProfilePage', () => {
       }
     ];
 
-    // Mock API responses
+    // Mock API responses (user, wishlist, ratings — component makes 3 calls)
     axios.get
       .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
-      .mockResolvedValueOnce({ data: { success: true, data: { books: mockBooks } } }) // Books
       .mockResolvedValueOnce({ data: { success: true, data: mockWishlist } }) // Wishlist
       .mockResolvedValueOnce({ data: { success: true, data: mockRatings } }); // Ratings
 
@@ -148,10 +147,9 @@ describe('UserProfilePage', () => {
       privacySettings: { showCity: true }
     };
 
-    // Mock API responses
+    // Mock API responses (user, wishlist, ratings — component makes 3 calls)
     axios.get
       .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
-      .mockResolvedValueOnce({ data: { success: true, data: { books: [] } } }) // Books
       .mockResolvedValueOnce({ data: { success: true, data: [] } }) // Wishlist
       .mockResolvedValueOnce({ data: { success: true, data: [] } }); // Ratings (empty)
 
@@ -202,10 +200,9 @@ describe('UserProfilePage', () => {
       }
     ];
 
-    // Mock API responses
+    // Mock API responses (user, wishlist, ratings — component makes 3 calls)
     axios.get
       .mockResolvedValueOnce({ data: { success: true, data: mockUser } }) // User profile
-      .mockResolvedValueOnce({ data: { success: true, data: { books: [] } } }) // Books
       .mockResolvedValueOnce({ data: { success: true, data: [] } }) // Wishlist
       .mockResolvedValueOnce({ data: { success: true, data: mockRatings } }); // Ratings
 

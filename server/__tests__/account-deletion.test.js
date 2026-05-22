@@ -7,8 +7,17 @@ const Message = require('../models/Message');
 const Wishlist = require('../models/Wishlist');
 const Rating = require('../models/Rating');
 const Notification = require('../models/Notification');
+const connectDB = require('../config/database');
 
 describe('Account Deletion', () => {
+  beforeAll(async () => {
+    await connectDB();
+  });
+
+  afterAll(async () => {
+    const mongoose = require('mongoose');
+    await mongoose.connection.close();
+  });
   let authToken;
   let userId;
 
@@ -39,8 +48,9 @@ describe('Account Deletion', () => {
       title: 'Test Book',
       author: 'Test Author',
       owner: userId,
-      condition: 'good',
-      genre: 'Fiction'
+      condition: 'Good',
+      genre: ['Fiction'],
+      imageUrl: 'https://example.com/test-book.jpg'
     });
 
     await Wishlist.create({

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Book = require('../models/Book');
 const Wishlist = require('../models/Wishlist');
 const Trade = require('../models/Trade');
+const connectDB = require('../config/database');
 const { generateToken } = require('../utils/jwt');
 
 describe('Recommendations API', () => {
@@ -14,6 +15,7 @@ describe('Recommendations API', () => {
   let testBooks = [];
 
   beforeAll(async () => {
+    await connectDB();
     // Create test users
     testUser = await User.create({
       name: 'Test User',
@@ -67,7 +69,7 @@ describe('Recommendations API', () => {
         title: 'Dune',
         author: 'Frank Herbert',
         genre: ['Science Fiction'],
-        condition: 'New',
+        condition: 'Good',
         imageUrl: 'https://example.com/dune.jpg',
         isAvailable: true
       }

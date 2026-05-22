@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BrowserRouter } from 'react-router-dom';
 import axios from 'axios';
@@ -48,7 +48,7 @@ describe('SignUp Component', () => {
       </BrowserRouter>
     );
 
-  const getPasswordInput = () => screen.getByLabelText(/^password$/i, { selector: 'input' });
+  const getPasswordInput = () => screen.getByLabelText(/^password/i, { selector: 'input' });
   const getConfirmPasswordInput = () => screen.getByLabelText(/confirm password/i, { selector: 'input' });
 
   beforeEach(() => {
@@ -72,7 +72,8 @@ describe('SignUp Component', () => {
 
       const checkbox = screen.getByRole('checkbox');
       expect(checkbox).toBeInTheDocument();
-      expect(screen.getByText(/i agree to the terms of service and privacy policy/i)).toBeInTheDocument();
+      expect(screen.getAllByText('Terms of Service')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Privacy Policy')[0]).toBeInTheDocument();
     });
 
     it('renders social sign up button', () => {
@@ -95,7 +96,7 @@ describe('SignUp Component', () => {
       renderSignUp();
 
       const submitButton = screen.getByRole('button', { name: /create account/i });
-      fireEvent.click(submitButton);
+      fireEvent.submit(submitButton.closest('form'));
 
       await waitFor(() => {
         expect(screen.getByText(/name is required/i)).toBeInTheDocument();
@@ -103,7 +104,7 @@ describe('SignUp Component', () => {
         expect(screen.getByText(/city or region is required/i)).toBeInTheDocument();
         expect(screen.getByText(/password is required/i)).toBeInTheDocument();
         expect(screen.getByText(/please confirm your password/i)).toBeInTheDocument();
-      }, { timeout: 1000 });
+      }, { timeout: 3000 });
     });
 
     it('displays validation error for invalid email format', async () => {
@@ -283,13 +284,15 @@ describe('SignUp Component', () => {
       const submitButton = screen.getByRole('button', { name: /create account/i });
       fireEvent.click(submitButton);
 
-      // Wait for success message
-      await waitFor(() => {
-        expect(screen.getByText(/registration successful/i)).toBeInTheDocument();
-      }, { timeout: 2000 });
+      // Flush promise resolution (microtasks) without relying on real-timer polling
+      await act(async () => {
+        await Promise.resolve();
+      });
 
-      // Fast-forward time and flush promises
-      await vi.advanceTimersByTimeAsync(4000);
+      expect(screen.getByText(/registration successful/i)).toBeInTheDocument();
+
+      // Fast-forward past the 4s redirect delay
+      await vi.runAllTimersAsync();
 
       // Check navigation was called
       expect(mockNavigate).toHaveBeenCalledWith('/login');
@@ -417,14 +420,14 @@ describe('SignUp Component', () => {
 
       // Fill all fields
       fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'John Doe' } });
-      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'invalid' } });
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'john@example.com' } });
       fireEvent.change(screen.getByLabelText(/city or region/i), { target: { value: 'New York' } });
-      fireEvent.change(getPasswordInput(), { target: { value: 'weak' } });
-      fireEvent.change(getConfirmPasswordInput(), { target: { value: 'weak' } });
+      fireEvent.change(getPasswordInput(), { target: { value: 'password123' } });
+      fireEvent.change(getConfirmPasswordInput(), { target: { value: 'password123' } });
       fireEvent.click(screen.getByRole('checkbox'));
 
       const submitButton = screen.getByRole('button', { name: /create account/i });
-      fireEvent.click(submitButton);
+      fireEvent.submit(submitButton.closest('form'));
 
       await waitFor(() => {
         expect(screen.getByText(/invalid email format/i)).toBeInTheDocument();

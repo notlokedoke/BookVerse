@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const Trade = require('../models/Trade');
+const User = require('../models/User');
+const Book = require('../models/Book');
+const connectDB = require('../config/database');
+const { generateToken } = require('../utils/jwt');
 const {
   clearDatabase,
   createTestUser,
@@ -14,10 +18,7 @@ describe('Message Model', () => {
   beforeAll(async () => {
     // Connect to test database
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bookverse-test';
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    await connectDB();
   });
 
   beforeEach(async () => {
@@ -271,7 +272,7 @@ describe('Message Model', () => {
         owner: testUser1._id,
         title: 'Test Book 3',
         author: 'Author 3',
-        condition: 'New',
+        condition: 'Good',
         genre: 'Science',
         imageUrl: 'http://example.com/image3.jpg'
       });
@@ -327,13 +328,7 @@ describe('Messages API - Send Message', () => {
 
   beforeAll(async () => {
     // Connect to test database if not already connected
-    if (mongoose.connection.readyState === 0) {
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/bookverse-test';
-      await mongoose.connect(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
-    }
+    await connectDB()
   });
 
   beforeEach(async () => {
@@ -446,7 +441,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail with missing content', async () => {
@@ -459,7 +454,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('MISSING_REQUIRED_FIELDS');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail with invalid trade ID format', async () => {
@@ -473,7 +468,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail with non-existent trade', async () => {
@@ -541,7 +536,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('EMPTY_CONTENT');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail with content exceeding 1000 characters', async () => {
@@ -556,7 +551,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('CONTENT_TOO_LONG');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should trim whitespace from content', async () => {
@@ -709,7 +704,7 @@ describe('Messages API - Send Message', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('INVALID_TRADE_ID');
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     test('should fail with non-existent trade', async () => {
@@ -747,7 +742,7 @@ describe('Messages API - Send Message', () => {
         owner: user1._id,
         title: 'Test Book 3',
         author: 'Author 3',
-        condition: 'New',
+        condition: 'Good',
         genre: 'Science',
         imageUrl: 'http://example.com/image3.jpg'
       });

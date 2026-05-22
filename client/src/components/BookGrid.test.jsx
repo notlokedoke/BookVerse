@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import BookGrid from './BookGrid';
 
@@ -31,19 +31,21 @@ describe('BookGrid', () => {
     hasPrevPage: false
   };
 
-  test('displays loading state', () => {
+  test('displays loading state', async () => {
     renderWithRouter(
-      <BookGrid 
-        books={[]} 
-        loading={true} 
-        error={null} 
+      <BookGrid
+        books={[]}
+        loading={true}
+        error={null}
         pagination={mockPagination}
         onPageChange={() => {}}
       />
     );
 
-    // Should show loading skeleton cards
-    expect(document.querySelectorAll('.loading-skeleton')).toHaveLength(8);
+    // useDelayedFlag delays skeleton by 150ms
+    await waitFor(() => {
+      expect(document.querySelectorAll('.loading-skeleton')).toHaveLength(8);
+    }, { timeout: 500 });
   });
 
   test('displays error state', () => {

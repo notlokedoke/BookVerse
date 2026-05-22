@@ -53,6 +53,9 @@ server/uploads/
 .kiro/
 .claude/
 
+# --- Graphify Output ---
+graphify-out/
+
 # --- Test Artifacts ---
 server/__tests__/temp-*.png
 server/__tests__/temp-*.jpg
