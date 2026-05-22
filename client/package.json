@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "BookVerse frontend React application",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "browserslist": [
     "last 2 Chrome versions",
     "last 2 Firefox versions",

@@ -131,6 +131,21 @@ app.use(cors({
 // Compression middleware
 app.use(compression());
 
+// Serve built client static files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const clientDist = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDist, {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    }
+  }));
+}
+
 // Initialize Passport for Google OAuth
 const passport = require('./config/passport');
 app.use(passport.initialize());
@@ -187,6 +202,10 @@ app.get('/api/health', (req, res) => {
 
 // Root route
 app.get('/', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    const path = require('path');
+    return res.sendFile(path.join(__dirname, '..', 'client', 'dist', 'index.html'));
+  }
   res.json({
     success: true,
     message: 'Welcome to BookVerse API',
@@ -195,7 +214,18 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
-app.use('/api/auth', authLimiter, authRoutes); // Apply auth rate limiter to authentication routes
+app.use('/api/auth', authLimiter, authRoutes);
+
+// Serve client index.html for all non-API routes (client-side routing)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const clientIndex = path.join(__dirname, '..', 'client', 'dist', 'index.html');
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(clientIndex);
+  });
+}
+
 app.use('/api/users', userRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/cities', citiesRoutes);

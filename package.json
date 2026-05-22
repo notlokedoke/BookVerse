@@ -1,4 +1,18 @@
 {
+  "name": "bookverse",
+  "version": "1.0.0",
+  "description": "BookVerse - Book Trading Platform",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "build:client": "npm --prefix client run build",
+    "start:server": "npm --prefix server start",
+    "start:client": "npm --prefix client run dev",
+    "dev": "npm --prefix server run dev & npm --prefix client run dev",
+    "test:server": "npm --prefix server test",
+    "test:client": "npm --prefix client test",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start"
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
