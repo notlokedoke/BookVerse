@@ -21,6 +21,10 @@ const {
 
 const app = express();
 
+// Trust Render/Vercel proxy so express-rate-limit uses real client IPs
+// (without this, all users share the load balancer IP and hit limits instantly)
+app.set('trust proxy', 1);
+
 // Initialize performance monitoring
 queryPerformanceTracker();
 monitorDatabaseConnection();

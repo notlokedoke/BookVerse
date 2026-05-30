@@ -100,7 +100,7 @@ const Footer = () => {
           </p>
           <div className="footer-social">
             <a
-              href="https://github.com/bookverse"
+              href="https://github.com/notlokedoke/BookVerse"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-social-link"
